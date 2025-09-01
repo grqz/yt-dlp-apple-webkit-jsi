@@ -72,7 +72,7 @@ int main(void) {
     void *msgInit = sel_registerName("init");
     void *msgDealloc = sel_registerName("dealloc");
     fprintf(stderr, "Initialised selectors\n");
-    void *pStr = objc_msgSend(ClsNSString, msgAlloc);
+    void *pStr = (((void *)(*)(void *, void *))objc_msgSend)((ClsNSString, msgAlloc);
     fprintf(stderr, "Allocated NSString\n");
     pStr = (((void *)(*)(void *, void *, const char *))objc_msgSend)(pStr, sel_registerName("initWithUTF8String:"), "Hello, World");
     fprintf(stderr, "Initialised NSString\n");
