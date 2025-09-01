@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 typedef void *(*FnProto_objc_getClass)(const char *name);
-typedef void *(*FnProto_objc_msgSend)(void *self, void *op, ...);
+typedef void (*FnProto_objc_msgSend)(void *self, void *op, ...);
 
 typedef void *(*FnProto_sel_registerName)(const char * str);
 
@@ -74,7 +74,7 @@ int main(void) {
     fprintf(stderr, "Initialised selectors\n");
     void *pStr = objc_msgSend(ClsNSString, msgAlloc);
     fprintf(stderr, "Allocated NSString\n");
-    pStr = objc_msgSend(pStr, sel_registerName("initWithUTF8String:"), "Hello, World");
+    pStr = (((void *)(*)(void *, void *, const char *))objc_msgSend)(pStr, sel_registerName("initWithUTF8String:"), "Hello, World");
     fprintf(stderr, "Initialised NSString\n");
 
     NSLog(pStr);
