@@ -11,7 +11,7 @@ jobs:
     - name: bld
       run: |
         clang++ -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` decl.mm -o main
-        clang++ -Wall -isysroot `xcrun --show-sdk-path` hello.cpp -o hello
+        clang -Wall hello.c -o hello
     - run: |
         ./main
         ./hello
