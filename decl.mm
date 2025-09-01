@@ -10,7 +10,7 @@
 }
 @end
 
-int main(void) {
+int main() {
     MyCls *obj = [[MyCls alloc] init];
     [obj meth];
     [obj release];

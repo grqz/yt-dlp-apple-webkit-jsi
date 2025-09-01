@@ -10,6 +10,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: bld
       run: |
-        clang -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` decl.m -o main
+        clang++ -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` decl.mm -o main
+        clang++ -Wall -isysroot `xcrun --show-sdk-path` hello.cpp -o hello
     - run: |
         ./main
+        ./hello
