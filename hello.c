@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-#define _GNU_SOURCE
 #include <dlfcn.h>
 
 // only loaded:
@@ -57,6 +56,7 @@ int main(void) {
         fprintf(stderr, "Failed to load Foundation, is it in the right place?\n");
         goto end1;
     }
+    fprintf(stderr, "All libraries loaded\n");
     void *ClsNSString = objc_getClass("NSString");
     if (!ClsNSString) {
         fprintf(stderr, "Failed to get NSString\n");
@@ -65,6 +65,7 @@ int main(void) {
     void *msgAlloc = sel_registerName("alloc");
     void *msgInit = sel_registerName("init");
     void *msgDealloc = sel_registerName("dealloc");
+    fprintf(stderr, "Initialised selectors\n");
     void *pStr = objc_msgSend(ClsNSString, msgAlloc);
     pStr = objc_msgSend(pStr, sel_registerName("initWithUTF8String:"), "Hello, World");
 
