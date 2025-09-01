@@ -57,6 +57,12 @@ int main(void) {
         goto end1;
     }
     fprintf(stderr, "All libraries loaded\n");
+
+    FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
+    if (!NSLog) {
+        fprintf(stderr, "Failed to load from Foundation: NSLog");
+        goto end2;
+    }
     void *ClsNSString = objc_getClass("NSString");
     if (!ClsNSString) {
         fprintf(stderr, "Failed to get NSString\n");
@@ -67,15 +73,12 @@ int main(void) {
     void *msgDealloc = sel_registerName("dealloc");
     fprintf(stderr, "Initialised selectors\n");
     void *pStr = objc_msgSend(ClsNSString, msgAlloc);
+    fprintf(stderr, "Allocated NSString\n");
     pStr = objc_msgSend(pStr, sel_registerName("initWithUTF8String:"), "Hello, World");
-
-    FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
-    if (!NSLog) {
-        fprintf(stderr, "Could not find NSLog");
-        goto end3;
-    }
+    fprintf(stderr, "Initialised NSString\n");
 
     NSLog(pStr);
+    fprintf(stderr, "Logged NSString\n");
 
     ret = 0;
 end3:
