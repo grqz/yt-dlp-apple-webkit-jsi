@@ -125,9 +125,9 @@ int main(void) {
         fprintf(stderr, "Failed to getClass NSString\n");
         goto fail_libs;
     }
-    void *ClsNSDictionary = objc_getClass("ClsNSDictionary");
+    void *ClsNSDictionary = objc_getClass("NSDictionary");
     if (!ClsNSDictionary) {
-        fprintf(stderr, "Failed to getClass ClsNSDictionary\n");
+        fprintf(stderr, "Failed to getClass NSDictionary\n");
         goto fail_libs;
     }
     void *ClsWKWebView = objc_getClass("WKWebView");
