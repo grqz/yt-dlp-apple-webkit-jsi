@@ -2,16 +2,6 @@
 
 #include <dlfcn.h>
 
-// only loaded:
-// _dyld_image_count
-// _dyld_get_image_name range
-// strstr _ Foundation.framework
-// obsolete:
-// dyld
-// NSAddImage
-// objc:
-// NSBundle
-
 typedef void *(*FnProto_objc_getClass)(const char *name);
 
 typedef void (*FnProto_objc_msgSend)();
@@ -51,16 +41,16 @@ int main(void) {
         goto end1;
     }
 
-    // void *foundation = dlopen("/System/Library/Frameworks/Foundation.framework/Foundation", RTLD_LAZY);
-    // if (!foundation) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to load Foundation: %s; Is it in the right place?\n", errm ? errm : &nul);
-    //     goto end1;
-    // }
+    // Would Foundation.framework always be here?
+    void *foundation = dlopen("/System/Library/Frameworks/Foundation.framework/Foundation", RTLD_LAZY);
+    if (!foundation) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to load Foundation: %s; Is it in the right place?\n", errm ? errm : &nul);
+        goto end1;
+    }
     fprintf(stderr, "All libraries loaded\n");
 
-    // FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
-    FnProto_NSLog NSLog = dlsym(objc, "NSLog");
+    FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
     if (!NSLog) {
         const char *errm = dlerror();
         fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
@@ -88,10 +78,10 @@ int main(void) {
 end3:
     ((FnProtov_objc_msgSend)objc_msgSend)(pStr, selRelease);
 end2:
-    // if (dlclose(foundation)) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to dlclose Foundation: %s\n", errm ? errm : &nul);
-    // }
+    if (dlclose(foundation)) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to dlclose Foundation: %s\n", errm ? errm : &nul);
+    }
 end1:
     if (dlclose(objc)) {
         const char *errm = dlerror();

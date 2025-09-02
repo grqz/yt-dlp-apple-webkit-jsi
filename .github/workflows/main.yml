@@ -6,3 +6,4 @@ jobs:
     - uses: actions/checkout@v4
     - run: |
         clang -Wall hello.c -o hello && ./hello
+        clang -Wall fdn.m -o fdn && ldd fdn
