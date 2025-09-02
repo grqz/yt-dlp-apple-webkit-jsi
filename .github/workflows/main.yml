@@ -5,5 +5,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-        clang -Wall hello.c -o hello && ./hello
+        # -c for objects
+        clang++ -Wall config.cpp -c -o config.o
+        clang -Wall hello.c config.o -o hello
+        ./hello
+        # clang -Wall hello.c -o hello && ./hello
         # clang -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` fdn.m -o fdn && otool -L fdn
