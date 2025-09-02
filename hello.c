@@ -218,7 +218,7 @@ int main(void) {
     block.isa = pNSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
-        pWebview, sel_registerName("callAsyncJavaScript"),
+        pWebview, sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
         psScript, pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
         /*completionHandler: (void (^)(id result, NSError *error))=*/
         &block);
