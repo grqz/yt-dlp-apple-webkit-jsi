@@ -116,7 +116,7 @@ int main(void) {
     void *selSetVal4K = sel_registerName("setValue:forKey:");
     fprintf(stderr, "Initialised selectors\n");
 
-    void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "Hello, World");
+    void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "Hello, World!");
     fprintf(stderr, "Initialised NSString\n");
     NSLog(pStr);
     fprintf(stderr, "Logged NSString\n");
@@ -126,7 +126,7 @@ int main(void) {
     void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
     pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
     void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
-    ((FnProtov_u8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically"), kbTrue);
+    ((FnProtov_u8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), kbTrue);
 
     void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "allowFileAccessFromFileURLs");
     ((FnProtov_vp_vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
