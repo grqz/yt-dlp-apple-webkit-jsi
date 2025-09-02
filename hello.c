@@ -2,6 +2,8 @@
 
 #include <dlfcn.h>
 
+#define SYSFWK(fwk) "/System/Library/Frameworks/" #fwk ".framework/" #fwk
+
 typedef void *(*FnProto_objc_getClass)(const char *name);
 
 typedef void (*FnProto_objc_msgSend)();
@@ -42,7 +44,7 @@ int main(void) {
     }
 
     // Would Foundation.framework always be here?
-    void *foundation = dlopen("/System/Library/Frameworks/Foundation.framework/Foundation", RTLD_LAZY);
+    void *foundation = dlopen(SYSFWK(Foundation), RTLD_LAZY);
     if (!foundation) {
         const char *errm = dlerror();
         fprintf(stderr, "Failed to load Foundation: %s; Is it in the right place?\n", errm ? errm : &nul);
