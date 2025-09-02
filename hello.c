@@ -125,6 +125,11 @@ int main(void) {
         fprintf(stderr, "Failed to getClass NSString\n");
         goto fail_libs;
     }
+    void *ClsNSURL = objc_getClass("NSURL");
+    if (!ClsNSURL) {
+        fprintf(stderr, "Failed to getClass NSURL\n");
+        goto fail_libs;
+    }
     void *ClsNSDictionary = objc_getClass("NSDictionary");
     if (!ClsNSDictionary) {
         fprintf(stderr, "Failed to getClass NSDictionary\n");
@@ -151,7 +156,9 @@ int main(void) {
     void *selSetVal4K = sel_registerName("setValue:forKey:");
     fprintf(stderr, "Initialised selectors\n");
 
-    void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "Hello, World!");
+    void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)"Hello, World!");
     fprintf(stderr, "Initialised NSString\n");
     NSLog(pStr);
     fprintf(stderr, "Logged NSString\n");
@@ -163,13 +170,17 @@ int main(void) {
     void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
     ((FnProtov_u8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), kbTrue);
 
-    void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "allowFileAccessFromFileURLs");
+    void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)"allowFileAccessFromFileURLs");
     ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
     ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
 
     pPref = NULL;
 
-    psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), "allowUniversalAccessFromFileURLs");
+    psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)"allowUniversalAccessFromFileURLs");
     ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pCfg, selSetVal4K, kCFBooleanTrue, psSetKey);
     ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
 
@@ -178,16 +189,26 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(pCfg, selRelease); pCfg = NULL;
     fprintf(stderr, "Initialised WKWebView\n");
 
-    void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), (void *)szHTMLString);
-    void *psBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), (void *)szBaseURL);
+    void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)szHTMLString);
+    void *psBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)szBaseURL);
+    void *pnurlBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSURL, selAlloc),
+        sel_registerName("initWithString:"), psBaseURL);
 
-    ((FnProtovp_2vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("loadHTMLString:baseURL:"), psHTMLString, psBaseURL);
+    ((FnProtovp_2vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("loadHTMLString:baseURL:"), psHTMLString, pnurlBaseURL);
 
+    ((FnProtov_objc_msgSend)objc_msgSend)(pnurlBaseURL, selRelease); pnurlBaseURL = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(psBaseURL, selRelease); psBaseURL = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(psHTMLString, selRelease); psHTMLString = NULL;
     fprintf(stderr, "Set up WKWebView\n");
 
-    void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(ClsNSString, sel_registerName("stringWithUTF8String:"), (void *)szScript);
+    void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+        sel_registerName("initWithUTF8String:"), (void *)szScript);
 
     void *pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSDictionary, selAlloc);
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
