@@ -5,6 +5,7 @@
 #include <stdarg.h>
 
 #include <dlfcn.h>
+#include <pthread.h>
 
 #define SYSFWK(fwk) "/System/Library/Frameworks/" #fwk ".framework/" #fwk
 
@@ -30,9 +31,17 @@ typedef void (*FnProto_NSLog)(void *format, ...);
 
 const unsigned char kbTrue = 1, kbFalse = 0;
 
+pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+unsigned char stop = kbFalse;
+
 static inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
+    pthread_mutex_lock(&mtx);
+    stop = kbTrue;
+    pthread_cond_signal(&cv);
+    pthread_mutex_unlock(&mtx);
 }
 
 int main(void) {
@@ -228,7 +237,10 @@ int main(void) {
 
     ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
 
-
+    pthread_mutex_lock(&mtx);
+    while (!stop)
+        pthread_cond_wait(&cv, &mtx);
+    pthread_mutex_unlock(&mtx);
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     fprintf(stderr, "Freed all\n");
 
@@ -261,5 +273,7 @@ fail_objc:
         fprintf(stderr, "Failed to dlclose libobjc: %s\n", errm ? errm : &nul);
     }
 fail_ret:
+    pthread_mutex_destroy(&mtx);
+    pthread_cond_destroy(&cv);
     return ret;
 }
