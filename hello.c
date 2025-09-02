@@ -50,19 +50,26 @@ int main(void) {
         fprintf(stderr, "Failed to load Foundation: %s; Is it in the right place?\n", errm ? errm : &nul);
         goto end1;
     }
+
+    void *webkit = dlopen(SYSFWK(WebKit), RTLD_LAZY);
+    if (!webkit) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to load Webkit: %s; Is it in the right place?\n", errm ? errm : &nul);
+        goto end2;
+    }
     fprintf(stderr, "All libraries loaded\n");
 
     FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
     if (!NSLog) {
         const char *errm = dlerror();
         fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
-        goto end2;
+        goto end3;
     }
 
     void *ClsNSString = objc_getClass("NSString");
     if (!ClsNSString) {
         fprintf(stderr, "Failed to getClass NSString\n");
-        goto end2;
+        goto end3;
     }
     void *selAlloc = sel_registerName("alloc");
     void *selInit = sel_registerName("init");
@@ -77,8 +84,13 @@ int main(void) {
     fprintf(stderr, "Logged NSString\n");
 
     ret = 0;
-end3:
+end4:
     ((FnProtov_objc_msgSend)objc_msgSend)(pStr, selRelease);
+end3:
+    if (dlclose(webkit)) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to dlclose WebKit: %s\n", errm ? errm : &nul);
+    }
 end2:
     if (dlclose(foundation)) {
         const char *errm = dlerror();
@@ -87,7 +99,7 @@ end2:
 end1:
     if (dlclose(objc)) {
         const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose Foundation: %s\n", errm ? errm : &nul);
+        fprintf(stderr, "Failed to dlclose libobjc: %s\n", errm ? errm : &nul);
     }
 end0:
     return ret;
