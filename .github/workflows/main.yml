@@ -1,17 +1,8 @@
-name: Build&test
-
 on: [workflow_dispatch]
-
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
     - uses: actions/checkout@v4
-    - name: bld
-      run: |
-        clang++ -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` decl.mm -o main
-        clang -Wall hello.c -o hello
     - run: |
-        ./main
-        ./hello
+        clang -Wall hello.c -o hello && ./hello
