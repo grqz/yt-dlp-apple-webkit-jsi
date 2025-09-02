@@ -139,7 +139,7 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
 
     void *pWebview = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebView, selAlloc);
-    pWebview = ((FnProtovp_CGRect_vp_objc_msgSend)objc_msgSend)(ClsWKWebView, sel_registerName("initWithFrame:configuration:"), Proto_CGRectZero, pCfg);
+    pWebview = ((FnProtovp_CGRect_vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("initWithFrame:configuration:"), Proto_CGRectZero, pCfg);
     fprintf(stderr, "Initialised WKWebView");
     ((FnProtov_objc_msgSend)objc_msgSend)(pCfg, selRelease); pCfg = NULL;
 
