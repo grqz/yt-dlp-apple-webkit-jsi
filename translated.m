@@ -5,20 +5,14 @@
 
 #include "config.h"
 #include <stdio.h>
-// #include <pthread.h>
-
-// pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
-// pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-// BOOL stop = NO;
 
 static inline
 void onCallAsyncJSComplete(void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
     NSLog(@"idResult of type %@", NSStringFromClass([(id)idResult class]));
-    // pthread_mutex_lock(&mtx);
-    // stop = YES;
-    // pthread_cond_signal(&cv);
-    // pthread_mutex_unlock(&mtx);
+    if ([(id)idResult isKindOfClass:[NSNumber class]]) {
+        fputs([[idResult stringValue] UTF8String], stderr);
+    }
     CFRunLoopStop(CFRunLoopGetMain());
 }
 
@@ -61,14 +55,7 @@ int main(void) {
     NSLog(@"Waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
     CFRunLoopRun();
-    // pthread_mutex_lock(&mtx);
-    // while (!stop) {
-    //     pthread_cond_wait(&cv, &mtx);
-    // }
-    // pthread_mutex_unlock(&mtx);
     [pWebview release]; pWebview = nil;
     NSLog(@"Finished");
-    // pthread_mutex_destroy(&mtx);
-    // pthread_cond_destroy(&cv);
     return 0;
 }

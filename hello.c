@@ -6,7 +6,6 @@
 #include <stddef.h>
 
 #include <dlfcn.h>
-#include <pthread.h>
 
 #define SYSFWK(fwk) "/System/Library/Frameworks/" #fwk ".framework/" #fwk
 
@@ -30,24 +29,29 @@ typedef void *(*FnProto_sel_registerName)(const char * str);
 
 typedef void (*FnProto_NSLog)(void *format, ...);
 
-const unsigned char kbTrue = 1, kbFalse = 0;
+typedef void (*FnProto_CFRunLoopRun)(void);
 
-pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-unsigned char stop = kbFalse;
+typedef void (*FnProto_CFRunLoopStop)(void *rl);
+
+typedef void *(*FnProto_CFRunLoopGetMain)(void);
+
+
+const unsigned char kbTrue = 1, kbFalse = 0;
+char nul = 0;
+
+struct OnCallAsyncJSCompleteUserData {
+    FnProto_CFRunLoopStop stop;
+    FnProto_CFRunLoopGetMain getmain;
+};
 
 static inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
-    if (!idResult) return;
-    pthread_mutex_lock(&mtx);
-    stop = kbTrue;
-    pthread_cond_signal(&cv);
-    pthread_mutex_unlock(&mtx);
+    struct OnCallAsyncJSCompleteUserData *userData = self->userData;
+    userData->stop(userData->getmain());
 }
 
 int main(void) {
-    char nul = 0;
     int ret = 1;
     void *objc = dlopen("/usr/lib/libobjc.A.dylib", RTLD_LAZY);
     if (!objc) {
@@ -116,6 +120,24 @@ int main(void) {
     if (!NSLog) {
         const char *errm = dlerror();
         fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
+        goto fail_libs;
+    }
+    FnProto_CFRunLoopRun CFRunLoopRun = dlsym(cf, "CFRunLoopRun");
+    if (!CFRunLoopRun) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to get CFRunLoopRun from CoreFoundation: %s\n", errm ? errm : &nul);
+        goto fail_libs;
+    }
+    FnProto_CFRunLoopGetMain CFRunLoopGetMain = dlsym(cf, "CFRunLoopGetMain");
+    if (!CFRunLoopGetMain) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to get CFRunLoopGetMain from CoreFoundation: %s\n", errm ? errm : &nul);
+        goto fail_libs;
+    }
+    FnProto_CFRunLoopStop CFRunLoopStop = dlsym(cf, "CFRunLoopStop");
+    if (!CFRunLoopStop) {
+        const char *errm = dlerror();
+        fprintf(stderr, "Failed to get CFRunLoopStop from CoreFoundation: %s\n", errm ? errm : &nul);
         goto fail_libs;
     }
     void *kCFBooleanTrue = *(void **)dlsym(cf, "kCFBooleanTrue");
@@ -225,9 +247,10 @@ int main(void) {
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
+    struct OnCallAsyncJSCompleteUserData userData = { CFRunLoopStop, CFRunLoopGetMain };
     struct Prototype_FnPtrWrapperBlock block;
     block.isa = pNSConcreteStackBlock;
-    make_wrapper(&block, &onCallAsyncJSComplete, NULL);
+    make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview,
@@ -246,15 +269,9 @@ int main(void) {
 
     ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
 
-    fprintf(stderr, "Testing call to block\n");
-    test_call_block_cbv_2vp(&block, NULL, NULL);
-
     fprintf(stderr, "Waiting for JS to stop\n");
+    CFRunLoopRun();
 
-    pthread_mutex_lock(&mtx);
-    while (!stop)
-        pthread_cond_wait(&cv, &mtx);
-    pthread_mutex_unlock(&mtx);
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     fprintf(stderr, "Freed all\n");
 
@@ -287,7 +304,5 @@ fail_objc:
         fprintf(stderr, "Failed to dlclose libobjc: %s\n", errm ? errm : &nul);
     }
 fail_ret:
-    pthread_mutex_destroy(&mtx);
-    pthread_cond_destroy(&cv);
     return ret;
 }
