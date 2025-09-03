@@ -13,6 +13,8 @@ void onCallAsyncJSComplete(void *idResult, void *nserrError, void *stop, void *g
     NSLog(@"idResult of type %@", NSStringFromClass([(id)idResult class]));
     if ([(id)idResult isKindOfClass:[NSNumber class]]) {
         fprintf(stderr, "%s\n", [[idResult stringValue] UTF8String]);
+    } else if ([(id)idResult isKindOfClass:[NSString class]]) {
+        fprintf(stderr, "%s\n", [idResult UTF8String]);
     }
     ((void(*)(void *))stop)(((void *(*)(void))getmain)());
     // CFRunLoopStop(CFRunLoopGetMain());
