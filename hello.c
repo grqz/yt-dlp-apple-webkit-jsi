@@ -39,6 +39,7 @@ unsigned char stop = kbFalse;
 static inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
+    if (!idResult) return;
     pthread_mutex_lock(&mtx);
     stop = kbTrue;
     pthread_cond_signal(&cv);
