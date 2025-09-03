@@ -31,9 +31,7 @@ void make_wrapper(struct Prototype_FnPtrWrapperBlock *block, void *fnptr, void *
     block->userData = userData;
 }
 
-void *really_makeblock_cbv_2vp(void (*fnptr)(void *, void *, void *), void *userData);
-
-void test_call_block_cbv_2vp(void *block_cbv_2vp);
+void test_call_block_cbv_2vp(void *block_cbv_2vp, void *, void *);
 
 #ifdef __cplusplus
 }

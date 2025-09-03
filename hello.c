@@ -244,7 +244,7 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
 
     fprintf(stderr, "Testing call to block\n");
-    test_call_block_cbv_2vp(&block);
+    test_call_block_cbv_2vp(&block, NULL, NULL);
 
     fprintf(stderr, "Waiting for JS to stop\n");
 
