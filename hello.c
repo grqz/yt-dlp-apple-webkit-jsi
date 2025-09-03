@@ -271,6 +271,7 @@ int main(void) {
 
     fprintf(stderr, "Waiting for JS to stop\n");
     CFRunLoopRun();
+    fprintf(stderr, "JS stopped\n");
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     fprintf(stderr, "Freed all\n");
