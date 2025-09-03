@@ -57,7 +57,7 @@ int main(void) {
     if (!signature) signature = "";
     fputs("block signature: ", stderr);
     while (1) {
-        unsigned char c = *signature++;
+        unsigned char c = *(signature++);
         fputc("0123456789abcdef"[c & 0xf], stderr);
         fputc("0123456789abcdef"[c >> 4], stderr);
         if (!c) break;
