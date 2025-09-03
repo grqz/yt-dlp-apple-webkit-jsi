@@ -24,6 +24,7 @@ typedef void *(*FnProtovp_CGRect_vp_objc_msgSend)(void *self, void *op, struct P
 typedef void *(*FnProtovp_2vp_objc_msgSend)(void *self, void *op, void *, void *);
 typedef void *(*FnProtovp_objc_msgSend)(void *self, void *op);
 typedef void *(*FnProtovp_vp_objc_msgSend)(void *self, void *op, void *);
+typedef unsigned char(*FnProtou8_vp_objc_msgSend)(void *self, void *op, void *);
 
 typedef void *(*FnProto_sel_registerName)(const char * str);
 
@@ -40,10 +41,11 @@ const unsigned char kbTrue = 1, kbFalse = 0;
 char nul = 0;
 
 struct OnCallAsyncJSCompleteUserData {
-    FnProto_CFRunLoopStop stop;
-    FnProto_CFRunLoopGetMain getmain;
-    FnProto_objc_msgSend objc_msgSend;
-    FnProto_sel_registerName sel_registerName;
+    const FnProto_CFRunLoopStop stop;
+    const FnProto_CFRunLoopGetMain getmain;
+    const FnProto_objc_msgSend objc_msgSend;
+    const FnProto_sel_registerName sel_registerName;
+    void *idResult;
 };
 
 static inline
@@ -59,6 +61,11 @@ void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idRes
         void *rpsUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpdUserInfo, userData->sel_registerName("description"));
         void *szUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsUserInfo, userData->sel_registerName("UTF8String"));
         fprintf(stderr, "Error encountered: code %lu, domain %s, userinfo %s\n", code, szDomain, szUserInfo);
+    }
+    if (idResult) {
+        userData->idResult = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(idResult, userData->sel_registerName("copy"));
+    } else {
+        userData->idResult = NULL;
     }
     userData->stop(userData->getmain());
 }
@@ -170,6 +177,11 @@ int main(void) {
         fprintf(stderr, "Failed to getClass NSString\n");
         goto fail_libs;
     }
+    void *ClsNSNumber = objc_getClass("NSNumber");
+    if (!ClsNSNumber) {
+        fprintf(stderr, "Failed to getClass NSNumber\n");
+        goto fail_libs;
+    }
     void *ClsNSURL = objc_getClass("NSURL");
     if (!ClsNSURL) {
         fprintf(stderr, "Failed to getClass NSURL\n");
@@ -198,12 +210,16 @@ int main(void) {
     void *selAlloc = sel_registerName("alloc");
     void *selInit = sel_registerName("init");
     void *selRelease = sel_registerName("release");
+    void *selClass = sel_registerName("class");
+    void *selIsKindOfClass = sel_registerName("isKindOfClass:");
     void *selSetVal4K = sel_registerName("setValue:forKey:");
+    void *selUTF8Str = sel_registerName("UTF8String");
+    void *selInitWithUTF8 = sel_registerName("initWithUTF8String:");
     fprintf(stderr, "Initialised selectors\n");
 
     void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)"Hello, World!");
+        selInitWithUTF8, (void *)"Hello, World!");
     fprintf(stderr, "Initialised NSString\n");
     NSLog(pStr);
     fprintf(stderr, "Logged NSString\n");
@@ -217,7 +233,7 @@ int main(void) {
 
     void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)"allowFileAccessFromFileURLs");
+        selInitWithUTF8, (void *)"allowFileAccessFromFileURLs");
     ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
     ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
 
@@ -225,7 +241,7 @@ int main(void) {
 
     psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)"allowUniversalAccessFromFileURLs");
+        selInitWithUTF8, (void *)"allowUniversalAccessFromFileURLs");
     ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pCfg, selSetVal4K, kCFBooleanTrue, psSetKey);
     ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
 
@@ -236,10 +252,10 @@ int main(void) {
 
     void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)szHTMLString);
+        selInitWithUTF8, (void *)szHTMLString);
     void *psBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)szBaseURL);
+        selInitWithUTF8, (void *)szBaseURL);
     void *pnurlBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSURL, selAlloc),
         sel_registerName("initWithString:"), psBaseURL);
@@ -253,7 +269,7 @@ int main(void) {
 
     void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        sel_registerName("initWithUTF8String:"), (void *)szScript);
+        selInitWithUTF8, (void *)szScript);
 
     void *pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSDictionary, selAlloc);
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
@@ -293,7 +309,24 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
-    fprintf(stderr, "Freed all\n");
+
+    FnProtou8_vp_objc_msgSend sendIsKindOfClass = objc_msgSend;
+    if (!userData.idResult) {
+        fputs("Javascript returned nil\n", stderr);
+    } else if (sendIsKindOfClass(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
+        const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, selUTF8Str);
+        fprintf(stderr, "Javascript returned string %s\n", szRet);
+    }
+    else if (sendIsKindOfClass(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
+        void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, sel_registerName("stringValue"));
+        const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
+        fprintf(stderr, "Javascript returned Number %s\n", szRet);
+    } else {
+        fputs("Javascript returned unknown object\n", stderr);
+    }
+
+    ((FnProtov_objc_msgSend)objc_msgSend)(userData.idResult, selRelease); userData.idResult = NULL;
+    fputs("Freed all\n", stderr);
 
     ret = 0;
 
