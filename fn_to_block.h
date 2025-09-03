@@ -13,7 +13,7 @@ extern "C" {
 struct Prototype_BlockDescBase {
     unsigned long int reserved;  // 0
     unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
-} static proto_bdesc = {0, sizeof(struct Prototype_BlockDescBase)};
+};
 struct Prototype_BlockDescCopyDispSign {
     unsigned long int reserved;  // 0
     unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
@@ -40,6 +40,11 @@ struct Prototype_FnPtrWrapperBlock {
     void (*invoke)();  // struct Prototype_FnPtrWrapperBlock *, ...
     struct Prototype_BlockDescBase *desc;
     void *userData;
+};
+static
+struct Prototype_BlockDescBase proto_bdesc = {
+    0,
+    sizeof(struct Prototype_FnPtrWrapperBlock)
 };
 
 static inline
