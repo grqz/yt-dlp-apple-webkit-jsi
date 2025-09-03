@@ -46,6 +46,7 @@ struct OnCallAsyncJSCompleteUserData {
 
 static inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
+    fprintf(stderr, "UserData: %p\n", self->userData);
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
     struct OnCallAsyncJSCompleteUserData *userData = self->userData;
     userData->stop(userData->getmain());
