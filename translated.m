@@ -11,7 +11,7 @@ void onCallAsyncJSComplete(void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
     NSLog(@"idResult of type %@", NSStringFromClass([(id)idResult class]));
     if ([(id)idResult isKindOfClass:[NSNumber class]]) {
-        fputs([[idResult stringValue] UTF8String], stderr);
+        fprintf(stderr, "%s\n", [[idResult stringValue] UTF8String]);
     }
     CFRunLoopStop(CFRunLoopGetMain());
 }
