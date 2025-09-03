@@ -5,12 +5,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-        # -c for objects
-        clang++ --std=c++17 -Wall config.cpp -c -o config.o
-
-        clang --std=c99 -Wall -fblocks testcall.m -c -o testcall.o
-        clang --std=c99 -Wall hello.c config.o testcall.o -o hello
-        clang -Wall -fno-objc-arc -fblocks -framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics -isysroot `xcrun --show-sdk-path` translated.m config.o -o translated
+        make
         ./translated
 
         ./hello
