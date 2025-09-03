@@ -32,6 +32,11 @@ int main(void) {
     WKWebView *pWebview = [[WKWebView alloc] initWithFrame:CGRectZero configuration:pCfg];
     [pCfg release]; pCfg = nil;
 
+    [pWebview
+        loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
+    [pWebview
+        loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
+        responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
     NSString *psHTMLString = [[NSString alloc] initWithUTF8String:szHTMLString];
     NSString *psBaseURL = [[NSString alloc] initWithUTF8String:szBaseURL];
     NSURL *pnurlBaseURL = [[NSURL alloc] initWithString:psBaseURL];
@@ -40,6 +45,7 @@ int main(void) {
     [psBaseURL release]; psBaseURL = nil;
     [psHTMLString release]; psHTMLString = nil;
     NSLog(@"Set up WKWebView");
+    NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
 
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
     NSDictionary *pdJsArguments = [[NSDictionary alloc] init];
