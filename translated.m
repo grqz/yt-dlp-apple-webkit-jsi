@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <WebKit/WebKit.h>
 #import <CoreFoundation/CoreFoundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 #include "config.h"
 #include <stdio.h>

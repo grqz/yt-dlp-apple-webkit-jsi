@@ -10,7 +10,7 @@ jobs:
 
         clang --std=c99 -Wall -fblocks testcall.m -c -o testcall.o
         clang --std=c99 -Wall hello.c config.o testcall.o -o hello
-        clang -Wall -framework Foundation -framework WebKit -framework CoreFoundation -isysroot `xcrun --show-sdk-path` translated.m config.o -o translated
+        clang -Wall -framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics -isysroot `xcrun --show-sdk-path` translated.m config.o -o translated
         ./translated
 
         ./hello
