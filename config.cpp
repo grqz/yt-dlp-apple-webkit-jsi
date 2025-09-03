@@ -3,8 +3,8 @@
 extern "C" {
     static inline const unsigned char szHTMLString_[] = R"HtmlcontenTT_T(<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>)HtmlcontenTT_T";
     static inline const unsigned char szBaseURL_[] = "https://www.youtube.com/robots.txt";
-    static inline const unsigned char szScript_[] = R"sz__scRRitp(return
- await(async ()=>{  // IIAFE
+    static inline const unsigned char szScript_[] = R"sz__scRRitp(
+return await(async ()=>{  // IIAFE
 try{
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
