@@ -265,13 +265,13 @@ int main(void) {
 
     // ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease); pdJsArguments = NULL;
-
-    ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
-
     fprintf(stderr, "Waiting for JS to stop\n");
     CFRunLoopRun();
     fprintf(stderr, "JS stopped\n");
+
+    ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease); pdJsArguments = NULL;
+
+    ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     fprintf(stderr, "Freed all\n");
