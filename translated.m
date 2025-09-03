@@ -55,10 +55,12 @@ int main(void) {
         completionHandler:completionHandler];
     const char *signature = signatureof(completionHandler);
     if (!signature) signature = "";
-    fputs(@"block signature: ", stderr);
-    while (++signature) {
-        fputc("0123456789abcdef"[*signature & 0xf], stderr);
-        fputc("0123456789abcdef"[*signature >> 4], stderr);
+    fputs("block signature: ", stderr);
+    while (1) {
+        unsigned char c = *signature++;
+        fputc("0123456789abcdef"[c & 0xf], stderr);
+        fputc("0123456789abcdef"[c >> 4], stderr);
+        if (!c) break;
         fputc(' ', stderr);
     }
     fputc('\n', stderr);
