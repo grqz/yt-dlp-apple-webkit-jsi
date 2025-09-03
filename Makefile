@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = --std=c99 -Wall
+CFLAGS = -fsanitize=address --std=c99 -Wall
 CXX = clang++
 CXXFLAGS = --std=c++17 -Wall
 OBJCFLAGS = --std=c99 -Wall -fblocks -fno-objc-arc \
