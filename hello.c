@@ -42,6 +42,8 @@ char nul = 0;
 struct OnCallAsyncJSCompleteUserData {
     FnProto_CFRunLoopStop stop;
     FnProto_CFRunLoopGetMain getmain;
+    FnProto_objc_msgSend objc_msgSend;
+    FnProto_sel_registerName sel_registerName;
 };
 
 static inline
@@ -49,6 +51,12 @@ void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idRes
     fprintf(stderr, "UserData: %p\n", self->userData);
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
     struct OnCallAsyncJSCompleteUserData *userData = self->userData;
+    if (nserrError) {
+        long code = ((long(*)(void *self, void *op))userData->objc_msgSend)(nserrError, userData->sel_registerName("code"));
+        void *rpsDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("domain"));
+        const char *szDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("UTF8String"));
+        fprintf(stderr, "Error encountered: code %lu, domain %s\n", code, szDomain);
+    }
     userData->stop(userData->getmain());
 }
 
@@ -248,7 +256,7 @@ int main(void) {
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
-    struct OnCallAsyncJSCompleteUserData userData = { CFRunLoopStop, CFRunLoopGetMain };
+    struct OnCallAsyncJSCompleteUserData userData = { CFRunLoopStop, CFRunLoopGetMain, objc_msgSend, sel_registerName };
     struct Prototype_FnPtrWrapperBlock block;
     struct {
         unsigned long int reserved;
