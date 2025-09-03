@@ -262,7 +262,7 @@ int main(void) {
         /*completionHandler: (void (^)(id result, NSError *error))*/
         &block);
         // pBlock);
-    fprintf(stderr, "Submitted Asynchronous JS execution\n");
+    fprintf(stderr, "Submitted asynchronous JS execution\n");
 
     // ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
 

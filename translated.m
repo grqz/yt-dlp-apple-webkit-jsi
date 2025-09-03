@@ -7,13 +7,14 @@
 #include <stdio.h>
 
 static inline
-void onCallAsyncJSComplete(void *idResult, void *nserrError) {
+void onCallAsyncJSComplete(void *idResult, void *nserrError, void *stop, void *getmain) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
     NSLog(@"idResult of type %@", NSStringFromClass([(id)idResult class]));
     if ([(id)idResult isKindOfClass:[NSNumber class]]) {
         fprintf(stderr, "%s\n", [[idResult stringValue] UTF8String]);
     }
-    CFRunLoopStop(CFRunLoopGetMain());
+    ((void(*)(void *))stop)(((void(*)(void))getmain)());
+    // CFRunLoopStop(CFRunLoopGetMain());
 }
 
 int main(void) {
@@ -42,19 +43,19 @@ int main(void) {
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
     NSDictionary *pdJsArguments = [[NSDictionary alloc] init];
     void *rpPageWorld = [WKContentWorld pageWorld];
+    void *__block stop = &CFRunLoopStop, *__block getmain = &CFRunLoopGetMain;
     [pWebview callAsyncJavaScript:psScript
         arguments:pdJsArguments
         inFrame:nil
         inContentWorld:rpPageWorld
         completionHandler:^ (id idResult, NSError *nserrError) {
-            onCallAsyncJSComplete((void *)idResult, (void *)nserrError);
+            onCallAsyncJSComplete((void *)idResult, (void *)nserrError, stop, getmain);
         }];
-    [pdJsArguments release]; pdJsArguments = nil;
-    [psScript release]; psScript = nil;
-    NSLog(@"Submitted Asynchronous JS execution");
-    NSLog(@"Waiting for JS to stop");
+    NSLog(@"Submitted asynchronous JS execution, waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
     CFRunLoopRun();
+    [pdJsArguments release]; pdJsArguments = nil;
+    [psScript release]; psScript = nil;
     [pWebview release]; pWebview = nil;
     NSLog(@"Finished");
     return 0;
