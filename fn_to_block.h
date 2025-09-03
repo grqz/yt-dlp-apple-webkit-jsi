@@ -14,6 +14,18 @@ struct Prototype_BlockDescBase {
     unsigned long int reserved;  // 0
     unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
 } static proto_bdesc = {0, sizeof(struct Prototype_BlockDescBase)};
+struct Prototype_BlockDescCopyDispSign {
+    unsigned long int reserved;  // 0
+    unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
+    void (*copy_helper)(void *dst, void *src);
+    void (*dispose_helper)(void *src);
+    const char *signature;
+};
+struct Prototype_BlockDescSign {
+    unsigned long int reserved;  // 0
+    unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
+    const char *signature;
+};
 struct Prototype_BlockBase {
     void *isa;
     int flags;
@@ -43,7 +55,9 @@ static inline
 const char *signatureof(void *block) {
     struct Prototype_BlockBase *baseBlock = block;
     return (baseBlock->flags & (1 << 30))
-        ? ((const char *)baseBlock->desc + baseBlock->desc->size - sizeof(const char *))
+        ? (baseBlock->flags & (1 << 25))
+        ? (((struct Prototype_BlockDescCopyDispSign *)baseBlock->desc)->signature)
+        : (((struct Prototype_BlockDescSign *)baseBlock->desc)->signature)
         : NULL;
 }
 
