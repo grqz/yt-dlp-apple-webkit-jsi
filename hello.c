@@ -55,7 +55,10 @@ void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idRes
         long code = ((long(*)(void *self, void *op))userData->objc_msgSend)(nserrError, userData->sel_registerName("code"));
         void *rpsDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("domain"));
         const char *szDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsDomain, userData->sel_registerName("UTF8String"));
-        fprintf(stderr, "Error encountered: code %lu, domain %s\n", code, szDomain);
+        void *rpdUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("userInfo"));
+        void *rpsUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpdUserInfo, userData->sel_registerName("description"));
+        void *szUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsUserInfo, userData->sel_registerName("UTF8String"));
+        fprintf(stderr, "Error encountered: code %lu, domain %s, userinfo %s\n", code, szDomain, szUserInfo);
     }
     userData->stop(userData->getmain());
 }
