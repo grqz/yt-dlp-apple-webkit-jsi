@@ -4,9 +4,9 @@ extern "C" {
     static inline const unsigned char szHTMLString_[] = R"HtmlcontenTT_T(<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>)HtmlcontenTT_T";
     static inline const unsigned char szBaseURL_[] = "https://www.youtube.com/robots.txt";
     static inline const unsigned char szScript_[] = R"sz__scRRitp(
-(async ()=>{  // IIAFE
+//(async ()=>{  // IIAFE
 console.log("Hello, world!");
-})();
+//})();
     )sz__scRRitp";
     const unsigned char *szHTMLString = szHTMLString_;
     const unsigned char *szBaseURL = szBaseURL_;

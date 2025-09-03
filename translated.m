@@ -58,7 +58,7 @@ int main(void) {
     [psScript release]; psScript = nil;
     NSLog(@"Submitted Asynchronous JS execution");
     NSLog(@"Waiting for JS to stop");
-    // wait until completionHandler is called
+    // wait until completionHandler is called, so main doesn't exit early
     pthread_mutex_lock(&mtx);
     while (!stop)
         pthread_cond_wait(&cv, &mtx);
