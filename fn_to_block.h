@@ -2,6 +2,7 @@
 #define FN_TO_BLOCK_H
 
 #include <stdarg.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,6 +14,13 @@ struct Prototype_BlockDescBase {
     unsigned long int reserved;  // 0
     unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
 } static proto_bdesc = {0, sizeof(struct Prototype_BlockDescBase)};
+struct Prototype_BlockBase {
+    void *isa;
+    int flags;
+    int reserved;  // 0
+    void (*invoke)();  // struct Prototype_FnPtrWrapperBlock *, ...
+    struct Prototype_BlockDescBase *desc;
+};
 struct Prototype_FnPtrWrapperBlock {
     void *isa;
     int flags;
@@ -29,6 +37,14 @@ void make_wrapper(struct Prototype_FnPtrWrapperBlock *block, void *fnptr, void *
     block->invoke = fnptr;
     block->desc = &proto_bdesc;
     block->userData = userData;
+}
+
+static inline
+const char *signatureof(void *block) {
+    struct Prototype_BlockBase *baseBlock = block;
+    return (baseBlock->flags & (1 << 30))
+        ? ((const char *)baseBlock->desc + baseBlock->desc->size - sizeof(const char *))
+        : NULL;
 }
 
 void test_call_block_cbv_2vp(void *block_cbv_2vp, void *, void *);

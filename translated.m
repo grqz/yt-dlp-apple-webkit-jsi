@@ -4,6 +4,7 @@
 #import <CoreGraphics/CoreGraphics.h>
 
 #include "config.h"
+#include "fn_to_block.h"
 #include <stdio.h>
 
 static inline
@@ -44,13 +45,23 @@ int main(void) {
     NSDictionary *pdJsArguments = [[NSDictionary alloc] init];
     void *rpPageWorld = [WKContentWorld pageWorld];
     void *__block stop = &CFRunLoopStop, *__block getmain = &CFRunLoopGetMain;
+    void (^completionHandler)(id, NSError *) = ^(id idResult, NSError *nserrError) {
+        onCallAsyncJSComplete((void *)idResult, (void *)nserrError, stop, getmain);
+    };
     [pWebview callAsyncJavaScript:psScript
         arguments:pdJsArguments
         inFrame:nil
         inContentWorld:rpPageWorld
-        completionHandler:^ (id idResult, NSError *nserrError) {
-            onCallAsyncJSComplete((void *)idResult, (void *)nserrError, stop, getmain);
-        }];
+        completionHandler:completionHandler];
+    const char *signature = signatureof(completionHandler);
+    if (!signature) signature = "";
+    fputs(stderr, @"block signature: ");
+    while (++signature) {
+        fputc(stderr, "0123456789abcdef"[*signature & 0xf]);
+        fputc(stderr, "0123456789abcdef"[*signature >> 4]);
+        fputc(stderr, ' ');
+    }
+    fputc(stderr, '\n');
     NSLog(@"Submitted asynchronous JS execution, waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
     CFRunLoopRun();

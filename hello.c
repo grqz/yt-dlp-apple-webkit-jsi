@@ -250,6 +250,11 @@ int main(void) {
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
     struct OnCallAsyncJSCompleteUserData userData = { CFRunLoopStop, CFRunLoopGetMain };
     struct Prototype_FnPtrWrapperBlock block;
+    struct _prototype_signaature_desc{
+        unsigned long int reserved;
+        unsigned long int size;
+        const char *signature;
+    } desc = { 0, sizeof(struct _prototype_signaature_desc), "" };
     block.isa = pNSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
