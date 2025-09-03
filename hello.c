@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stddef.h>
 
 #include <dlfcn.h>
 #include <pthread.h>
@@ -223,15 +224,19 @@ int main(void) {
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
-    struct Prototype_FnPtrWrapperBlock block;
-    block.isa = pNSConcreteStackBlock;
-    make_wrapper(&block, &onCallAsyncJSComplete, NULL);
+    // struct Prototype_FnPtrWrapperBlock block;
+    // block.isa = pNSConcreteStackBlock;
+    // make_wrapper(&block, &onCallAsyncJSComplete, NULL);
+    void *pBlock = really_makeblock_cbv_2vp(onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview, sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
         psScript, pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
         /*completionHandler: (void (^)(id result, NSError *error))=*/
-        &block);
+        // &block);
+        pBlock);
     fprintf(stderr, "Submitted Asynchronous JS execution\n");
+
+    ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease); pdJsArguments = NULL;
 

@@ -7,7 +7,8 @@ jobs:
     - run: |
         # -c for objects
         clang++ --std=c++17 -Wall config.cpp -c -o config.o
-        clang --std=c99 -Wall hello.c config.o -o hello
+        clang --std=c99 -Wall -fblocks really_makeblock.m -c -o really_makeblock.o
+        clang --std=c99 -Wall hello.c config.o really_makeblock.o -o hello
         ./hello
         # clang -Wall hello.c -o hello && ./hello
         # clang -Wall -framework Foundation -isysroot `xcrun --show-sdk-path` fdn.m -o fdn && otool -L fdn
