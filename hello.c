@@ -229,14 +229,13 @@ int main(void) {
     block.isa = pNSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, NULL);
     // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
-    // ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
-    ((FnProtov_2vp_objc_msgSend)objc_msgSend)(
+    ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview,
-        // sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
-        sel_registerName("evaluateJavaScript:completionHandler:"),
+        sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
+        // sel_registerName("evaluateJavaScript:completionHandler:"),
         psScript,
-        // pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
-        /*completionHandler: (void (^)(id result, NSError *error))=*/
+        pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
+        /*completionHandler: (void (^)(id result, NSError *error))*/
         &block);
         // pBlock);
     fprintf(stderr, "Submitted Asynchronous JS execution\n");
