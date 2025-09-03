@@ -59,7 +59,7 @@ void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idRes
         const char *szDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsDomain, userData->sel_registerName("UTF8String"));
         void *rpdUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("userInfo"));
         void *rpsUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpdUserInfo, userData->sel_registerName("description"));
-        void *szUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsUserInfo, userData->sel_registerName("UTF8String"));
+        const char *szUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsUserInfo, userData->sel_registerName("UTF8String"));
         fprintf(stderr, "Error encountered: code %lu, domain %s, userinfo %s\n", code, szDomain, szUserInfo);
     }
     if (idResult) {
@@ -310,14 +310,13 @@ int main(void) {
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
 
-    FnProtou8_vp_objc_msgSend sendIsKindOfClass = objc_msgSend;
     if (!userData.idResult) {
         fputs("Javascript returned nil\n", stderr);
-    } else if (sendIsKindOfClass(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
+    } else if (((FnProtou8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, selUTF8Str);
         fprintf(stderr, "Javascript returned string %s\n", szRet);
     }
-    else if (sendIsKindOfClass(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
+    else if (((FnProtou8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
         void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, sel_registerName("stringValue"));
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
         fprintf(stderr, "Javascript returned Number %s\n", szRet);
