@@ -269,7 +269,11 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(pnurlBaseURL, selRelease); pnurlBaseURL = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(psBaseURL, selRelease); psBaseURL = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(psHTMLString, selRelease); psHTMLString = NULL;
-    fprintf(stderr, "Set up WKWebView\n");
+
+    void *rpnurlWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("URL"));
+    void *rpsWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpnurlWvURL, sel_registerName("absoluteString"));
+    const char *rpszWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsWvURL, sel_registerName(selUTF8Str));
+    fprintf(stderr, "Set up WKWebView, URL: %s\n", rpszWvURL);
 
     void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
