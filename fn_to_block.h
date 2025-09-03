@@ -16,14 +16,14 @@ struct Prototype_BlockDescBase {
 };
 struct Prototype_BlockDescCopyDispSign {
     unsigned long int reserved;  // 0
-    unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
+    unsigned long int size;  // sizeof(struct Prototype_FnPtrWrapperBlock)
     void (*copy_helper)(void *dst, void *src);
     void (*dispose_helper)(void *src);
     const char *signature;
 };
 struct Prototype_BlockDescSign {
     unsigned long int reserved;  // 0
-    unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
+    unsigned long int size;  // sizeof(struct Prototype_FnPtrWrapperBlock)
     const char *signature;
 };
 struct Prototype_BlockBase {
