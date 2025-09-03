@@ -259,6 +259,10 @@ int main(void) {
     void *pnurlBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSURL, selAlloc),
         sel_registerName("initWithString:"), psBaseURL);
+    if (!pnurlBaseURL)
+        fputs("pnurlBaseURL unexpected nil", stderr);
+    if (!psHTMLString)
+        fputs("psHTMLString unexpected nil", stderr);
 
     ((FnProtovp_2vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("loadHTMLString:baseURL:"), psHTMLString, pnurlBaseURL);
 
