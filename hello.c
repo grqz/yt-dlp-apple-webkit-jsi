@@ -314,12 +314,12 @@ int main(void) {
         fputs("Javascript returned nil\n", stderr);
     } else if (((FnProtou8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, selUTF8Str);
-        fprintf(stderr, "Javascript returned string %s\n", szRet);
+        fprintf(stderr, "Javascript returned string: %s\n", szRet);
     }
     else if (((FnProtou8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
         void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, sel_registerName("stringValue"));
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
-        fprintf(stderr, "Javascript returned Number %s\n", szRet);
+        fprintf(stderr, "Javascript returned Number: %s\n", szRet);
     } else {
         fputs("Javascript returned unknown object\n", stderr);
     }
