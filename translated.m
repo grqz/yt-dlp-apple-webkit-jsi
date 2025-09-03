@@ -49,8 +49,8 @@ int main(void) {
         arguments:pdJsArguments
         inFrame:nil
         inContentWorld:rpPageWorld
-        completionHandler:^ (void *idResult, void *nserrError) {
-            onCallAsyncJSComplete(idResult, nserrError);
+        completionHandler:^ (id idResult, NSError *nserrError) {
+            onCallAsyncJSComplete((void *)idResult, (void *)nserrError);
         }];
     [pdJsArguments release]; pdJsArguments = nil;
     [psScript release]; psScript = nil;
