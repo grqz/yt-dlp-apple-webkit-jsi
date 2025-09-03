@@ -19,6 +19,7 @@ void onCallAsyncJSComplete(void *idResult, void *nserrError) {
     stop = YES;
     pthread_cond_signal(&cv);
     pthread_mutex_unlock(&mtx);
+    CFRunLoopStop(CFRunLoopGetMain());
 }
 
 int main(void) {
@@ -59,9 +60,11 @@ int main(void) {
     NSLog(@"Submitted Asynchronous JS execution");
     NSLog(@"Waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
+    CFRunLoopRun();
     pthread_mutex_lock(&mtx);
-    while (!stop)
+    while (!stop) {
         pthread_cond_wait(&cv, &mtx);
+    }
     pthread_mutex_unlock(&mtx);
     [pWebview release]; pWebview = nil;
     NSLog(@"Finished");

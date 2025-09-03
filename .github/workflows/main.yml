@@ -7,5 +7,4 @@ jobs:
     - run: |
         make
         ./translated
-
         ./hello
