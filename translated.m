@@ -14,7 +14,6 @@ BOOL stop = NO;
 static inline
 void onCallAsyncJSComplete(void *idResult, void *nserrError) {
     fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
-    if (!idResult) return;
     pthread_mutex_lock(&mtx);
     stop = YES;
     pthread_cond_signal(&cv);
