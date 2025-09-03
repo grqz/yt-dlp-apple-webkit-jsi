@@ -227,7 +227,7 @@ int main(void) {
     // struct Prototype_FnPtrWrapperBlock block;
     // block.isa = pNSConcreteStackBlock;
     // make_wrapper(&block, &onCallAsyncJSComplete, NULL);
-    void *pBlock = really_makeblock_cbv_2vp(onCallAsyncJSComplete, NULL);
+    void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview, sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
         psScript, pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
