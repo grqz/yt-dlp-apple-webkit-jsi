@@ -254,9 +254,11 @@ int main(void) {
         unsigned long int reserved;
         unsigned long int size;
         const char *signature;
-    } desc = { 0, sizeof(struct _prototype_signaature_desc), "" };
+    } desc = { 0, sizeof(struct _prototype_signaature_desc), "v24@?0@8@\"NSError\"16" };
     block.isa = pNSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
+    block.desc = &desc;
+    block.flags |= (1 << 30);
     // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview,

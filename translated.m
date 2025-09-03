@@ -55,13 +55,13 @@ int main(void) {
         completionHandler:completionHandler];
     const char *signature = signatureof(completionHandler);
     if (!signature) signature = "";
-    fputs("block signature: ", stderr);
+    fprintf(stderr, "block signature(%s):", signature);
     while (1) {
         unsigned char c = *(signature++);
-        fputc("0123456789abcdef"[c >> 4], stderr);
-        fputc("0123456789abcdef"[c & 0xf], stderr);
         if (!c) break;
         fputc(' ', stderr);
+        fputc("0123456789abcdef"[c >> 4], stderr);
+        fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
     NSLog(@"Submitted asynchronous JS execution, waiting for JS to stop");
