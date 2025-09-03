@@ -42,6 +42,7 @@ int main(void) {
     [pnurlBaseURL release]; pnurlBaseURL = nil;
     [psBaseURL release]; psBaseURL = nil;
     [psHTMLString release]; psHTMLString = nil;
+    NSLog(@"Set up WKWebView");
 
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
     NSDictionary *pdJsArguments = [[NSDictionary alloc] init];
@@ -55,13 +56,15 @@ int main(void) {
         }];
     [pdJsArguments release]; pdJsArguments = nil;
     [psScript release]; psScript = nil;
+    NSLog(@"Submitted Asynchronous JS execution");
+    NSLog(@"Waiting for JS to stop");
     // wait until completionHandler is called
     pthread_mutex_lock(&mtx);
     while (!stop)
         pthread_cond_wait(&cv, &mtx);
     pthread_mutex_unlock(&mtx);
     [pWebview release]; pWebview = nil;
-    fprintf(stderr, "Finished\n");
+    NSLog(@"Finished");
     pthread_mutex_destroy(&mtx);
     pthread_cond_destroy(&cv);
     return 0;
