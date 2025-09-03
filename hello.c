@@ -224,23 +224,28 @@ int main(void) {
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
-    // struct Prototype_FnPtrWrapperBlock block;
-    // block.isa = pNSConcreteStackBlock;
-    // make_wrapper(&block, &onCallAsyncJSComplete, NULL);
-    void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
+    struct Prototype_FnPtrWrapperBlock block;
+    block.isa = pNSConcreteStackBlock;
+    make_wrapper(&block, &onCallAsyncJSComplete, NULL);
+    // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview, sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
         psScript, pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
         /*completionHandler: (void (^)(id result, NSError *error))=*/
-        // &block);
-        pBlock);
+        &block);
+        // pBlock);
     fprintf(stderr, "Submitted Asynchronous JS execution\n");
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
+    // ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease); pdJsArguments = NULL;
 
     ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
+
+    fprintf(stderr, "Testing call to block\n");
+    test_call_block_cbv_2vp(&block);
+
+    fprintf(stderr, "Waiting for JS to stop\n");
 
     pthread_mutex_lock(&mtx);
     while (!stop)
