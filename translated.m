@@ -55,13 +55,13 @@ int main(void) {
         completionHandler:completionHandler];
     const char *signature = signatureof(completionHandler);
     if (!signature) signature = "";
-    fputs(stderr, @"block signature: ");
+    fputs(@"block signature: ", stderr);
     while (++signature) {
-        fputc(stderr, "0123456789abcdef"[*signature & 0xf]);
-        fputc(stderr, "0123456789abcdef"[*signature >> 4]);
-        fputc(stderr, ' ');
+        fputc("0123456789abcdef"[*signature & 0xf], stderr);
+        fputc("0123456789abcdef"[*signature >> 4], stderr);
+        fputc(' ', stderr);
     }
-    fputc(stderr, '\n');
+    fputc('\n', stderr);
     NSLog(@"Submitted asynchronous JS execution, waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
     CFRunLoopRun();
