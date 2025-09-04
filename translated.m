@@ -50,7 +50,6 @@ int main(void) {
     [pWebview
         loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
     NSLog(@"Set up WKWebView");
-    sleep(5);
     NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
 
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
