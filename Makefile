@@ -14,11 +14,8 @@ translated: translated.m config.o
 config.o: config.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
 
-hello: hello.c config.o testcall.o
+hello: hello.c config.o
 	$(CC) $(CFLAGS) $^ -o $@
-
-testcall.o: testcall.m
-	$(CC) $(OBJCFLAGS) -c $^ -o $@
 
 clean:
 	rm -f *.o a.out hello translated

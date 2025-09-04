@@ -66,8 +66,6 @@ const char *signatureof(void *block) {
         : NULL;
 }
 
-void test_call_block_cbv_2vp(void *block_cbv_2vp, void *, void *);
-
 #ifdef __cplusplus
 }
 #endif
