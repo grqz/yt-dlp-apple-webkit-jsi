@@ -69,7 +69,7 @@ int main(void) {
         fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
-    [pWebview callAsyncJavaScript:"location.href='https://www.youtube.com'"
+    [pWebview callAsyncJavaScript:@"location.href='https://www.youtube.com'"
         arguments:pdJsArguments
         inFrame:nil
         inContentWorld:rpPageWorld
