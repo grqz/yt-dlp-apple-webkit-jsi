@@ -41,6 +41,9 @@ int main(void) {
     [pnurlBaseURL release]; pnurlBaseURL = nil;
     [psBaseURL release]; psBaseURL = nil;
     [psHTMLString release]; psHTMLString = nil;
+    [pWebview
+        loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
+        responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
     NSLog(@"Set up WKWebView");
     NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
 
