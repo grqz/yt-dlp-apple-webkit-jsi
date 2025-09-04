@@ -34,16 +34,20 @@ int main(void) {
     WKWebView *pWebview = [[WKWebView alloc] initWithFrame:CGRectZero configuration:pCfg];
     [pCfg release]; pCfg = nil;
 
-    NSString *psHTMLString = [[NSString alloc] initWithUTF8String:szHTMLString];
-    NSString *psBaseURL = [[NSString alloc] initWithUTF8String:szBaseURL];
-    NSURL *pnurlBaseURL = [[NSURL alloc] initWithString:psBaseURL];
-    [pWebview loadHTMLString:psHTMLString baseURL:pnurlBaseURL];
-    [pnurlBaseURL release]; pnurlBaseURL = nil;
-    [psBaseURL release]; psBaseURL = nil;
-    [psHTMLString release]; psHTMLString = nil;
+    // NSString *psHTMLString = [[NSString alloc] initWithUTF8String:szHTMLString];
+    // NSString *psBaseURL = [[NSString alloc] initWithUTF8String:szBaseURL];
+    // NSURL *pnurlBaseURL = [[NSURL alloc] initWithString:psBaseURL];
+    // [pWebview loadHTMLString:psHTMLString baseURL:pnurlBaseURL];
+    // [pnurlBaseURL release]; pnurlBaseURL = nil;
+    // [psBaseURL release]; psBaseURL = nil;
+    // [psHTMLString release]; psHTMLString = nil;
+
+    // [pWebview
+    //     loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
+    //     responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
+
     [pWebview
-        loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
-        responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
+        loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
     NSLog(@"Set up WKWebView");
     NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
 
