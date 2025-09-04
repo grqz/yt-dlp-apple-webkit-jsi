@@ -76,6 +76,7 @@ int main(void) {
         completionHandler:completionHandler];
     CFRunLoopRun();
     NSLog(@"Location changed");
+    NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
     [pWebview callAsyncJavaScript:psScript
         arguments:pdJsArguments
         inFrame:nil
