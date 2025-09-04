@@ -6,6 +6,7 @@
 #include "config.h"
 #include "fn_to_block.h"
 #include <stdio.h>
+#include <unistd.h>
 
 static inline
 void onCallAsyncJSComplete(void *idResult, void *nserrError, void *stop, void *getmain) {
@@ -49,6 +50,7 @@ int main(void) {
     [pWebview
         loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
     NSLog(@"Set up WKWebView");
+    sleep(5);
     NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
 
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
