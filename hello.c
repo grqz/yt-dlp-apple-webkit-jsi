@@ -128,8 +128,8 @@ int main(void) {
         goto fail_libs;
     }
 
-    void *pNSConcreteStackBlock = dlsym(libSystem, "_NSConcreteStackBlock");
-    if (!pNSConcreteStackBlock) {
+    void *p_NSConcreteStackBlock = dlsym(libSystem, "_NSConcreteStackBlock");
+    if (!p_NSConcreteStackBlock) {
         const char *errm = dlerror();
         fprintf(stderr, "Failed to get _NSConcreteStackBlock: %s\n", errm ? errm : &nul);
         goto fail_libs;
@@ -294,23 +294,18 @@ int main(void) {
         unsigned long int size;
         const char *signature;
     } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v24@?0@8@\"NSError\"16" };
-    block.isa = pNSConcreteStackBlock;
+    block.isa = p_NSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     block.desc = (struct Prototype_BlockDescBase *)&desc;
     block.flags |= (1 << 30);
-    // void *pBlock = really_makeblock_cbv_2vp((void (*)(void *, void *, void *))&onCallAsyncJSComplete, NULL);
     ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
         pWebview,
         sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
-        // sel_registerName("evaluateJavaScript:completionHandler:"),
         psScript,
         pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
         /*completionHandler: (void (^)(id result, NSError *error))*/
         &block);
-        // pBlock);
     fprintf(stderr, "Submitted asynchronous JS execution\n");
-
-    // ((FnProtov_objc_msgSend)objc_msgSend)(pBlock, selRelease); pBlock = NULL;
 
     fprintf(stderr, "Waiting for JS to stop\n");
     CFRunLoopRun();
