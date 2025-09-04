@@ -18,7 +18,7 @@ const resp = await fetch('https://jnn-pa.googleapis.com/$rpc/google.internal.waa
     'x-goog-api-key': GOOG_API_KEY,
     'x-user-agent': 'grpc-web-javascript/0.1'
 }});
-return `:E:${document.URL}:${await resp.text()}`;
+return `:.:${document.URL}:${await resp.text()}`;
 }catch(e) {return `:E:${document.URL}:ERR: ${e}`;}
 })();
     )sz__scRRitp";
