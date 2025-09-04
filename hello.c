@@ -250,30 +250,34 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(pCfg, selRelease); pCfg = NULL;
     fprintf(stderr, "Initialised WKWebView\n");
 
-    void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)szHTMLString);
-    void *psBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)szBaseURL);
-    void *pnurlBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSURL, selAlloc),
-        sel_registerName("initWithString:"), psBaseURL);
-    if (!pnurlBaseURL)
-        fputs("pnurlBaseURL unexpected nil", stderr);
-    if (!psHTMLString)
-        fputs("psHTMLString unexpected nil", stderr);
+    {
+        void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+            selInitWithUTF8, (void *)szHTMLString);
+        void *psBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+            selInitWithUTF8, (void *)szBaseURL);
+        void *pnurlBaseURL = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSURL, selAlloc),
+            sel_registerName("initWithString:"), psBaseURL);
+        if (!pnurlBaseURL)
+            fputs("pnurlBaseURL unexpected nil", stderr);
+        if (!psHTMLString)
+            fputs("psHTMLString unexpected nil", stderr);
 
-    ((FnProtovp_2vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("loadHTMLString:baseURL:"), psHTMLString, pnurlBaseURL);
+        ((FnProtovp_2vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("loadHTMLString:baseURL:"), psHTMLString, pnurlBaseURL);
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(pnurlBaseURL, selRelease); pnurlBaseURL = NULL;
-    ((FnProtov_objc_msgSend)objc_msgSend)(psBaseURL, selRelease); psBaseURL = NULL;
-    ((FnProtov_objc_msgSend)objc_msgSend)(psHTMLString, selRelease); psHTMLString = NULL;
+        ((FnProtov_objc_msgSend)objc_msgSend)(pnurlBaseURL, selRelease); pnurlBaseURL = NULL;
+        ((FnProtov_objc_msgSend)objc_msgSend)(psBaseURL, selRelease); psBaseURL = NULL;
+        ((FnProtov_objc_msgSend)objc_msgSend)(psHTMLString, selRelease); psHTMLString = NULL;
+    }
 
-    void *rpnurlWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("URL"));
-    void *rpsWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpnurlWvURL, sel_registerName("absoluteString"));
-    const char *rpszWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsWvURL, sel_registerName(selUTF8Str));
-    fprintf(stderr, "Set up WKWebView, URL: %s\n", rpszWvURL);
+    {
+        void *rpnurlWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("URL"));
+        void *rpsWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpnurlWvURL, sel_registerName("absoluteString"));
+        const char *rpszWvURL = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsWvURL, sel_registerName(selUTF8Str));
+        fprintf(stderr, "Set up WKWebView, URL: %s\n", rpszWvURL);
+    }
 
     void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
