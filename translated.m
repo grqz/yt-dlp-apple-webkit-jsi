@@ -58,11 +58,6 @@ int main(void) {
     void (^completionHandler)(id, NSError *) = ^(id idResult, NSError *nserrError) {
         onCallAsyncJSComplete((void *)idResult, (void *)nserrError, stop, getmain);
     };
-    [pWebview callAsyncJavaScript:psScript
-        arguments:pdJsArguments
-        inFrame:nil
-        inContentWorld:rpPageWorld
-        completionHandler:completionHandler];
     const char *signature = signatureof(completionHandler);
     if (!signature) signature = "";
     fprintf(stderr, "block signature(%s):", signature);
@@ -74,6 +69,18 @@ int main(void) {
         fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
+    [pWebview callAsyncJavaScript:"location.href='https://www.youtube.com'"
+        arguments:pdJsArguments
+        inFrame:nil
+        inContentWorld:rpPageWorld
+        completionHandler:completionHandler];
+    CFRunLoopRun();
+    NSLog(@"Location changed");
+    [pWebview callAsyncJavaScript:psScript
+        arguments:pdJsArguments
+        inFrame:nil
+        inContentWorld:rpPageWorld
+        completionHandler:completionHandler];
     NSLog(@"Submitted asynchronous JS execution, waiting for JS to stop");
     // wait until completionHandler is called, so main doesn't exit early
     CFRunLoopRun();

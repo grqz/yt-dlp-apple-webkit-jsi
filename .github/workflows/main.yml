@@ -6,5 +6,4 @@ jobs:
     - uses: actions/checkout@v4
     - run: |
         make translated && ./translated
-        # make hello
-        # ./hello
+        # make hello && ./hello
