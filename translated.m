@@ -70,7 +70,7 @@ int main(void) {
         fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
-    [pWebview callAsyncJavaScript:@"location.href='https://www.youtube.com'"
+    [pWebview callAsyncJavaScript:@"return new Promise(r=>setTimeout(()=>r(5000), 5000));"
         arguments:pdJsArguments
         inFrame:nil
         inContentWorld:rpPageWorld
