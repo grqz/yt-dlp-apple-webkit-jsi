@@ -12,32 +12,32 @@ extern "C" {
 // https://oliver-hu.medium.com/objective-c-blocks-ins-and-outs-840a1c12fb1e
 struct Prototype_BlockDescBase {
     unsigned long int reserved;  // 0
-    unsigned long int size;  // sizeof(struct Prototype_BlockDescBase)
+    unsigned long int size;  // sizeof(BlockLiteral)
 };
 struct Prototype_BlockDescCopyDispSign {
     unsigned long int reserved;  // 0
-    unsigned long int size;  // sizeof(struct Prototype_FnPtrWrapperBlock)
+    unsigned long int size;  // sizeof(BlockLiteral)
     void (*copy_helper)(void *dst, void *src);
     void (*dispose_helper)(void *src);
     const char *signature;
 };
 struct Prototype_BlockDescSign {
     unsigned long int reserved;  // 0
-    unsigned long int size;  // sizeof(struct Prototype_FnPtrWrapperBlock)
+    unsigned long int size;  // sizeof(BlockLiteral)
     const char *signature;
 };
 struct Prototype_BlockBase {
     void *isa;
     int flags;
     int reserved;  // 0
-    void (*invoke)();  // struct Prototype_FnPtrWrapperBlock *, ...
+    void (*invoke)();  // (struct Prototype_BlockBase *self, ...)
     struct Prototype_BlockDescBase *desc;
 };
 struct Prototype_FnPtrWrapperBlock {
     void *isa;
     int flags;
     int reserved;  // 0
-    void (*invoke)();  // struct Prototype_FnPtrWrapperBlock *, ...
+    void (*invoke)();  // (struct Prototype_FnPtrWrapperBlock *self, ...)
     struct Prototype_BlockDescBase *desc;
     void *userData;
 };
