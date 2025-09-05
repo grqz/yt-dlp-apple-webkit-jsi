@@ -80,22 +80,24 @@ int main(void) {
     WKWebView *pWebview = [[WKWebView alloc] initWithFrame:CGRectZero configuration:pCfg];
     [pCfg release]; pCfg = nil;
 
-    // NSString *psHTMLString = [[NSString alloc] initWithUTF8String:szHTMLString];
-    // NSString *psBaseURL = [[NSString alloc] initWithUTF8String:szBaseURL];
-    // NSURL *pnurlBaseURL = [[NSURL alloc] initWithString:psBaseURL];
-    // [pWebview loadHTMLString:psHTMLString baseURL:pnurlBaseURL];
-    // [pnurlBaseURL release]; pnurlBaseURL = nil;
-    // [psBaseURL release]; psBaseURL = nil;
-    // [psHTMLString release]; psHTMLString = nil;
+    NaviDelegate *naviDg = [[NaviDelegate alloc] init];
+    [pWebview setNavigationDelegate:naviDg];
+    WKNavigation *rpNavi;
+
+    NSString *psHTMLString = [[NSString alloc] initWithUTF8String:szHTMLString];
+    NSString *psBaseURL = [[NSString alloc] initWithUTF8String:szBaseURL];
+    NSURL *pnurlBaseURL = [[NSURL alloc] initWithString:psBaseURL];
+    rpNavi = [pWebview loadHTMLString:psHTMLString baseURL:pnurlBaseURL];
+    [pnurlBaseURL release]; pnurlBaseURL = nil;
+    [psBaseURL release]; psBaseURL = nil;
+    [psHTMLString release]; psHTMLString = nil;
 
     // [pWebview
     //     loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
     //     responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
 
-    NaviDelegate *naviDg = [[NaviDelegate alloc] init];
-    [pWebview setNavigationDelegate:naviDg];
-    WKNavigation *rpNavi = [pWebview
-        loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
+    // rpNavi = [pWebview
+    //     loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
     [naviDg registerFinishCallback:onNavigationFinished
         withUserData:NULL
         forNavigation:rpNavi];
@@ -121,14 +123,6 @@ int main(void) {
         fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
-    // [pWebview callAsyncJavaScript:@"return new Promise(r=>setTimeout(()=>r(5000), 5000));"
-    //     arguments:pdJsArguments
-    //     inFrame:nil
-    //     inContentWorld:rpPageWorld
-    //     completionHandler:completionHandler];
-    // CFRunLoopRun();
-    // NSLog(@"Location changed");
-    // NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
     [pWebview callAsyncJavaScript:psScript
         arguments:pdJsArguments
         inFrame:nil
