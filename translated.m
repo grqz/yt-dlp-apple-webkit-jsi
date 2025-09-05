@@ -11,7 +11,7 @@
 
 @interface NaviDelegate : NSObject <WKNavigationDelegate>
 @property (nonatomic, readonly) const CallbackMap *cCallbackMap;
-- (unsigned char) registerFinishCallback:(void (*)(void *)) callback
+- (unsigned char) registerFinishCallback:(user_callback_type) callback
 withUserData:(void *) userData
 forNavigation:(WKNavigation *) navigation;
 @end
@@ -41,7 +41,7 @@ didFinishNavigation:(WKNavigation *) navigation {
     return pmCCbMap;
 }
 
-- (unsigned char) registerFinishCallback:(void (*)(void *)) callback
+- (unsigned char) registerFinishCallback:(user_callback_type) callback
 withUserData:(void *) userData
 forNavigation:(WKNavigation *) navigation {
     return cbmap_add(pmCCbMap, navigation, callback, userData);
