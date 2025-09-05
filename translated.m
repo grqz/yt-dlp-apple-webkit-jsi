@@ -5,8 +5,53 @@
 
 #include "config.h"
 #include "fn_to_block.h"
+#include "cbmap.h"
 #include <stdio.h>
 #include <unistd.h>
+
+@interface NaviDelegate : NSObject <WKNavigationDelegate>
+@property (nonatomic, readonly) const CallbackMap *cCallbackMap;
+- (unsigned char) registerFinishCallback:(void (*)(void *)) callback
+withUserData:(void *) userData
+forNavigation:(WKNavigation *) navigation;
+@end
+
+@implementation NaviDelegate {
+    CallbackMap *pmCCbMap;
+}
+
+- (instancetype) init {
+    self = [super init];
+    if (self)
+        pmCCbMap = cbmap_new();
+    return self;
+}
+
+- (void) dealloc {
+    cbmap_free(pmCCbMap);
+    [super dealloc];
+}
+
+- (void) webView:(WKWebView *) webView 
+didFinishNavigation:(WKNavigation *) navigation {
+    cbmap_callpop(pmCCbMap, navigation, navigation);
+}
+
+- (const CallbackMap *) cCallbackMap {
+    return pmCCbMap;
+}
+
+- (unsigned char) registerFinishCallback:(void (*)(void *)) callback
+withUserData:(void *) userData
+forNavigation:(WKNavigation *) navigation {
+    return cbmap_add(pmCCbMap, navigation, callback, userData);
+}
+@end
+
+void onNavigationFinished(void *ctx, void *userData) {
+    fprintf(stderr, "Finished navigation: %p, userData: %p\n", ctx, userData);
+    CFRunLoopStop(CFRunLoopGetMain());
+}
 
 static inline
 void onCallAsyncJSComplete(void *idResult, void *nserrError, void *stop, void *getmain) {
@@ -47,10 +92,16 @@ int main(void) {
     //     loadSimulatedRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]
     //     responseHTMLString:[NSString stringWithUTF8String:szHTMLString]];
 
-    [pWebview
+    NaviDelegate *naviDg = [[NaviDelegate alloc] init];
+    [pWebview setNavigationDelegate:naviDg];
+    WKNavigation *rpNavi = [pWebview
         loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithUTF8String:szBaseURL]]]];
-    NSLog(@"Set up WKWebView");
-    NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
+    [naviDg registerFinishCallback:onNavigationFinished
+        withUserData:NULL
+        forNavigation:rpNavi];
+    NSLog(@"Set up WKWebView, navigating to: %@", [[pWebview URL] absoluteString]);
+    CFRunLoopRun();
+    fprintf(stderr, "WKWebView navigation finished\n");
 
     NSString *psScript = [[NSString alloc] initWithUTF8String:szScript];
     NSDictionary *pdJsArguments = [[NSDictionary alloc] init];
@@ -88,7 +139,9 @@ int main(void) {
     CFRunLoopRun();
     [pdJsArguments release]; pdJsArguments = nil;
     [psScript release]; psScript = nil;
+
     [pWebview release]; pWebview = nil;
+    [naviDg release]; naviDg = nil;
     NSLog(@"Finished");
     return 0;
 }
