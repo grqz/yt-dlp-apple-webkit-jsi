@@ -23,28 +23,28 @@ forNavigation:(WKNavigation *) navigation;
 - (instancetype) init {
     self = [super init];
     if (self)
-        pmCCbMap = cbmap_new();
+        self.pmCCbMap = cbmap_new();
     return self;
 }
 
 - (void) dealloc {
-    cbmap_free(pmCCbMap);
+    cbmap_free(self.pmCCbMap);
     [super dealloc];
 }
 
 - (void) webView:(WKWebView *) webView 
 didFinishNavigation:(WKNavigation *) navigation {
-    cbmap_callpop(pmCCbMap, navigation, navigation);
+    cbmap_callpop(self.pmCCbMap, navigation, navigation);
 }
 
 - (const CallbackMap *) cCallbackMap {
-    return pmCCbMap;
+    return self.pmCCbMap;
 }
 
 - (unsigned char) registerFinishCallback:(user_callback_type) callback
 withUserData:(void *) userData
 forNavigation:(WKNavigation *) navigation {
-    return cbmap_add(pmCCbMap, navigation, callback, userData);
+    return cbmap_add(self.pmCCbMap, navigation, callback, userData);
 }
 @end
 
