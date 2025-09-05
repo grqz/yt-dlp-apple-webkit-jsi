@@ -57,7 +57,7 @@ void make_wrapper(struct Prototype_FnPtrWrapperBlock *block, void *fnptr, void *
 }
 
 static inline
-const char *signatureof(void *block) {
+const char *signatureof(const void *block) {
     struct Prototype_BlockBase *baseBlock = block;
     return (baseBlock->flags & (1 << 30))
         ? (baseBlock->flags & (1 << 25))
