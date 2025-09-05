@@ -121,14 +121,14 @@ int main(void) {
         fputc("0123456789abcdef"[c & 0xf], stderr);
     }
     fputc('\n', stderr);
-    [pWebview callAsyncJavaScript:@"return new Promise(r=>setTimeout(()=>r(5000), 5000));"
-        arguments:pdJsArguments
-        inFrame:nil
-        inContentWorld:rpPageWorld
-        completionHandler:completionHandler];
-    CFRunLoopRun();
-    NSLog(@"Location changed");
-    NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
+    // [pWebview callAsyncJavaScript:@"return new Promise(r=>setTimeout(()=>r(5000), 5000));"
+    //     arguments:pdJsArguments
+    //     inFrame:nil
+    //     inContentWorld:rpPageWorld
+    //     completionHandler:completionHandler];
+    // CFRunLoopRun();
+    // NSLog(@"Location changed");
+    // NSLog(@"URL: %@", [[pWebview URL] absoluteString]);
     [pWebview callAsyncJavaScript:psScript
         arguments:pdJsArguments
         inFrame:nil
