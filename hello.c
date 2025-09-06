@@ -28,6 +28,8 @@
             onFailure; \
         } \
     } while (0)
+#define LOADSYMBOL_OUTVAR(hLib, symType, sym, outvar, failLabel) \
+    LOADSYMBOL_BASE(hLib, symType, #sym, outvar, outvar, #hLib, goto failLabel)
 #define LOADSYMBOL_SIMPLE(hLib, symType, sym, failLabel) \
     LOADSYMBOL_BASE(hLib, symType, #sym, sym, sym, #hLib, goto failLabel)
 #define LOADSYMBOL_SIMPLE_INITG(hLib, symType, sym, failLabel) \
@@ -52,15 +54,24 @@ struct Prototype_objc_super {
 };
 
 typedef void *(*FnProto_objc_allocateClassPair)(void *superclass, const char *name, size_t extraBytes);
-// typedef void (*FnProto_objc_disposeClassPair)(void *cls);  // unused
 typedef void (*FnProto_objc_registerClassPair)(void *cls);
 
 typedef void *(*FnProto_objc_getClass)(const char *name);
+static FnProto_objc_getClass initg_objc_getClass = NULL;
+#define INITG_GETCLASS_SETUP(varNamePfx, className, classType, failLabel) \
+    classType varNamePfx##className; \
+    do { \
+        varNamePfx##className = (classType)objc_getClass(#className); \
+        if (!varNamePfx##className) { \
+            fputs("Failed to getClass \"" #className "\"\n", stderr); \
+            goto failLabel; \
+        } \
+    } while (0);
 
 typedef void *(*FnProto_objc_getProtocol)(const char *name);
 
 typedef void (*FnProto_objc_msgSend)();
-FnProto_objc_msgSend initg_objc_msgSend = NULL;
+static FnProto_objc_msgSend initg_objc_msgSend = NULL;
 typedef void (*FnProtov_objc_msgSend)(void *self, void *op);
 typedef void (*FnProtov_2vp_objc_msgSend)(void *self, void *op, void *, void *);
 typedef void (*FnProtov_5vp_objc_msgSend)(void *self, void *op, void *, void *, void *, void *, void *);
@@ -73,33 +84,33 @@ typedef void *(*FnProtovp_vp_objc_msgSend)(void *self, void *op, void *);
 typedef signed char(*FnProtoi8_vp_objc_msgSend)(void *self, void *op, void *);
 
 typedef void (*FnProto_objc_msgSendSuper)();
-FnProto_objc_msgSendSuper initg_objc_msgSendSuper = NULL;
+static FnProto_objc_msgSendSuper initg_objc_msgSendSuper = NULL;
 typedef void *(*FnProtovp_objc_msgSendSuper)(void *super, void *op);
 typedef void (*FnProtov_objc_msgSendSuper)(void *super, void *op);
 
 typedef void *(*FnProto_object_setInstanceVariable)(void *obj, const char *name, void *value);
-FnProto_object_setInstanceVariable initg_object_setInstanceVariable = NULL;
+static FnProto_object_setInstanceVariable initg_object_setInstanceVariable = NULL;
 typedef void *(*FnProto_object_getInstanceVariable)(void *obj, const char *name, void **outValue);
-FnProto_object_getInstanceVariable initg_object_getInstanceVariable = NULL;
+static FnProto_object_getInstanceVariable initg_object_getInstanceVariable = NULL;
 typedef void *(*FnProto_object_getClass)(void *obj);
-FnProto_object_getClass initg_object_getClass = NULL;
+static FnProto_object_getClass initg_object_getClass = NULL;
 
 typedef signed char (*FnProto_class_addProtocol)(void *cls, void *protocol);
 typedef signed char (*FnProto_class_addMethod)(void *cls, void *name, void *imp, const char *types);
 typedef signed char (*FnProto_class_addIvar)(void *cls, const char *name, size_t size, uint8_t alignment, const char *types);
 
 typedef void *(*FnProto_sel_registerName)(const char * str);
-FnProto_sel_registerName initg_sel_registerName = NULL;
+static FnProto_sel_registerName initg_sel_registerName = NULL;
 
 typedef void (*FnProto_NSLog)(void *format, ...);
 
 typedef void (*FnProto_CFRunLoopRun)(void);
 
 typedef void (*FnProto_CFRunLoopStop)(void *rl);
-FnProto_CFRunLoopStop initg_CFRunLoopStop = NULL;
+static FnProto_CFRunLoopStop initg_CFRunLoopStop = NULL;
 
 typedef void *(*FnProto_CFRunLoopGetMain)(void);
-FnProto_CFRunLoopGetMain initg_CFRunLoopGetMain = NULL;
+static FnProto_CFRunLoopGetMain initg_CFRunLoopGetMain = NULL;
 
 
 const signed char kbTrue = 1, kbFalse = 0;
@@ -155,34 +166,24 @@ void onNavigationFinished(void *ctx, void *userData) {
     initg_CFRunLoopStop(initg_CFRunLoopGetMain());
 }
 
-struct OnCallAsyncJSCompleteUserData {
-    const FnProto_CFRunLoopStop stop;
-    const FnProto_CFRunLoopGetMain getmain;
-    const FnProto_objc_msgSend objc_msgSend;
-    const FnProto_sel_registerName sel_registerName;
-    void *idResult;
-};
-
+typedef void *OnCallAsyncJSCompleteUserData;
 static inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
-    fprintf(stderr, "UserData: %p\n", self->userData);
-    fprintf(stderr, "JS Complete! idResult: %p; nserrError: %p\n", idResult, nserrError);
-    struct OnCallAsyncJSCompleteUserData *userData = self->userData;
+    OnCallAsyncJSCompleteUserData *pUserData = self->userData;
+    fprintf(stderr, "JS Complete! old user data: %p, idResult: %p; nserrError: %p\n", *pUserData, idResult, nserrError);
     if (nserrError) {
-        long code = ((long(*)(void *self, void *op))userData->objc_msgSend)(nserrError, userData->sel_registerName("code"));
-        void *rpsDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("domain"));
-        const char *szDomain = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsDomain, userData->sel_registerName("UTF8String"));
-        void *rpdUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(nserrError, userData->sel_registerName("userInfo"));
-        void *rpsUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpdUserInfo, userData->sel_registerName("description"));
-        const char *szUserInfo = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(rpsUserInfo, userData->sel_registerName("UTF8String"));
+        long code = ((long(*)(void *self, void *op))initg_objc_msgSend)(nserrError, initg_sel_registerName("code"));
+        void *rpsDomain = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(nserrError, initg_sel_registerName("domain"));
+        const char *szDomain = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(rpsDomain, initg_sel_registerName("UTF8String"));
+        void *rpdUserInfo = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(nserrError, initg_sel_registerName("userInfo"));
+        void *rpsUserInfo = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(rpdUserInfo, initg_sel_registerName("description"));
+        const char *szUserInfo = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(rpsUserInfo, initg_sel_registerName("UTF8String"));
         fprintf(stderr, "Error encountered: code %lu, domain %s, userinfo %s\n", code, szDomain, szUserInfo);
     }
-    if (idResult) {
-        userData->idResult = ((FnProtovp_objc_msgSend)userData->objc_msgSend)(idResult, userData->sel_registerName("copy"));
-    } else {
-        userData->idResult = NULL;
-    }
-    userData->stop(userData->getmain());
+    *pUserData = idResult
+        ? ((FnProtovp_objc_msgSend)initg_objc_msgSend)(idResult, initg_sel_registerName("copy"))
+        : NULL;
+    initg_CFRunLoopStop(initg_CFRunLoopGetMain());
 }
 
 int main(void) {
@@ -224,142 +225,144 @@ int main(void) {
     }
     fprintf(stderr, "All libraries loaded\n");
 
-    FnProto_objc_allocateClassPair objc_allocateClassPair = dlsym(objc, "objc_allocateClassPair");
-    if (!objc_allocateClassPair) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get objc_allocateClassPair: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    FnProto_objc_registerClassPair objc_registerClassPair = dlsym(objc, "objc_registerClassPair");
-    if (!objc_registerClassPair) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get objc_registerClassPair: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    FnProto_objc_getClass objc_getClass = dlsym(objc, "objc_getClass");
-    if (!objc_getClass) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get objc_getClass: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    FnProto_objc_msgSend objc_msgSend = initg_objc_msgSend = dlsym(objc, "objc_msgSend");
-    if (!objc_msgSend) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get objc_msgSend: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
+    // FnProto_objc_allocateClassPair objc_allocateClassPair = dlsym(objc, "objc_allocateClassPair");
+    // if (!objc_allocateClassPair) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get objc_allocateClassPair: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    // FnProto_objc_registerClassPair objc_registerClassPair = dlsym(objc, "objc_registerClassPair");
+    // if (!objc_registerClassPair) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get objc_registerClassPair: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    // FnProto_objc_getClass objc_getClass = dlsym(objc, "objc_getClass");
+    // if (!objc_getClass) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get objc_getClass: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    // FnProto_objc_msgSend objc_msgSend = initg_objc_msgSend = dlsym(objc, "objc_msgSend");
+    // if (!objc_msgSend) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get objc_msgSend: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    LOADFUNC_SETUP(objc, objc_allocateClassPair, fail_libs);
+    LOADFUNC_SETUP(objc, objc_registerClassPair, fail_libs);
+    LOADFUNC_SETUP_INITG(objc, objc_getClass, fail_libs);
+    LOADFUNC_SETUP_INITG(objc, objc_msgSend, fail_libs);
+
     LOADFUNC_SETUP_INITG(objc, objc_msgSendSuper, fail_libs);
     LOADFUNC_SETUP(objc, objc_getProtocol, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_getInstanceVariable, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_setInstanceVariable, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_getClass, fail_libs);
-    FnProto_class_addMethod class_addMethod = dlsym(objc, "class_addMethod");
-    if (!class_addMethod) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get class_addMethod: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    FnProto_class_addIvar class_addIvar = dlsym(objc, "class_addIvar");
-    if (!class_addIvar) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get class_addIvar: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    LOADFUNC_SETUP(objc, class_addProtocol, fail_libs);
-    FnProto_sel_registerName sel_registerName = initg_sel_registerName = dlsym(objc, "sel_registerName");
-    if (!sel_registerName) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get sel_registerName: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
 
-    void *p_NSConcreteStackBlock = dlsym(libSystem, "_NSConcreteStackBlock");
-    if (!p_NSConcreteStackBlock) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get _NSConcreteStackBlock: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-
-    FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
-    if (!NSLog) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    // FnProto_CFRunLoopRun CFRunLoopRun = dlsym(cf, "CFRunLoopRun");
-    // if (!CFRunLoopRun) {
+    LOADFUNC_SETUP(objc, class_addMethod, fail_libs);
+    LOADFUNC_SETUP(objc, class_addIvar, fail_libs);
+    // FnProto_class_addMethod class_addMethod = dlsym(objc, "class_addMethod");
+    // if (!class_addMethod) {
     //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get CFRunLoopRun from CoreFoundation: %s\n", errm ? errm : &nul);
+    //     fprintf(stderr, "Failed to get class_addMethod: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    // FnProto_class_addIvar class_addIvar = dlsym(objc, "class_addIvar");
+    // if (!class_addIvar) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get class_addIvar: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+    LOADFUNC_SETUP(objc, class_addProtocol, fail_libs);
+
+    LOADFUNC_SETUP_INITG(objc, sel_registerName, fail_libs);
+    // FnProto_sel_registerName sel_registerName = initg_sel_registerName = dlsym(objc, "sel_registerName");
+    // if (!sel_registerName) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get sel_registerName: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+
+    void *p_NSConcreteStackBlock;
+    LOADSYMBOL_OUTVAR(libSystem, void *, _NSConcreteStackBlock, p_NSConcreteStackBlock, fail_libs);
+    // void *p_NSConcreteStackBlock = dlsym(libSystem, "_NSConcreteStackBlock");
+    // if (!p_NSConcreteStackBlock) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get _NSConcreteStackBlock: %s\n", errm ? errm : &nul);
+    //     goto fail_libs;
+    // }
+
+    LOADFUNC_SETUP(foundation, NSLog, fail_libs);
+    // FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
+    // if (!NSLog) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
     //     goto fail_libs;
     // }
     LOADFUNC_SETUP(cf, CFRunLoopRun, fail_libs);
     LOADFUNC_SETUP_INITG(cf, CFRunLoopGetMain, fail_libs);
     LOADFUNC_SETUP_INITG(cf, CFRunLoopStop, fail_libs);
-    // FnProto_CFRunLoopGetMain CFRunLoopGetMain = dlsym(cf, "CFRunLoopGetMain");
-    // if (!CFRunLoopGetMain) {
+    void **pkCFBooleanTrue;
+    LOADSYMBOL_OUTVAR(cf, void **, kCFBooleanTrue, pkCFBooleanTrue, fail_libs);
+    void *kCFBooleanTrue = *pkCFBooleanTrue;
+    // void *kCFBooleanTrue = *(void **)dlsym(cf, "kCFBooleanTrue");
+    // if (!kCFBooleanTrue) {
     //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get CFRunLoopGetMain from CoreFoundation: %s\n", errm ? errm : &nul);
+    //     fprintf(stderr, "Failed to get NSLog from CoreFoundation: %s\n", errm ? errm : &nul);
     //     goto fail_libs;
     // }
-    // FnProto_CFRunLoopStop CFRunLoopStop = dlsym(cf, "CFRunLoopStop");
-    // if (!CFRunLoopStop) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get CFRunLoopStop from CoreFoundation: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
-    void *kCFBooleanTrue = *(void **)dlsym(cf, "kCFBooleanTrue");
-    if (!kCFBooleanTrue) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get NSLog from CoreFoundation: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
-    void *kCFBooleanFalse = *(void **)dlsym(cf, "kCFBooleanFalse");
-    if (!kCFBooleanFalse) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to get NSLog from CoreFoundation: %s\n", errm ? errm : &nul);
-        goto fail_libs;
-    }
 
-    void *ClsNSObject = objc_getClass("NSObject");
-    if (!ClsNSObject) {
-        fputs("Failed to getClass NSObject\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsNSString = objc_getClass("NSString");
-    if (!ClsNSString) {
-        fputs("Failed to getClass NSString\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsNSNumber = objc_getClass("NSNumber");
-    if (!ClsNSNumber) {
-        fputs("Failed to getClass NSNumber\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsNSURL = objc_getClass("NSURL");
-    if (!ClsNSURL) {
-        fputs("Failed to getClass NSURL\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsNSDictionary = objc_getClass("NSDictionary");
-    if (!ClsNSDictionary) {
-        fputs("Failed to getClass NSDictionary\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsWKWebView = objc_getClass("WKWebView");
-    if (!ClsWKWebView) {
-        fputs("Failed to getClass WKWebView\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsWKContentWorld = objc_getClass("WKContentWorld");
-    if (!ClsWKContentWorld) {
-        fputs("Failed to getClass WKContentWorld\n", stderr);
-        goto fail_libs;
-    }
-    void *ClsWKWebViewConfiguration = objc_getClass("WKWebViewConfiguration");
-    if (!ClsWKWebViewConfiguration) {
-        fputs("Failed to getClass WKWebViewConfiguration\n", stderr);
-        goto fail_libs;
-    }
+    INITG_GETCLASS_SETUP(Cls, NSObject, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, NSString, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, NSNumber, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, NSURL, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, NSDictionary, void *, fail_libs);
+
+    // void *ClsNSObject = objc_getClass("NSObject");
+    // if (!ClsNSObject) {
+    //     fputs("Failed to getClass NSObject\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsNSString = objc_getClass("NSString");
+    // if (!ClsNSString) {
+    //     fputs("Failed to getClass NSString\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsNSNumber = objc_getClass("NSNumber");
+    // if (!ClsNSNumber) {
+    //     fputs("Failed to getClass NSNumber\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsNSURL = objc_getClass("NSURL");
+    // if (!ClsNSURL) {
+    //     fputs("Failed to getClass NSURL\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsNSDictionary = objc_getClass("NSDictionary");
+    // if (!ClsNSDictionary) {
+    //     fputs("Failed to getClass NSDictionary\n", stderr);
+    //     goto fail_libs;
+    // }
+
+    INITG_GETCLASS_SETUP(Cls, WKWebView, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, WKContentWorld, void *, fail_libs);
+    INITG_GETCLASS_SETUP(Cls, WKWebViewConfiguration, void *, fail_libs);
+    // void *ClsWKWebView = objc_getClass("WKWebView");
+    // if (!ClsWKWebView) {
+    //     fputs("Failed to getClass WKWebView\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsWKContentWorld = objc_getClass("WKContentWorld");
+    // if (!ClsWKContentWorld) {
+    //     fputs("Failed to getClass WKContentWorld\n", stderr);
+    //     goto fail_libs;
+    // }
+    // void *ClsWKWebViewConfiguration = objc_getClass("WKWebViewConfiguration");
+    // if (!ClsWKWebViewConfiguration) {
+    //     fputs("Failed to getClass WKWebViewConfiguration\n", stderr);
+    //     goto fail_libs;
+    // }
     fputs("Loaded classes\n", stderr);
     void *selAlloc = sel_registerName("alloc");
     void *selDealloc = sel_registerName("dealloc");
@@ -476,13 +479,13 @@ int main(void) {
     pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
-    struct OnCallAsyncJSCompleteUserData userData = { CFRunLoopStop, CFRunLoopGetMain, objc_msgSend, sel_registerName };
+    OnCallAsyncJSCompleteUserData userData;
     struct Prototype_FnPtrWrapperBlock block;
     struct {
         unsigned long int reserved;
         unsigned long int size;
         const char *signature;
-    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), /*"v24@?0@8@\"NSError\"16"*/"v@?@@" };
+    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@" };
     block.isa = p_NSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     block.desc = (struct Prototype_BlockDescBase *)&desc;
@@ -494,9 +497,7 @@ int main(void) {
         pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
         /*completionHandler: (void (^)(id result, NSError *error))*/
         &block);
-    fprintf(stderr, "Submitted asynchronous JS execution\n");
-
-    fprintf(stderr, "Waiting for JS to stop\n");
+    fprintf(stderr, "Submitted asynchronous JS execution, waiting for JS to stop\n");
     CFRunLoopRun();
     fprintf(stderr, "JS stopped\n");
 
@@ -507,21 +508,21 @@ int main(void) {
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(pNaviDg, selRelease); pNaviDg = NULL; rpmCbMap = NULL;
 
-    if (!userData.idResult) {
+    if (!userData) {
         fputs("Javascript returned nil\n", stderr);
-    } else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
-        const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, selUTF8Str);
+    } else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
+        const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData, selUTF8Str);
         fprintf(stderr, "Javascript returned string: %s\n", szRet);
     }
-    else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData.idResult, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
-        void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData.idResult, sel_registerName("stringValue"));
+    else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
+        void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData, sel_registerName("stringValue"));
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
         fprintf(stderr, "Javascript returned Number: %s\n", szRet);
     } else {
         fputs("Javascript returned unknown object\n", stderr);
     }
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(userData.idResult, selRelease); userData.idResult = NULL;
+    ((FnProtov_objc_msgSend)objc_msgSend)(userData, selRelease); userData = NULL;
     fputs("Freed all\n", stderr);
 
     ret = 0;
