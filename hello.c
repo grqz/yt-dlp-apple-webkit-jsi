@@ -24,6 +24,17 @@
             goto failLabel; \
         } \
     } while (0)
+#define TRY_DLCLOSE(hLib) \
+    do { \
+        if (dlclose(hLib)) { \
+            const char *_try_dlclose_internal_errm = dlerror(); \
+            fprintf(stderr, "Failed to dlclose " \
+                "\"" #hLib "\": %s\n", \
+                _try_dlclose_internal_errm \
+                    ? _try_dlclose_internal_errm : ""); \
+        } \
+    } while (0)
+
 #define FNPROTO_DECLARE(fn) \
     FnProto_##fn fn
 #define LOADSYMBOL_BASE( \
@@ -202,31 +213,10 @@ int main(void) {
     int ret = 1;
     TRY_DLOPEN(objc, "/usr/lib/libobjc.A.dylib", RTLD_NOW, "Are you on APPLE?", fail_ret);
     TRY_DLOPEN(libSystem, "/usr/lib/libSystem.B.dylib", RTLD_LAZY, "Are you on APPLE?", fail_objc);
-
     // Load Frameworks
     TRY_DLOPEN(foundation, SYSFWK(Foundation), RTLD_LAZY, "", fail_libSystem);
     TRY_DLOPEN(webkit, SYSFWK(WebKit), RTLD_LAZY, "", fail_foundation);
     TRY_DLOPEN(cf, SYSFWK(CoreFoundation), RTLD_LAZY, "", fail_webkit);
-    // void *foundation = dlopen(SYSFWK(Foundation), RTLD_LAZY);
-    // if (!foundation) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to load Foundation: %s\n", errm ? errm : &nul);
-    //     goto fail_libSystem;
-    // }
-
-    // void *webkit = dlopen(SYSFWK(WebKit), RTLD_LAZY);
-    // if (!webkit) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to load Webkit: %s\n", errm ? errm : &nul);
-    //     goto fail_foundation;
-    // }
-
-    // void *cf = dlopen(SYSFWK(CoreFoundation), RTLD_LAZY);
-    // if (!cf) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to load CoreFoundation: %s\n", errm ? errm : &nul);
-    //     goto fail_webkit;
-    // }
     fprintf(stderr, "All libraries loaded\n");
 
     LOADFUNC_SETUP(objc, objc_allocateClassPair, fail_libs);
@@ -424,32 +414,13 @@ int main(void) {
 
     ret = 0;
 
-fail_libs:
-// fail_cf:
-    if (dlclose(cf)) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose CoreFoundation: %s\n", errm ? errm : &nul);
-    }
-fail_webkit:
-    if (dlclose(webkit)) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose WebKit: %s\n", errm ? errm : &nul);
-    }
-fail_foundation:
-    if (dlclose(foundation)) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose Foundation: %s\n", errm ? errm : &nul);
-    }
-fail_libSystem:
-    if (dlclose(libSystem)) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose libSystem: %s\n", errm ? errm : &nul);
-    }
-fail_objc:
-    if (dlclose(objc)) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to dlclose libobjc: %s\n", errm ? errm : &nul);
-    }
-fail_ret:
+fail_libs:;
+// fail_cf:;
+    TRY_DLCLOSE(cf);
+fail_webkit:; TRY_DLCLOSE(webkit);
+fail_foundation:; TRY_DLCLOSE(foundation);
+fail_libSystem:; TRY_DLCLOSE(libSystem);
+fail_objc:; TRY_DLCLOSE(objc);
+fail_ret:;
     return ret;
 }
