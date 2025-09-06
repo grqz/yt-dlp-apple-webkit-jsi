@@ -482,7 +482,7 @@ int main(void) {
         unsigned long int reserved;
         unsigned long int size;
         const char *signature;
-    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v24@?0@8@\"NSError\"16" };
+    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), /*"v24@?0@8@\"NSError\"16"*/"v@?@@" };
     block.isa = p_NSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     block.desc = (struct Prototype_BlockDescBase *)&desc;
