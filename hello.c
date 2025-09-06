@@ -476,7 +476,7 @@ int main(void) {
         unsigned long int reserved;
         unsigned long int size;
         const char *signature;
-    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@" };
+    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
     block.isa = p_NSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     block.desc = (struct Prototype_BlockDescBase *)&desc;
