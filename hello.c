@@ -75,6 +75,7 @@ typedef signed char(*FnProtoi8_vp_objc_msgSend)(void *self, void *op, void *);
 typedef void (*FnProto_objc_msgSendSuper)();
 FnProto_objc_msgSendSuper initg_objc_msgSendSuper = NULL;
 typedef void *(*FnProtovp_objc_msgSendSuper)(void *super, void *op);
+typedef void (*FnProtov_objc_msgSendSuper)(void *super, void *op);
 
 typedef void *(*FnProto_object_setInstanceVariable)(void *obj, const char *name, void *value);
 FnProto_object_setInstanceVariable initg_object_setInstanceVariable = NULL;
@@ -113,13 +114,14 @@ void *CFC_NaviDelegate_init(void *self, void *op) {
             initg_object_getClass(self),
             initg_sel_registerName("superclass"))
     };
-    self = ((FnProtovp_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, initg_sel_registerName("init"));
+    self = ((FnProtovp_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, op);
     if (self)
         initg_object_setInstanceVariable(self, "pmCbMap", cbmap_new());
     return self;
 }
 static inline
 void CFC_NaviDelegate_dealloc(void *self, void *op) {
+    fputs("CFC_NaviDelegate::dealloc\n", stderr);
     struct Prototype_objc_super super = {
         self,
         ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
@@ -130,7 +132,7 @@ void CFC_NaviDelegate_dealloc(void *self, void *op) {
     initg_object_getInstanceVariable(self, "pmCbMap", &pmCbMap);
     if (pmCbMap)
         cbmap_free((CallbackMap *)pmCbMap);
-    self = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(&super, initg_sel_registerName("dealloc"));
+    ((FnProtov_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, op);
 }
 
 static inline
@@ -138,6 +140,7 @@ void CFC_NaviDelegate_webView0_didFinishNavigation1(
     void *self, void *op,
     void *rpwkwvWebView, void *rpwknNavigation
 ) {
+    fputs("CFC_NaviDelegate::webview(WKWebView *_, WKNavigation *didFinishNavigation)\n", stderr);
     void *pmCbMap = NULL;
     initg_object_getInstanceVariable(self, "pmCbMap", &pmCbMap);
     if (pmCbMap)
