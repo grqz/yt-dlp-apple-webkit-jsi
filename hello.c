@@ -384,6 +384,7 @@ int main(void) {
         "v@:@@"/*void (*)(id, SEL, WKWebView *, WKNavigation *)*/);
     class_addProtocol(ClsCFC_NaviDelegate, objc_getProtocol("WKNavigationDelegate"));
     objc_registerClassPair(ClsCFC_NaviDelegate);
+    fputs("Registered CFC_NaviDelegate\n", stderr);
     void *pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(
         ((FnProtovp_objc_msgSend)objc_msgSend)(ClsCFC_NaviDelegate, selAlloc),
         selInit);

@@ -1,5 +1,5 @@
 CC ?= clang
-CFLAGS ?= --std=c99 -Wall
+CFLAGS ?= -g -fsanitize=address --std=c99 -Wall
 CXX ?= clang++
 CXXFLAGS ?= --std=c++17 -Wall
 OBJC ?= clang
