@@ -406,15 +406,6 @@ int main(void) {
         goto fail_libs;
     }
 
-    void *pStr = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)"Hello, World!");
-    fprintf(stderr, "Initialised NSString\n");
-    NSLog(pStr);
-    fprintf(stderr, "Logged NSString\n");
-    ((FnProtov_objc_msgSend)objc_msgSend)(pStr, selRelease); pStr = NULL;
-    fprintf(stderr, "Released NSString\n");
-
     void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
     pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
     void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
