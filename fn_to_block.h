@@ -1,7 +1,6 @@
 #ifndef FN_TO_BLOCK_H
 #define FN_TO_BLOCK_H
 
-#include <stdarg.h>
 #include <stddef.h>
 
 #include "common.h"
@@ -33,14 +32,14 @@ struct Prototype_BlockBase {
     void *isa;
     int flags;
     int reserved;  /* 0 */
-    void (*invoke)();  /* (struct Prototype_BlockBase *self, ...) */
+    void (*invoke)(void);  /* (struct Prototype_BlockBase *self, ...) */
     struct Prototype_BlockDescBase *desc;
 };
 struct Prototype_FnPtrWrapperBlock {
     void *isa;
     int flags;
     int reserved;  /* 0 */
-    void (*invoke)();  /* (struct Prototype_BlockBase *self, ...) */
+    void (*invoke)(void);  /* (struct Prototype_BlockBase *self, ...) */
     struct Prototype_BlockDescBase *desc;
     void *userData;
 };
@@ -51,7 +50,7 @@ struct Prototype_BlockDescBase proto_bdesc = {
 };
 
 static common_inline
-void make_wrapper(struct Prototype_FnPtrWrapperBlock *block, void (*fnptr)(), void *userData) {
+void make_wrapper(struct Prototype_FnPtrWrapperBlock *block, void (*fnptr)(void), void *userData) {
     block->flags = 0;
     block->reserved = 0;
     block->invoke = fnptr;

@@ -78,7 +78,7 @@ struct Prototype_objc_super {
     void *receiver, *super_class;
 };
 
-typedef void (*Prototype_IMP)();
+typedef void (*Prototype_IMP)(void);
 
 typedef void *(*FnProto_objc_allocateClassPair)(void *superclass, const char *name, size_t extraBytes);
 typedef void (*FnProto_objc_registerClassPair)(void *cls);
@@ -97,7 +97,7 @@ static FnProto_objc_getClass initg_objc_getClass = NULL;
 
 typedef void *(*FnProto_objc_getProtocol)(const char *name);
 
-typedef void (*FnProto_objc_msgSend)();
+typedef void (*FnProto_objc_msgSend)(void);
 static FnProto_objc_msgSend initg_objc_msgSend = NULL;
 typedef void (*FnProtov_objc_msgSend)(void *self, void *op);
 typedef void (*FnProtov_2vp_objc_msgSend)(void *self, void *op, void *, void *);
@@ -110,7 +110,7 @@ typedef void *(*FnProtovp_objc_msgSend)(void *self, void *op);
 typedef void *(*FnProtovp_vp_objc_msgSend)(void *self, void *op, void *);
 typedef signed char(*FnProtoi8_vp_objc_msgSend)(void *self, void *op, void *);
 
-typedef void (*FnProto_objc_msgSendSuper)();
+typedef void (*FnProto_objc_msgSendSuper)(void);
 static FnProto_objc_msgSendSuper initg_objc_msgSendSuper = NULL;
 typedef void *(*FnProtovp_objc_msgSendSuper)(void *super, void *op);
 typedef void (*FnProtov_objc_msgSendSuper)(void *super, void *op);
@@ -271,8 +271,9 @@ int main(void) {
             fputs("Failed to allocate class CForeignClass_NaviDelegate, did you register twice?\n", stderr);
             goto fail_libs;
         }
+        struct _getalignof_CbMapPtr { char c; CallbackMap *p; };
         if (!class_addIvar(
-                ClsCFC_NaviDelegate, "pmCbMap", sizeof(CallbackMap *), ALIGNOF_STRUCTURE(CallbackMap *),
+                ClsCFC_NaviDelegate, "pmCbMap", sizeof(CallbackMap *), offsetof(struct _getalignof_CbMapPtr, p),
                 "^v"/*void */)) {
             fputs("Failed to add instance variable pmCbMap to CForeignClass_NaviDelegate, was it added before?\n", stderr);
             goto fail_libs;
@@ -369,7 +370,7 @@ int main(void) {
         struct Prototype_FnPtrWrapperBlock block;
         struct Prototype_BlockDescSign desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
         block.isa = p_NSConcreteStackBlock;
-        make_wrapper(&block, &onCallAsyncJSComplete, &userData);
+        make_wrapper(&block, (Prototype_IMP)&onCallAsyncJSComplete, &userData);
         block.desc = (struct Prototype_BlockDescBase *)&desc;
         block.flags |= (1 << 30);
         ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
