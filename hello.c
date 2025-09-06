@@ -3,7 +3,6 @@
 #include "fn_to_block.h"
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -135,10 +134,6 @@ static FnProto_CFRunLoopStop initg_CFRunLoopStop = NULL;
 typedef void *(*FnProto_CFRunLoopGetMain)(void);
 static FnProto_CFRunLoopGetMain initg_CFRunLoopGetMain = NULL;
 
-
-const signed char kbTrue = 1, kbFalse = 0;
-char nul = 0;
-
 static inline
 void *CFC_NaviDelegate_init(void *self, void *op) {
     fputs("CFC_NaviDelegate::init\n", stderr);
@@ -168,7 +163,6 @@ void CFC_NaviDelegate_dealloc(void *self, void *op) {
         cbmap_free((CallbackMap *)pmCbMap);
     ((FnProtov_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, op);
 }
-
 static inline
 void CFC_NaviDelegate_webView0_didFinishNavigation1(
     void *self, void *op,
@@ -223,7 +217,6 @@ int main(void) {
     LOADFUNC_SETUP(objc, objc_registerClassPair, fail_libs);
     LOADFUNC_SETUP_INITG(objc, objc_getClass, fail_libs);
     LOADFUNC_SETUP_INITG(objc, objc_msgSend, fail_libs);
-
     LOADFUNC_SETUP_INITG(objc, objc_msgSendSuper, fail_libs);
     LOADFUNC_SETUP(objc, objc_getProtocol, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_getInstanceVariable, fail_libs);
@@ -270,27 +263,30 @@ int main(void) {
     void *selInitWithUTF8 = sel_registerName("initWithUTF8String:");
     fputs("Initialised selectors\n", stderr);
 
-    void *ClsCFC_NaviDelegate = objc_allocateClassPair(ClsNSObject, "CForeignClass_NaviDelegate", 0);
-    if (!ClsCFC_NaviDelegate) {
-        fputs("Failed to allocate class CForeignClass_NaviDelegate, did you register twice?\n", stderr);
-        goto fail_libs;
+    void *ClsCFC_NaviDelegate;
+    {
+        ClsCFC_NaviDelegate = objc_allocateClassPair(ClsNSObject, "CForeignClass_NaviDelegate", 0);
+        if (!ClsCFC_NaviDelegate) {
+            fputs("Failed to allocate class CForeignClass_NaviDelegate, did you register twice?\n", stderr);
+            goto fail_libs;
+        }
+        if (!class_addIvar(
+                ClsCFC_NaviDelegate, "pmCbMap", sizeof(CallbackMap *), ALIGNOF_STRUCTURE(CallbackMap *),
+                "^v"/*void */)) {
+            fputs("Failed to add instance variable pmCbMap to CForeignClass_NaviDelegate, was it added before?\n", stderr);
+            goto fail_libs;
+        }
+        class_addMethod(ClsCFC_NaviDelegate, selInit, &CFC_NaviDelegate_init, "@@:"/* id (*)(id, SEL)*/);
+        class_addMethod(ClsCFC_NaviDelegate, selDealloc, &CFC_NaviDelegate_dealloc, "v@:"/*void (*)(id, SEL)*/);
+        class_addMethod(
+            ClsCFC_NaviDelegate,
+            sel_registerName("webView:didFinishNavigation:"),
+            &CFC_NaviDelegate_webView0_didFinishNavigation1,
+            "v@:@@"/*void (*)(id, SEL, WKWebView *, WKNavigation *)*/);
+        class_addProtocol(ClsCFC_NaviDelegate, objc_getProtocol("WKNavigationDelegate"));
+        objc_registerClassPair(ClsCFC_NaviDelegate);
+        fputs("Registered CFC_NaviDelegate\n", stderr);
     }
-    if (!class_addIvar(
-            ClsCFC_NaviDelegate, "pmCbMap", sizeof(CallbackMap *), ALIGNOF_STRUCTURE(CallbackMap *),
-            "^v"/*void */)) {
-        fputs("Failed to add instance variable pmCbMap to CForeignClass_NaviDelegate, was it added before?\n", stderr);
-        goto fail_libs;
-    }
-    class_addMethod(ClsCFC_NaviDelegate, selInit, &CFC_NaviDelegate_init, "@@:"/* id (*)(id, SEL)*/);
-    class_addMethod(ClsCFC_NaviDelegate, selDealloc, &CFC_NaviDelegate_dealloc, "v@:"/*void (*)(id, SEL)*/);
-    class_addMethod(
-        ClsCFC_NaviDelegate,
-        sel_registerName("webView:didFinishNavigation:"),
-        &CFC_NaviDelegate_webView0_didFinishNavigation1,
-        "v@:@@"/*void (*)(id, SEL, WKWebView *, WKNavigation *)*/);
-    class_addProtocol(ClsCFC_NaviDelegate, objc_getProtocol("WKNavigationDelegate"));
-    objc_registerClassPair(ClsCFC_NaviDelegate);
-    fputs("Registered CFC_NaviDelegate\n", stderr);
     void *pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsCFC_NaviDelegate, selAlloc);
     pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(pNaviDg, selInit);
     CallbackMap *rpmCbMap = NULL;
@@ -306,7 +302,7 @@ int main(void) {
         void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
         pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
         void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
-        ((FnProtov_i8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), kbTrue);
+        ((FnProtov_i8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), 1);
 
         void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
             ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
@@ -369,11 +365,7 @@ int main(void) {
     void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
     OnCallAsyncJSCompleteUserData userData;
     struct Prototype_FnPtrWrapperBlock block;
-    struct {
-        unsigned long int reserved;
-        unsigned long int size;
-        const char *signature;
-    } desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
+    struct Prototype_BlockDescSign desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
     block.isa = p_NSConcreteStackBlock;
     make_wrapper(&block, &onCallAsyncJSComplete, &userData);
     block.desc = (struct Prototype_BlockDescBase *)&desc;
@@ -406,7 +398,7 @@ int main(void) {
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
         fprintf(stderr, "Javascript returned Number: %s\n", szRet);
     } else {
-        fputs("Javascript returned unknown object\n", stderr);
+        fputs("Javascript returned an unknown object\n", stderr);
     }
 
     ((FnProtov_objc_msgSend)objc_msgSend)(userData, selRelease); userData = NULL;
