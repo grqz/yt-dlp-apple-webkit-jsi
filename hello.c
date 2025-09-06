@@ -103,6 +103,7 @@ char nul = 0;
 
 static inline
 void *CFC_NaviDelegate_init(void *self, void *op) {
+    fputs("CFC_NaviDelegate::init\n", stderr);
     struct Prototype_objc_super super = {
         self,
         ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
@@ -385,9 +386,8 @@ int main(void) {
     class_addProtocol(ClsCFC_NaviDelegate, objc_getProtocol("WKNavigationDelegate"));
     objc_registerClassPair(ClsCFC_NaviDelegate);
     fputs("Registered CFC_NaviDelegate\n", stderr);
-    void *pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsCFC_NaviDelegate, selAlloc),
-        selInit);
+    void *pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsCFC_NaviDelegate, selAlloc);
+    pNaviDg = ((FnProtovp_objc_msgSend)objc_msgSend)(pNaviDg, selInit);
     CallbackMap *rpmCbMap = NULL;
     object_getInstanceVariable(pNaviDg, "pmCbMap", (void **)&rpmCbMap);
     if (!rpmCbMap) {
