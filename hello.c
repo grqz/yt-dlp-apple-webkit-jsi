@@ -202,7 +202,7 @@ int main(void) {
         goto fail_objc;
     }
 
-    // Frameworks
+    // Load Frameworks
     void *foundation = dlopen(SYSFWK(Foundation), RTLD_LAZY);
     if (!foundation) {
         const char *errm = dlerror();
@@ -225,30 +225,6 @@ int main(void) {
     }
     fprintf(stderr, "All libraries loaded\n");
 
-    // FnProto_objc_allocateClassPair objc_allocateClassPair = dlsym(objc, "objc_allocateClassPair");
-    // if (!objc_allocateClassPair) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get objc_allocateClassPair: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
-    // FnProto_objc_registerClassPair objc_registerClassPair = dlsym(objc, "objc_registerClassPair");
-    // if (!objc_registerClassPair) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get objc_registerClassPair: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
-    // FnProto_objc_getClass objc_getClass = dlsym(objc, "objc_getClass");
-    // if (!objc_getClass) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get objc_getClass: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
-    // FnProto_objc_msgSend objc_msgSend = initg_objc_msgSend = dlsym(objc, "objc_msgSend");
-    // if (!objc_msgSend) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get objc_msgSend: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
     LOADFUNC_SETUP(objc, objc_allocateClassPair, fail_libs);
     LOADFUNC_SETUP(objc, objc_registerClassPair, fail_libs);
     LOADFUNC_SETUP_INITG(objc, objc_getClass, fail_libs);
@@ -262,56 +238,21 @@ int main(void) {
 
     LOADFUNC_SETUP(objc, class_addMethod, fail_libs);
     LOADFUNC_SETUP(objc, class_addIvar, fail_libs);
-    // FnProto_class_addMethod class_addMethod = dlsym(objc, "class_addMethod");
-    // if (!class_addMethod) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get class_addMethod: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
-    // FnProto_class_addIvar class_addIvar = dlsym(objc, "class_addIvar");
-    // if (!class_addIvar) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get class_addIvar: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
     LOADFUNC_SETUP(objc, class_addProtocol, fail_libs);
 
     LOADFUNC_SETUP_INITG(objc, sel_registerName, fail_libs);
-    // FnProto_sel_registerName sel_registerName = initg_sel_registerName = dlsym(objc, "sel_registerName");
-    // if (!sel_registerName) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get sel_registerName: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
 
     void *p_NSConcreteStackBlock;
     LOADSYMBOL_OUTVAR(libSystem, void *, _NSConcreteStackBlock, p_NSConcreteStackBlock, fail_libs);
-    // void *p_NSConcreteStackBlock = dlsym(libSystem, "_NSConcreteStackBlock");
-    // if (!p_NSConcreteStackBlock) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get _NSConcreteStackBlock: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
 
     LOADFUNC_SETUP(foundation, NSLog, fail_libs);
-    // FnProto_NSLog NSLog = dlsym(foundation, "NSLog");
-    // if (!NSLog) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get NSLog from Foundation: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
+
     LOADFUNC_SETUP(cf, CFRunLoopRun, fail_libs);
     LOADFUNC_SETUP_INITG(cf, CFRunLoopGetMain, fail_libs);
     LOADFUNC_SETUP_INITG(cf, CFRunLoopStop, fail_libs);
     void **pkCFBooleanTrue;
     LOADSYMBOL_OUTVAR(cf, void **, kCFBooleanTrue, pkCFBooleanTrue, fail_libs);
     void *kCFBooleanTrue = *pkCFBooleanTrue;
-    // void *kCFBooleanTrue = *(void **)dlsym(cf, "kCFBooleanTrue");
-    // if (!kCFBooleanTrue) {
-    //     const char *errm = dlerror();
-    //     fprintf(stderr, "Failed to get NSLog from CoreFoundation: %s\n", errm ? errm : &nul);
-    //     goto fail_libs;
-    // }
 
     INITG_GETCLASS_SETUP(Cls, NSObject, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, NSString, void *, fail_libs);
@@ -319,50 +260,10 @@ int main(void) {
     INITG_GETCLASS_SETUP(Cls, NSURL, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, NSDictionary, void *, fail_libs);
 
-    // void *ClsNSObject = objc_getClass("NSObject");
-    // if (!ClsNSObject) {
-    //     fputs("Failed to getClass NSObject\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsNSString = objc_getClass("NSString");
-    // if (!ClsNSString) {
-    //     fputs("Failed to getClass NSString\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsNSNumber = objc_getClass("NSNumber");
-    // if (!ClsNSNumber) {
-    //     fputs("Failed to getClass NSNumber\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsNSURL = objc_getClass("NSURL");
-    // if (!ClsNSURL) {
-    //     fputs("Failed to getClass NSURL\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsNSDictionary = objc_getClass("NSDictionary");
-    // if (!ClsNSDictionary) {
-    //     fputs("Failed to getClass NSDictionary\n", stderr);
-    //     goto fail_libs;
-    // }
-
     INITG_GETCLASS_SETUP(Cls, WKWebView, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, WKContentWorld, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, WKWebViewConfiguration, void *, fail_libs);
-    // void *ClsWKWebView = objc_getClass("WKWebView");
-    // if (!ClsWKWebView) {
-    //     fputs("Failed to getClass WKWebView\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsWKContentWorld = objc_getClass("WKContentWorld");
-    // if (!ClsWKContentWorld) {
-    //     fputs("Failed to getClass WKContentWorld\n", stderr);
-    //     goto fail_libs;
-    // }
-    // void *ClsWKWebViewConfiguration = objc_getClass("WKWebViewConfiguration");
-    // if (!ClsWKWebViewConfiguration) {
-    //     fputs("Failed to getClass WKWebViewConfiguration\n", stderr);
-    //     goto fail_libs;
-    // }
+
     fputs("Loaded classes\n", stderr);
     void *selAlloc = sel_registerName("alloc");
     void *selDealloc = sel_registerName("dealloc");
