@@ -65,13 +65,16 @@ typedef void (*FnProtov_objc_msgSend)(void *self, void *op);
 typedef void (*FnProtov_2vp_objc_msgSend)(void *self, void *op, void *, void *);
 typedef void (*FnProtov_5vp_objc_msgSend)(void *self, void *op, void *, void *, void *, void *, void *);
 typedef void (*FnProtov_i8_objc_msgSend)(void *self, void *op, signed char);
-
 typedef void (*FnProtov_vp_objc_msgSend)(void *self, void *op, void *);
 typedef void *(*FnProtovp_CGRect_vp_objc_msgSend)(void *self, void *op, struct Prototype_CGRect, void *);
 typedef void *(*FnProtovp_2vp_objc_msgSend)(void *self, void *op, void *, void *);
 typedef void *(*FnProtovp_objc_msgSend)(void *self, void *op);
 typedef void *(*FnProtovp_vp_objc_msgSend)(void *self, void *op, void *);
 typedef signed char(*FnProtoi8_vp_objc_msgSend)(void *self, void *op, void *);
+
+typedef void (*FnProto_objc_msgSendSuper)();
+FnProto_objc_msgSendSuper initg_objc_msgSendSuper = NULL;
+typedef void *(*FnProtovp_objc_msgSendSuper)(void *super, void *op);
 
 typedef void *(*FnProto_object_setInstanceVariable)(void *obj, const char *name, void *value);
 FnProto_object_setInstanceVariable initg_object_setInstanceVariable = NULL;
@@ -110,7 +113,7 @@ void *CFC_NaviDelegate_init(void *self, void *op) {
             initg_object_getClass(self),
             initg_sel_registerName("superclass"))
     };
-    self = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(&super, initg_sel_registerName("init"));
+    self = ((FnProtovp_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, initg_sel_registerName("init"));
     if (self)
         initg_object_setInstanceVariable(self, "pmCbMap", cbmap_new());
     return self;
@@ -242,6 +245,7 @@ int main(void) {
         fprintf(stderr, "Failed to get objc_msgSend: %s\n", errm ? errm : &nul);
         goto fail_libs;
     }
+    LOADFUNC_SETUP_INITG(objc, objc_msgSendSuper, fail_libs);
     LOADFUNC_SETUP(objc, objc_getProtocol, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_getInstanceVariable, fail_libs);
     LOADFUNC_SETUP_INITG(objc, object_setInstanceVariable, fail_libs);
