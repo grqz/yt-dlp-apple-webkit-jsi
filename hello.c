@@ -37,10 +37,12 @@
 #define FNPROTO_DECLARE(fn) \
     FnProto_##fn fn
 #define LOADSYMBOL_BASE( \
-    hLib, symType, sym, assignto, outvar, libName, onFailure) \
+    hLib, symType, sym, assignto, libName, onFailure) \
     do { \
-        assignto = (symType)dlsym(hLib, sym); \
-        if (!outvar) { \
+        symType _loadsymbol_internal_symbol; \
+        *(void **)(&_loadsymbol_internal_symbol) = dlsym(hLib, sym); \
+        assignto = _loadsymbol_internal_symbol; \
+        if (!_loadsymbol_internal_symbol) { \
             const char *_loadsymbol_internal_errm = dlerror(); \
             fprintf(stderr, \
                 "Failed to get \"" sym "\" " \
@@ -51,11 +53,11 @@
         } \
     } while (0)
 #define LOADSYMBOL_OUTVAR(hLib, symType, sym, outvar, failLabel) \
-    LOADSYMBOL_BASE(hLib, symType, #sym, outvar, outvar, #hLib, goto failLabel)
+    LOADSYMBOL_BASE(hLib, symType, #sym, outvar, #hLib, goto failLabel)
 #define LOADSYMBOL_SIMPLE(hLib, symType, sym, failLabel) \
-    LOADSYMBOL_BASE(hLib, symType, #sym, sym, sym, #hLib, goto failLabel)
+    LOADSYMBOL_BASE(hLib, symType, #sym, sym, #hLib, goto failLabel)
 #define LOADSYMBOL_SIMPLE_INITG(hLib, symType, sym, failLabel) \
-    LOADSYMBOL_BASE(hLib, symType, #sym, sym = initg_##sym, sym, #hLib, goto failLabel)
+    LOADSYMBOL_BASE(hLib, symType, #sym, sym = initg_##sym, #hLib, goto failLabel)
 
 #define LOADFUNC(hLib, sym, failLabel) \
     LOADSYMBOL_SIMPLE(hLib, FnProto_##sym, sym, failLabel)
@@ -69,11 +71,14 @@
 
 struct Prototype_CGRect {
     struct { double x, y; } m_orig, m_size;
-} static const Proto_CGRectZero = { {0.00, 0.00}, {0.00, 0.00} };
+};
+static struct Prototype_CGRect const Proto_CGRectZero = { {0.00, 0.00}, {0.00, 0.00} };
 
 struct Prototype_objc_super {
     void *receiver, *super_class;
 };
+
+typedef void (*Prototype_IMP)();
 
 typedef void *(*FnProto_objc_allocateClassPair)(void *superclass, const char *name, size_t extraBytes);
 typedef void (*FnProto_objc_registerClassPair)(void *cls);
@@ -118,7 +123,7 @@ typedef void *(*FnProto_object_getClass)(void *obj);
 static FnProto_object_getClass initg_object_getClass = NULL;
 
 typedef signed char (*FnProto_class_addProtocol)(void *cls, void *protocol);
-typedef signed char (*FnProto_class_addMethod)(void *cls, void *name, void *imp, const char *types);
+typedef signed char (*FnProto_class_addMethod)(void *cls, void *name, Prototype_IMP imp, const char *types);
 typedef signed char (*FnProto_class_addIvar)(void *cls, const char *name, size_t size, uint8_t alignment, const char *types);
 
 typedef void *(*FnProto_sel_registerName)(const char * str);
@@ -134,36 +139,32 @@ static FnProto_CFRunLoopStop initg_CFRunLoopStop = NULL;
 typedef void *(*FnProto_CFRunLoopGetMain)(void);
 static FnProto_CFRunLoopGetMain initg_CFRunLoopGetMain = NULL;
 
-static inline
+static common_inline
 void *CFC_NaviDelegate_init(void *self, void *op) {
+    struct Prototype_objc_super super;
     fputs("CFC_NaviDelegate::init\n", stderr);
-    struct Prototype_objc_super super = {
-        self,
-        ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
-            initg_object_getClass(self),
-            initg_sel_registerName("superclass"))
-    };
+    super.receiver = self;
+    super.super_class = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
+        initg_object_getClass(self), initg_sel_registerName("superclass"));
     self = ((FnProtovp_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, op);
     if (self)
         initg_object_setInstanceVariable(self, "pmCbMap", cbmap_new());
     return self;
 }
-static inline
+static common_inline
 void CFC_NaviDelegate_dealloc(void *self, void *op) {
-    fputs("CFC_NaviDelegate::dealloc\n", stderr);
-    struct Prototype_objc_super super = {
-        self,
-        ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
-            initg_object_getClass(self),
-            initg_sel_registerName("superclass"))
-    };
+    struct Prototype_objc_super super;
     void *pmCbMap = NULL;
+    fputs("CFC_NaviDelegate::dealloc\n", stderr);
+    super.receiver = self;
+    super.super_class = ((FnProtovp_objc_msgSend)initg_objc_msgSend)(
+        initg_object_getClass(self), initg_sel_registerName("superclass"));
     initg_object_getInstanceVariable(self, "pmCbMap", &pmCbMap);
     if (pmCbMap)
         cbmap_free((CallbackMap *)pmCbMap);
     ((FnProtov_objc_msgSendSuper)initg_objc_msgSendSuper)(&super, op);
 }
-static inline
+static common_inline
 void CFC_NaviDelegate_webView0_didFinishNavigation1(
     void *self, void *op,
     void *rpwkwvWebView, void *rpwknNavigation
@@ -177,14 +178,14 @@ void CFC_NaviDelegate_webView0_didFinishNavigation1(
         fputs("webView:didFinishNavigation: pmCbMap unexpectedly null!\n", stderr);
 }
 
-static inline
+static common_inline
 void onNavigationFinished(void *ctx, void *userData) {
     fprintf(stderr, "Finished navigation: %p, userData: %p\n", ctx, userData);
     initg_CFRunLoopStop(initg_CFRunLoopGetMain());
 }
 
 typedef void *OnCallAsyncJSCompleteUserData;
-static inline
+static common_inline
 void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idResult, void *nserrError) {
     OnCallAsyncJSCompleteUserData *pUserData = self->userData;
     fprintf(stderr, "JS Complete! old user data: %p, idResult: %p; nserrError: %p\n", *pUserData, idResult, nserrError);
@@ -207,11 +208,11 @@ int main(void) {
     int ret = 1;
     TRY_DLOPEN(objc, "/usr/lib/libobjc.A.dylib", RTLD_NOW, "Are you on APPLE?", fail_ret);
     TRY_DLOPEN(libSystem, "/usr/lib/libSystem.B.dylib", RTLD_LAZY, "Are you on APPLE?", fail_objc);
-    // Load Frameworks
+    /* Load Frameworks */
     TRY_DLOPEN(foundation, SYSFWK(Foundation), RTLD_LAZY, "", fail_libSystem);
     TRY_DLOPEN(webkit, SYSFWK(WebKit), RTLD_LAZY, "", fail_foundation);
     TRY_DLOPEN(cf, SYSFWK(CoreFoundation), RTLD_LAZY, "", fail_webkit);
-    fprintf(stderr, "All libraries loaded\n");
+    fprintf(stderr, "All libraries and frameworks loaded\n");
 
     LOADFUNC_SETUP(objc, objc_allocateClassPair, fail_libs);
     LOADFUNC_SETUP(objc, objc_registerClassPair, fail_libs);
@@ -250,8 +251,8 @@ int main(void) {
     INITG_GETCLASS_SETUP(Cls, WKWebView, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, WKContentWorld, void *, fail_libs);
     INITG_GETCLASS_SETUP(Cls, WKWebViewConfiguration, void *, fail_libs);
-
     fputs("Loaded classes\n", stderr);
+
     void *selAlloc = sel_registerName("alloc");
     void *selDealloc = sel_registerName("dealloc");
     void *selInit = sel_registerName("init");
@@ -276,12 +277,12 @@ int main(void) {
             fputs("Failed to add instance variable pmCbMap to CForeignClass_NaviDelegate, was it added before?\n", stderr);
             goto fail_libs;
         }
-        class_addMethod(ClsCFC_NaviDelegate, selInit, &CFC_NaviDelegate_init, "@@:"/* id (*)(id, SEL)*/);
-        class_addMethod(ClsCFC_NaviDelegate, selDealloc, &CFC_NaviDelegate_dealloc, "v@:"/*void (*)(id, SEL)*/);
+        class_addMethod(ClsCFC_NaviDelegate, selInit, (Prototype_IMP)&CFC_NaviDelegate_init, "@@:"/* id (*)(id, SEL)*/);
+        class_addMethod(ClsCFC_NaviDelegate, selDealloc, (Prototype_IMP)&CFC_NaviDelegate_dealloc, "v@:"/*void (*)(id, SEL)*/);
         class_addMethod(
             ClsCFC_NaviDelegate,
             sel_registerName("webView:didFinishNavigation:"),
-            &CFC_NaviDelegate_webView0_didFinishNavigation1,
+            (Prototype_IMP)&CFC_NaviDelegate_webView0_didFinishNavigation1,
             "v@:@@"/*void (*)(id, SEL, WKWebView *, WKNavigation *)*/);
         class_addProtocol(ClsCFC_NaviDelegate, objc_getProtocol("WKNavigationDelegate"));
         objc_registerClassPair(ClsCFC_NaviDelegate);
@@ -355,34 +356,35 @@ int main(void) {
         fputs("Navigation finished\n", stderr);
     }
 
-    void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)szScript);
-
-    void *pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSDictionary, selAlloc);
-    pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
-
-    void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
     OnCallAsyncJSCompleteUserData userData;
-    struct Prototype_FnPtrWrapperBlock block;
-    struct Prototype_BlockDescSign desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
-    block.isa = p_NSConcreteStackBlock;
-    make_wrapper(&block, &onCallAsyncJSComplete, &userData);
-    block.desc = (struct Prototype_BlockDescBase *)&desc;
-    block.flags |= (1 << 30);
-    ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
-        pWebview,
-        sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
-        psScript,
-        pdJsArguments, /*inFrame:*/NULL, rpPageWorld,
-        /*completionHandler: (void (^)(id result, NSError *error))*/&block);
-    fprintf(stderr, "Submitted asynchronous JS execution, waiting for JS to stop\n");
-    CFRunLoopRun();
-    fprintf(stderr, "JS stopped\n");
+    {
+        void *psScript = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+            selInitWithUTF8, (void *)szScript);
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease); pdJsArguments = NULL;
+        void *pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSDictionary, selAlloc);
+        pdJsArguments = ((FnProtovp_objc_msgSend)objc_msgSend)(pdJsArguments, selInit);
 
-    ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease); psScript = NULL;
+        void *rpPageWorld = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKContentWorld, sel_registerName("pageWorld"));
+        struct Prototype_FnPtrWrapperBlock block;
+        struct Prototype_BlockDescSign desc = { 0, sizeof(struct Prototype_FnPtrWrapperBlock), "v@?@@"/*void (*)(Block self, id, id)*/ };
+        block.isa = p_NSConcreteStackBlock;
+        make_wrapper(&block, &onCallAsyncJSComplete, &userData);
+        block.desc = (struct Prototype_BlockDescBase *)&desc;
+        block.flags |= (1 << 30);
+        ((FnProtov_5vp_objc_msgSend)objc_msgSend)(
+            pWebview,
+            sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
+            psScript,
+            pdJsArguments, /*inFrame:*/NULL, rpPageWorld,
+            /*completionHandler: (void (^)(id result, NSError *error))*/&block);
+        fprintf(stderr, "Submitted asynchronous JS execution, waiting for JS to stop\n");
+        CFRunLoopRun();
+        fprintf(stderr, "JS stopped\n");
+
+        ((FnProtov_objc_msgSend)objc_msgSend)(pdJsArguments, selRelease);
+        ((FnProtov_objc_msgSend)objc_msgSend)(psScript, selRelease);
+    }
 
     ((FnProtov_objc_msgSend)objc_msgSend)(pWebview, selRelease); pWebview = NULL;
     ((FnProtov_objc_msgSend)objc_msgSend)(pNaviDg, selRelease); pNaviDg = NULL; rpmCbMap = NULL;
@@ -405,10 +407,8 @@ int main(void) {
     fputs("Freed all\n", stderr);
 
     ret = 0;
-
 fail_libs:;
-// fail_cf:;
-    TRY_DLCLOSE(cf);
+/*fail_cf:;*/ TRY_DLCLOSE(cf);
 fail_webkit:; TRY_DLCLOSE(webkit);
 fail_foundation:; TRY_DLCLOSE(foundation);
 fail_libSystem:; TRY_DLCLOSE(libSystem);

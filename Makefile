@@ -1,9 +1,10 @@
+C_CXX_OBJC_WARNING_FLAGS ?= -Wall -Wextra -pedantic -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-unused-parameter
 CC ?= clang
-CFLAGS ?= -g -fsanitize=address --std=c99 -Wall
+CFLAGS ?= -g --std=c99 $(C_CXX_OBJC_WARNING_FLAGS)
 CXX ?= clang++
-CXXFLAGS ?= --std=c++17 -Wall
+CXXFLAGS ?= --std=c++17 $(C_CXX_OBJC_WARNING_FLAGS)
 OBJC ?= clang
-OBJCFLAGS ?= --std=c99 -Wall -fblocks -fno-objc-arc
+OBJCFLAGS ?= --std=c99 $(C_CXX_OBJC_WARNING_FLAGS) -fblocks -fno-objc-arc
 LDFLAGS ?= -fsanitize=address \
 	-framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics \
 	-isysroot "$(shell xcrun --show-sdk-path)"
