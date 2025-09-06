@@ -1,10 +1,10 @@
-CC = clang
-CFLAGS = --std=c99 -Wall
-CXX = clang++
-CXXFLAGS = --std=c++17 -Wall
-OBJC = clang
-OBJCFLAGS = --std=c99 -Wall -fblocks -fno-objc-arc
-LDFLAGS = \
+CC ?= clang
+CFLAGS ?= --std=c99 -Wall
+CXX ?= clang++
+CXXFLAGS ?= --std=c++17 -Wall
+OBJC ?= clang
+OBJCFLAGS ?= --std=c99 -Wall -fblocks -fno-objc-arc
+LDFLAGS ?= \
 	-framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics \
 	-isysroot "$(shell xcrun --show-sdk-path)"
 
