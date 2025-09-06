@@ -11,6 +11,19 @@
 
 #define SYSFWK(fwk) "/System/Library/Frameworks/" #fwk ".framework/" #fwk
 #define ALIGNOF_STRUCTURE(st) offsetof(struct { char c; st s; }, s)
+#define TRY_DLOPEN(hLib, libPath, mode, failHint, failLabel) \
+    void *hLib; \
+    do { \
+        hLib = dlopen(libPath, mode); \
+        if (!hLib) { \
+            const char *_try_dlopen_internal_errm = dlerror(); \
+            fprintf(stderr, \
+                "Failed to load \"" #hLib "\": %s" \
+                failHint "\n", _try_dlopen_internal_errm \
+                    ? _try_dlopen_internal_errm : ""); \
+            goto failLabel; \
+        } \
+    } while (0)
 #define FNPROTO_DECLARE(fn) \
     FnProto_##fn fn
 #define LOADSYMBOL_BASE( \
@@ -23,8 +36,7 @@
                 "Failed to get \"" sym "\" " \
                 "from \"" libName "\": %s\n", \
                 _loadsymbol_internal_errm \
-                    ? _loadsymbol_internal_errm \
-                    : ""); \
+                    ? _loadsymbol_internal_errm : ""); \
             onFailure; \
         } \
     } while (0)
@@ -66,7 +78,7 @@ static FnProto_objc_getClass initg_objc_getClass = NULL;
             fputs("Failed to getClass \"" #className "\"\n", stderr); \
             goto failLabel; \
         } \
-    } while (0);
+    } while (0)
 
 typedef void *(*FnProto_objc_getProtocol)(const char *name);
 
@@ -188,41 +200,33 @@ void onCallAsyncJSComplete(struct Prototype_FnPtrWrapperBlock *self, void *idRes
 
 int main(void) {
     int ret = 1;
-    void *objc = dlopen("/usr/lib/libobjc.A.dylib", RTLD_LAZY);
-    if (!objc) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to load libobjc: %s; Are you on APPLE?\n", errm ? errm : &nul);
-        goto fail_ret;
-    }
-
-    void *libSystem = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
-    if (!libSystem) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to load libSystem: %s; Are you on APPLE?\n", errm ? errm : &nul);
-        goto fail_objc;
-    }
+    TRY_DLOPEN(objc, "/usr/lib/libobjc.A.dylib", RTLD_NOW, "Are you on APPLE?", fail_ret);
+    TRY_DLOPEN(libSystem, "/usr/lib/libSystem.B.dylib", RTLD_LAZY, "Are you on APPLE?", fail_objc);
 
     // Load Frameworks
-    void *foundation = dlopen(SYSFWK(Foundation), RTLD_LAZY);
-    if (!foundation) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to load Foundation: %s; Is it in the right place?\n", errm ? errm : &nul);
-        goto fail_libSystem;
-    }
+    TRY_DLOPEN(foundation, SYSFWK(Foundation), RTLD_LAZY, "", fail_libSystem);
+    TRY_DLOPEN(webkit, SYSFWK(WebKit), RTLD_LAZY, "", fail_foundation);
+    TRY_DLOPEN(cf, SYSFWK(CoreFoundation), RTLD_LAZY, "", fail_webkit);
+    // void *foundation = dlopen(SYSFWK(Foundation), RTLD_LAZY);
+    // if (!foundation) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to load Foundation: %s\n", errm ? errm : &nul);
+    //     goto fail_libSystem;
+    // }
 
-    void *webkit = dlopen(SYSFWK(WebKit), RTLD_LAZY);
-    if (!webkit) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to load Webkit: %s; Is it in the right place?\n", errm ? errm : &nul);
-        goto fail_foundation;
-    }
+    // void *webkit = dlopen(SYSFWK(WebKit), RTLD_LAZY);
+    // if (!webkit) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to load Webkit: %s\n", errm ? errm : &nul);
+    //     goto fail_foundation;
+    // }
 
-    void *cf = dlopen(SYSFWK(CoreFoundation), RTLD_LAZY);
-    if (!cf) {
-        const char *errm = dlerror();
-        fprintf(stderr, "Failed to load CoreFoundation: %s; Is it in the right place?\n", errm ? errm : &nul);
-        goto fail_webkit;
-    }
+    // void *cf = dlopen(SYSFWK(CoreFoundation), RTLD_LAZY);
+    // if (!cf) {
+    //     const char *errm = dlerror();
+    //     fprintf(stderr, "Failed to load CoreFoundation: %s\n", errm ? errm : &nul);
+    //     goto fail_webkit;
+    // }
     fprintf(stderr, "All libraries loaded\n");
 
     LOADFUNC_SETUP(objc, objc_allocateClassPair, fail_libs);
@@ -307,33 +311,35 @@ int main(void) {
         goto fail_libs;
     }
 
-    void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
-    pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
-    void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
-    ((FnProtov_i8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), kbTrue);
+    void *pWebview;
+    {
+        void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
+        pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
+        void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
+        ((FnProtov_i8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), kbTrue);
 
-    void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)"allowFileAccessFromFileURLs");
-    ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
-    ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
+        void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+            selInitWithUTF8, (void *)"allowFileAccessFromFileURLs");
+        ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
+        ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease);
+        
+        psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
+            ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
+            selInitWithUTF8, (void *)"allowUniversalAccessFromFileURLs");
+        ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pCfg, selSetVal4K, kCFBooleanTrue, psSetKey);
+        ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease);
 
-    pPref = NULL;
+        pWebview = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebView, selAlloc);
+        pWebview = ((FnProtovp_CGRect_vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("initWithFrame:configuration:"), Proto_CGRectZero, pCfg);
+        ((FnProtov_objc_msgSend)objc_msgSend)(pCfg, selRelease);
 
-    psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
-        ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
-        selInitWithUTF8, (void *)"allowUniversalAccessFromFileURLs");
-    ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pCfg, selSetVal4K, kCFBooleanTrue, psSetKey);
-    ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease); psSetKey = NULL;
-
-    void *pWebview = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebView, selAlloc);
-    pWebview = ((FnProtovp_CGRect_vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("initWithFrame:configuration:"), Proto_CGRectZero, pCfg);
-    ((FnProtov_objc_msgSend)objc_msgSend)(pCfg, selRelease); pCfg = NULL;
-    fprintf(stderr, "Initialised WKWebView\n");
-
-    ((FnProtov_vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("setNavigationDelegate:"), pNaviDg);
+        fputs("Initialised WKWebView\n", stderr);
+    }
 
     {
+        ((FnProtov_vp_objc_msgSend)objc_msgSend)(pWebview, sel_registerName("setNavigationDelegate:"), pNaviDg);
+
         void *psHTMLString = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
             ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
             selInitWithUTF8, (void *)szHTMLString);
@@ -386,9 +392,8 @@ int main(void) {
         pWebview,
         sel_registerName("callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:"),
         psScript,
-        pdJsArguments, /*inFrame=*/NULL, rpPageWorld,
-        /*completionHandler: (void (^)(id result, NSError *error))*/
-        &block);
+        pdJsArguments, /*inFrame:*/NULL, rpPageWorld,
+        /*completionHandler: (void (^)(id result, NSError *error))*/&block);
     fprintf(stderr, "Submitted asynchronous JS execution, waiting for JS to stop\n");
     CFRunLoopRun();
     fprintf(stderr, "JS stopped\n");
