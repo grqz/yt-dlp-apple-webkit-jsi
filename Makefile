@@ -4,7 +4,7 @@ CXX ?= clang++
 CXXFLAGS ?= --std=c++17 -Wall
 OBJC ?= clang
 OBJCFLAGS ?= --std=c99 -Wall -fblocks -fno-objc-arc
-LDFLAGS ?= \
+LDFLAGS ?= -fsanitize=address \
 	-framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics \
 	-isysroot "$(shell xcrun --show-sdk-path)"
 
