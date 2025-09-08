@@ -179,8 +179,8 @@ def main():
         NSString = pa.objc_getClass(b'NSString')
         print('objc_getClass NSString', flush=True)
         nstring = pa.send_message(c_void_p(pa.send_message(NSString, b'alloc')), b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,))
-        print('Instantiated NSString', flush=True)
-        cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
+        print(f'Instantiated NSString@{nstring}', flush=True)
+        cfn_at(fndatn(b'NSLog').value, None, c_void_p)(c_void_p(nstring))
         print('Logged NSString', flush=True)
         return 0
 
