@@ -129,8 +129,6 @@ typedef signed char (*FnProto_class_addIvar)(void *cls, const char *name, size_t
 typedef void *(*FnProto_sel_registerName)(const char * str);
 static FnProto_sel_registerName initg_sel_registerName = NULL;
 
-typedef void (*FnProto_NSLog)(void *format, ...);
-
 typedef void (*FnProto_CFRunLoopRun)(void);
 
 typedef void (*FnProto_CFRunLoopStop)(void *rl);
@@ -232,8 +230,6 @@ int main(void) {
 
     void *p_NSConcreteStackBlock;
     LOADSYMBOL_OUTVAR(libSystem, void *, _NSConcreteStackBlock, p_NSConcreteStackBlock, fail_libs);
-
-    LOADFUNC_SETUP(foundation, NSLog, fail_libs);
 
     LOADFUNC_SETUP(cf, CFRunLoopRun, fail_libs);
     LOADFUNC_SETUP_INITG(cf, CFRunLoopGetMain, fail_libs);
