@@ -5,7 +5,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
+        python3 py/pyneapple_objc.py
+    - run: |
         make hello && ./hello
         # make translated && ./translated
-    - run: |
-        python3 py/pyneapple_objc.py
