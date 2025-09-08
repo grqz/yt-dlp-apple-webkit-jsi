@@ -179,7 +179,9 @@ class PyNeApple:
 def main():
     with PyNeApple() as pa:
         fndatn = pa.load_framework_from_path('Foundation')
-        print('Loaded fndatn, cf', flush=True)
+        cf = pa.load_framework_from_path('CoreFoundation')
+        wk = pa.load_framework_from_path('WebKit')
+        print('Loaded fndatn, cf, wk', flush=True)
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
         print(f'objc_getClass NSString@{NSString.value}', flush=True)
         nstring = c_void_p(pa.send_message(NSString, b'alloc', restype=c_void_p))
