@@ -139,7 +139,7 @@ class PyNeApple:
             fwk_path = PyNeApple.path_to_framework(fwk_name)
             if not fwk_path:
                 raise ValueError(f'Could not find framework {fwk_name}, please provide a valid path')
-        if fwk := self._fwks[fwk_name]:
+        if fwk := self._fwks.get(fwk_name):
             return fwk
         ret = self._fwks[fwk_name] = self._stack.enter_context(self.dlsym_of_lib(fwk_path.encode(), mode=mode))
         return ret
