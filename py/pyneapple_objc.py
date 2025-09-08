@@ -93,7 +93,7 @@ class PyNeApple:
     BLOCK_ST = struct.Struct(b'@PiiPP')
     BLOCKDESC_SIGNATURE_ST = struct.Struct(b'@LLP')
     BLOCKDESC_ST = struct.Struct(b'@LL')
-    __slots__ = '_stack', 'dlsym_of_lib', '_objc', '_system', '_lobjc', 'objc_getClass', 'pobjc_msgSend', 'sel_registerName', 'p_NSConcreteMallocBlock', '_fwks', '_init'
+    __slots__ = '_stack', 'dlsym_of_lib', '_objc', '_system', 'objc_getClass', 'pobjc_msgSend', 'sel_registerName', 'p_NSConcreteMallocBlock', '_fwks', '_init'
 
     @staticmethod
     def path_to_framework(fwk_name: str, use_findlib: bool = False):
@@ -113,12 +113,11 @@ class PyNeApple:
             self._stack = ExitStack()
             self.dlsym_of_lib = dlsym_factory()
             self._objc = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_NOW))
-            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_LAZY))
-            self._lobjc = CDLL('/usr/lib/libobjc.A.dylib', mode=os.RTLD_NOW)
+            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libSystem.B.dylib', os.RTLD_LAZY))
             self.objc_getClass = cfn_at(self._objc(b'objc_getClass').value, c_void_p, c_char_p)
             self.pobjc_msgSend = self._objc(b'objc_msgSend').value
             self.sel_registerName = cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
-            self.p_NSConcreteMallocBlock = self._system(b'_NSConcreteMallocBlock')
+            self.p_NSConcreteMallocBlock = self._system(b'_NSConcreteMallocBlock').value
             self._fwks: dict[str, DLSYM_FUNC] = {}
             self._init = True
             return self
@@ -176,13 +175,14 @@ class PyNeApple:
 def main():
     with PyNeApple() as pa:
         fndatn = pa.load_framework_from_path('Foundation')
-        cf = pa.load_framework_from_path('CoreFoundation')
         print('Loaded fndatn, cf', flush=True)
         NSString = pa.objc_getClass(b'NSString')
         print('objc_getClass NSString', flush=True)
         nstring = pa.send_message(c_void_p(pa.send_message(NSString, b'alloc')), b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,))
         print('Instantiated NSString', flush=True)
         cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
+        print('Logged NSString', flush=True)
+        return 0
 
 
 if __name__ == '__main__':
