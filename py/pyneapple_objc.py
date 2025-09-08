@@ -148,6 +148,10 @@ class PyNeApple:
     def dlsym_objc(self):
         return self._objc
 
+    @property
+    def dlsym_system(self):
+        return self._system
+
     def open_dylib(self, path: bytes, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
         return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode))
 
@@ -202,7 +206,6 @@ def main():
         fndatn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         wk = pa.load_framework_from_path('WebKit')
-        dpatch = pa.open_dylib(find_library('dispatch'))
         debug_log('Loaded libs')
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
         debug_log(f'objc_getClass NSString@{NSString.value}')
@@ -217,8 +220,8 @@ def main():
         getmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
         stoploop = lambda: stop(getmain())
 
-        cfn_at(dpatch(b'dispatch_async').value, None, c_void_p, c_void_p)(
-            cfn_at(dpatch(b'dispatch_get_main_queue').value, c_void_p)(),
+        cfn_at(pa.dlsym_system(b'dispatch_async').value, None, c_void_p, c_void_p)(
+            cfn_at(pa.dlsym_system(b'dispatch_get_main_queue').value, c_void_p)(),
             pa.make_block(lambda: debug_log('Hello from dispatch_async!', ret=cf(b'CFRunLoopStop')), stoploop()).block
         )
         cfn_at(cf(b'CFRunLoopRun').value, None)()
