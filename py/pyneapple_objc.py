@@ -4,10 +4,10 @@ import struct
 import sys
 
 from contextlib import contextmanager, ExitStack
-from ctypes import CDLL, CFUNCTYPE, c_char_p, c_void_p, c_int
+from ctypes import CDLL, CFUNCTYPE, c_char_p, c_void_p, c_int, cast
 from ctypes.util import find_library
 from functools import wraps
-from typing import Any, Callable, Generator, Type, TypeVar, overload
+from typing import Any, Callable, Generator, Optional, Type, TypeVar, overload
 
 
 T = TypeVar('T')
@@ -31,27 +31,22 @@ def debug_log(msg, *, ret: Any = _DefaultTag):
     return ret
 
 
-def setup_signature(c_fn, restype: Type | None = None, *argtypes: Type):
+def setup_signature(c_fn, restype: Optional[Type] = None, *argtypes: Type):
     c_fn.argtypes = argtypes
     c_fn.restype = restype
     return c_fn
 
 
-def cfn_at(addr: int, restype: Type | None = None, *argtypes: Type) -> Callable:
+def cfn_at(addr: int, restype: Optional[Type] = None, *argtypes: Type) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
     debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
-def objc_type_encode(type: Type | None) -> bytes:
-    # How do i detect pointers and arrays?
-    ...
-
-
 class DLError(OSError):
     UNKNOWN_ERROR = b'<unknown error>'
 
-    def __init__(self, fname: bytes, arg: str, err: bytes | None) -> None:
+    def __init__(self, fname: bytes, arg: str, err: Optional[bytes]) -> None:
         self.fname = fname
         self.err = err
         self.arg = arg
@@ -67,13 +62,13 @@ class DLError(OSError):
         return f'DLError(fname={self.fname!r}, arg={self.arg!r}, err={self.err!r})'
 
     @staticmethod
-    def handle(ret: int | None, fname: bytes, arg: str, err: bytes | None) -> int:
+    def handle(ret: Optional[int], fname: bytes, arg: str, err: Optional[bytes]) -> int:
         if not ret:
             raise DLError(fname, arg, err)
         return ret
 
     @staticmethod
-    def wrap(fn, fname: bytes, errfn: Callable[[], bytes | None], *partial, success_handle):
+    def wrap(fn, fname: bytes, errfn: Callable[[], Optional[bytes]], *partial, success_handle):
         return wraps(fn)(lambda *args: success_handle(DLError.handle(fn(*partial, *args), fname, ''.join(map(str, args)), errfn())))
 
 
@@ -113,13 +108,10 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
 
 
 class PyNeApple:
-    BLOCK_ST = struct.Struct(b'@PiiPP')
-    BLOCKDESC_SIGNATURE_ST = struct.Struct(b'@LLP')
-    BLOCKDESC_ST = struct.Struct(b'@LL')
     __slots__ = '_stack', 'dlsym_of_lib', '_objc', '_system', 'objc_getClass', 'pobjc_msgSend', 'sel_registerName', 'p_NSConcreteMallocBlock', '_fwks', '_init'
 
     @staticmethod
-    def path_to_framework(fwk_name: str, use_findlib: bool = False):
+    def path_to_framework(fwk_name: str, use_findlib: bool = False) -> Optional[str]:
         if use_findlib:
             return find_library(fwk_name)
         return f'/System/Library/Frameworks/{fwk_name}.framework/{fwk_name}'
@@ -156,45 +148,53 @@ class PyNeApple:
     def dlsym_objc(self):
         return self._objc
 
-    def load_framework_from_path(self, fwk_name: str, fwk_path: str | None = None, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
+    def open_dylib(self, path: bytes, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
+        return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode))
+
+    def load_framework_from_path(self, fwk_name: str, fwk_path: Optional[str] = None, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
         if not fwk_path:
             fwk_path = PyNeApple.path_to_framework(fwk_name)
             if not fwk_path:
                 raise ValueError(f'Could not find framework {fwk_name}, please provide a valid path')
         if fwk := self._fwks.get(fwk_name):
             return fwk
-        ret = self._fwks[fwk_name] = self._stack.enter_context(self.dlsym_of_lib(fwk_path.encode(), mode=mode))
+        ret = self._fwks[fwk_name] = self.open_dylib(fwk_path.encode(), mode)
         return ret
 
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type | None = None, argtypes: tuple[Type, ...] = ()):
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Any, argtypes: tuple[Type, ...] = ()) -> Optional[int]: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, argtypes: tuple[Type, ...]) -> None: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...] = ()) -> Optional[bytes]: ...
+
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[Type] = None, argtypes: tuple[Type, ...] = ()):
         sel = c_void_p(self.sel_registerName(sel_name))
         debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
-    # def pycb_to_block(self, cb: Callable, *argstype: Type, signature: bytes):
-    #     f = 0
-    #     if signature is not None:
-    #         f |= 1 << 30
-    #         desc = PyNeApple.BLOCKDESC_SIGNATURE_ST.pack(0, PyNeApple.BLOCK_ST.size, signature)
-    #     else:
-    #         desc = PyNeApple.BLOCKDESC_ST.pack(0, PyNeApple.BLOCK_ST.size)
-    #     # desc -> &desc
-    #     block = PyNeApple.BLOCK_ST.pack(self.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(None, *argstype)(cb), c_char_p(desc).value)
-    #     return desc, block
+    def make_block(self, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None) -> 'ObjCBlock':
+        return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
-# class ObjCBlock:
-#     # @staticmethod
 
-#     def __init__(self, pyneapple: PyNeApple, cb: Callable, restype: Type | None, *argstype: Type):
-#         f = 0
-#         if signature is not None:
-#             f |= 1 << 30
-#             desc = PyNeApple.BLOCKDESC_SIGNATURE_ST.pack(0, PyNeApple.BLOCK_ST.size, signature)
-#         else:
-#             desc = PyNeApple.BLOCKDESC_ST.pack(0, PyNeApple.BLOCK_ST.size)
-#         # desc -> &desc
-#         block = PyNeApple.BLOCK_ST.pack(self.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(None, *argstype)(cb), c_char_p(desc).value)
-#         return desc, block
+class ObjCBlock:
+    BLOCK_ST = struct.Struct(b'@PiiPP')
+    BLOCKDESC_SIGNATURE_ST = struct.Struct(b'@LLP')
+    BLOCKDESC_ST = struct.Struct(b'@LL')
+    BLOCK_TYPE = b'@?'
+
+    def __init__(self, pyneapple: PyNeApple, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None):
+        f = 0
+        if signature:  # Empty signatures are not acceptable
+            f |= 1 << 30
+            self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(0, ObjCBlock.BLOCK_ST.size, signature)
+        else:
+            self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
+        self.block = ObjCBlock.BLOCK_ST.pack(pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb), cast(c_char_p(self.desc), c_void_p))
+
+    @property
+    def _as_parameter_(self):
+        return cast(c_char_p(self.desc), c_void_p)
 
 
 def main():
@@ -202,7 +202,8 @@ def main():
         fndatn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         wk = pa.load_framework_from_path('WebKit')
-        debug_log('Loaded fndatn, cf, wk')
+        dpatch = pa.open_dylib(find_library('libdispatch.dylib'))
+        debug_log('Loaded libs')
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
         debug_log(f'objc_getClass NSString@{NSString.value}')
         nstring = c_void_p(pa.send_message(NSString, b'alloc', restype=c_void_p))
@@ -211,6 +212,16 @@ def main():
         debug_log(f'Instantiated NSString@{nstring.value}')
         cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
         debug_log('Logged NSString')
+
+        stop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
+        getmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
+        stoploop = lambda: stop(getmain())
+
+        cfn_at(dpatch(b'dispatch_async').value, None, c_void_p, c_void_p)(
+            cfn_at(dpatch(b'dispatch_get_main_queue').value, c_void_p)(),
+            pa.make_block(lambda: debug_log('Hello from dispatch_async!', ret=cf(b'CFRunLoopStop')), stoploop()).block
+        )
+        cfn_at(cf(b'CFRunLoopRun').value, None)()
         return 0
 
 
