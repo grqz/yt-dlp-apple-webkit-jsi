@@ -7,7 +7,28 @@ from contextlib import contextmanager, ExitStack
 from ctypes import CDLL, CFUNCTYPE, c_char_p, c_void_p, c_int
 from ctypes.util import find_library
 from functools import wraps
-from typing import Callable, Generator, Type
+from typing import Any, Callable, Generator, Type, TypeVar, overload
+
+
+T = TypeVar('T')
+
+
+class _DefaultTag:
+    ...
+
+
+@overload
+def debug_log(msg: T) -> T: ...
+@overload
+def debug_log(msg, *, ret: T) -> T: ...
+
+
+def debug_log(msg, *, ret: Any = _DefaultTag):
+    sys.stdout.write(str(msg) + '\n')
+    sys.stdout.flush()
+    if ret is _DefaultTag:
+        ret = msg
+    return ret
 
 
 def setup_signature(c_fn, restype: Type | None = None, *argtypes: Type):
@@ -18,7 +39,7 @@ def setup_signature(c_fn, restype: Type | None = None, *argtypes: Type):
 
 def cfn_at(addr: int, restype: Type | None = None, *argtypes: Type) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
-    print(f'Casting function pointer at {addr} to {restype}(*)({argss})', flush=True)
+    debug_log(f'Casting function pointer at {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
@@ -77,14 +98,14 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
 
     @contextmanager
     def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY) -> Generator[DLSYM_FUNC, None, None]:
-        print(f'will dlopen {path.decode()}', flush=True)
+        debug_log(f'will dlopen {path.decode()}')
         h_lib = DLError.handle(
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
         try:
-            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: print(f'dlsym@{x}') or x)(x)))
+            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: debug_log(f'dlsym@{x}', ret=x))(x)))
         finally:
-            print(f'will dlclose {path.decode()}', flush=True)
+            debug_log(f'will dlclose {path.decode()}')
             DLError.handle(
                 not fn_dlclose(h_lib),
                 b'dlclose', path.decode(), fn_dlerror())
@@ -147,7 +168,7 @@ class PyNeApple:
 
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type | None = None, argtypes: tuple[Type, ...] = ()):
         sel = c_void_p(self.sel_registerName(sel_name))
-        print(f'SEL for {sel_name.decode()}: {sel.value}', flush=True)
+        debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     # def pycb_to_block(self, cb: Callable, *argstype: Type, signature: bytes):
@@ -181,15 +202,15 @@ def main():
         fndatn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         wk = pa.load_framework_from_path('WebKit')
-        print('Loaded fndatn, cf, wk', flush=True)
+        debug_log('Loaded fndatn, cf, wk')
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
-        print(f'objc_getClass NSString@{NSString.value}', flush=True)
+        debug_log(f'objc_getClass NSString@{NSString.value}')
         nstring = c_void_p(pa.send_message(NSString, b'alloc', restype=c_void_p))
-        print(f'Allocated NSString@{nstring.value}', flush=True)
+        debug_log(f'Allocated NSString@{nstring.value}')
         nstring = c_void_p(pa.send_message(nstring, b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,)))
-        print(f'Instantiated NSString@{nstring.value}', flush=True)
+        debug_log(f'Instantiated NSString@{nstring.value}')
         cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
-        print('Logged NSString', flush=True)
+        debug_log('Logged NSString')
         return 0
 
 
