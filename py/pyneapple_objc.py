@@ -144,7 +144,9 @@ class PyNeApple:
         return ret
 
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type | None = None, argtypes: tuple[Type, ...] = ()):
-        return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, c_void_p(self.sel_registerName(sel_name)), *args)
+        sel = c_void_p(self.sel_registerName(sel_name))
+        print(f'SEL for {sel_name.decode()}: {sel.value}', flush=True)
+        return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     # def pycb_to_block(self, cb: Callable, *argstype: Type, signature: bytes):
     #     f = 0
