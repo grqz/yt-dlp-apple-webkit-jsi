@@ -17,6 +17,8 @@ def setup_signature(c_fn, restype: Type | None = None, *argtypes: Type):
 
 
 def cfn_at(addr: int, restype: Type | None = None, *argtypes: Type) -> Callable:
+    argss = ', '.join(str(t) for t in argtypes)
+    print(f'Casting function pointer at {addr} to {restype}(*)({argss})', flush=True)
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
@@ -80,7 +82,7 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
         try:
-            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=c_void_p)
+            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: print(f'dlsym@{x}') or x)(x)))
         finally:
             print(f'will dlclose {path.decode()}', flush=True)
             DLError.handle(
