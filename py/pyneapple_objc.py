@@ -176,13 +176,13 @@ def main():
     with PyNeApple() as pa:
         fndatn = pa.load_framework_from_path('Foundation')
         print('Loaded fndatn, cf', flush=True)
-        NSString = pa.objc_getClass(b'NSString')
-        print('objc_getClass NSString', flush=True)
+        NSString = c_void_p(pa.objc_getClass(b'NSString'))
+        print(f'objc_getClass NSString@{NSString.value}', flush=True)
         nstring = c_void_p(pa.send_message(NSString, b'alloc'))
-        print(f'Allocated NSString@{nstring}', flush=True)
-        nstring = pa.send_message(nstring, b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,))
-        print(f'Instantiated NSString@{nstring}', flush=True)
-        cfn_at(fndatn(b'NSLog').value, None, c_void_p)(c_void_p(nstring))
+        print(f'Allocated NSString@{nstring.value}', flush=True)
+        nstring = c_void_p(pa.send_message(nstring, b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,)))
+        print(f'Instantiated NSString@{nstring.value}', flush=True)
+        cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
         print('Logged NSString', flush=True)
         return 0
 
