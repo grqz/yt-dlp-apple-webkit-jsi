@@ -202,7 +202,7 @@ def main():
         fndatn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         wk = pa.load_framework_from_path('WebKit')
-        dpatch = pa.open_dylib(find_library('libdispatch.dylib'))
+        dpatch = pa.open_dylib(find_library('dispatch'))
         debug_log('Loaded libs')
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
         debug_log(f'objc_getClass NSString@{NSString.value}')
