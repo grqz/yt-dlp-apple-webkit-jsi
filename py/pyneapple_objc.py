@@ -182,7 +182,7 @@ def main():
         print('Loaded fndatn, cf', flush=True)
         NSString = c_void_p(pa.objc_getClass(b'NSString'))
         print(f'objc_getClass NSString@{NSString.value}', flush=True)
-        nstring = c_void_p(pa.send_message(NSString, b'alloc'))
+        nstring = c_void_p(pa.send_message(NSString, b'alloc', restype=c_void_p))
         print(f'Allocated NSString@{nstring.value}', flush=True)
         nstring = c_void_p(pa.send_message(nstring, b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,)))
         print(f'Instantiated NSString@{nstring.value}', flush=True)
