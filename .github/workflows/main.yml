@@ -7,3 +7,5 @@ jobs:
     - run: |
         make hello && ./hello
         # make translated && ./translated
+    - run: |
+        python3 py/pyneapple_objc.py
