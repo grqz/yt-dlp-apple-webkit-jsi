@@ -39,7 +39,7 @@ def setup_signature(c_fn, restype: Type | None = None, *argtypes: Type):
 
 def cfn_at(addr: int, restype: Type | None = None, *argtypes: Type) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
-    debug_log(f'Casting function pointer at {addr} to {restype}(*)({argss})')
+    debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
