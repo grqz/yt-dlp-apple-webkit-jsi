@@ -75,14 +75,14 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
 
     @contextmanager
     def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY) -> Generator[DLSYM_FUNC, None, None]:
-        print(f'will dlopen {path.decode()}')
+        print(f'will dlopen {path.decode()}', flush=True)
         h_lib = DLError.handle(
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
         try:
             yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=c_void_p)
         finally:
-            print(f'will dlclose {path.decode()}')
+            print(f'will dlclose {path.decode()}', flush=True)
             DLError.handle(
                 not fn_dlclose(h_lib),
                 b'dlclose', path.decode(), fn_dlerror())
@@ -177,8 +177,11 @@ def main():
     with PyNeApple() as pa:
         fndatn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
+        print('Loaded fndatn, cf', flush=True)
         NSString = pa.objc_getClass(b'NSString')
+        print('objc_getClass NSString', flush=True)
         nstring = pa.send_message(c_void_p(pa.send_message(NSString, b'alloc')), b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,))
+        print('Instantiated NSString', flush=True)
         cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
 
 
