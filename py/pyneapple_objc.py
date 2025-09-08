@@ -145,7 +145,7 @@ class PyNeApple:
         return ret
 
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type | None = None, argtypes: tuple[Type, ...] = ()):
-        return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel_name, *args)
+        return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, c_void_p(self.sel_registerName(sel_name)), *args)
 
     # def pycb_to_block(self, cb: Callable, *argstype: Type, signature: bytes):
     #     f = 0
@@ -176,6 +176,7 @@ class PyNeApple:
 def main():
     with PyNeApple() as pa:
         fndatn = pa.load_framework_from_path('Foundation')
+        cf = pa.load_framework_from_path('CoreFoundation')
         NSString = pa.objc_getClass(b'NSString')
         nstring = pa.send_message(c_void_p(pa.send_message(NSString, b'alloc')), b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,))
         cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
