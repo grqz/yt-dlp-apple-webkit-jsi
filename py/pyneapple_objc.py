@@ -54,6 +54,13 @@ def cfn_at(addr: int, restype: Optional[Type] = None, *argtypes: Type) -> Callab
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
+def as_fnptr(cb: Callable, restype: Optional[Type] = None, *argtypes: Type) -> c_void_p:
+    argss = ', '.join(str(t) for t in argtypes)
+    fnptr = cast(CFUNCTYPE(restype, *argtypes)(cb), c_void_p)
+    debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {fnptr.value}')
+    return fnptr
+
+
 class DLError(OSError):
     UNKNOWN_ERROR = b'<unknown error>'
 
@@ -269,7 +276,7 @@ class ObjCBlock(Structure):
         ('isa', c_void_p),
         ('flags', c_int),
         ('reserved', c_int),
-        ('invoke', POINTER(c_ubyte)),  # FnPtr
+        ('invoke', c_void_p),  # FnPtr
         ('desc', POINTER(ObjCBlockDescBase)),
     )
     BLOCK_ST = struct.Struct(b'@PiiPP')
@@ -288,6 +295,6 @@ class ObjCBlock(Structure):
             isa=pyneapple.p_NSConcreteMallocBlock,
             flags=f,
             reserved=0,
-            invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
+            invoke=as_fnptr(cb, restype, *argtypes),
             desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
         )

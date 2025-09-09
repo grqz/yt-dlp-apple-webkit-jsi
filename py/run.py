@@ -15,6 +15,7 @@ from .pyneapple_objc import (
     NotNull_VoidP,
     ObjCBlock,
     PyNeApple,
+    as_fnptr,
     cfn_at,
     debug_log,
 )
@@ -69,7 +70,7 @@ def main():
                 raise RuntimeError('Failed to allocate class PyForeignClass_NavigationDelegate, did you register twice?')
             pa.class_addMethod(
                 Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
-                CFUNCTYPE(None, c_void_p, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1),
+                as_fnptr(PFC_NaviDelegate, None, c_void_p, c_void_p, c_void_p, c_void_p),
                 PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
             pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
             pa.objc_registerClassPair(Py_NaviDg)
@@ -104,7 +105,6 @@ def main():
                     kcf_true, p_setkey1,
                     argtypes=(c_void_p, c_void_p))
 
-                # rp, for it's released on 'with' exit
                 p_webview = pa.safe_new_object(
                     WKWebView, b'initWithFrame:configuration:',
                     CGRect(), p_cfg,
@@ -112,11 +112,11 @@ def main():
                 pa.release_on_exit(p_webview)
                 debug_log('webview init')
 
-            rp_navidg = pa.safe_new_object(Py_NaviDg)
-            pa.release_on_exit(rp_navidg)
+            p_navidg = pa.safe_new_object(Py_NaviDg)
+            pa.release_on_exit(p_navidg)
             pa.send_message(
                 p_webview, b'setNavigationDelegate:',
-                rp_navidg, argtypes=(c_void_p, ))
+                p_navidg, argtypes=(c_void_p, ))
             debug_log('webview set navidg')
 
             with ExitStack() as exsk:
