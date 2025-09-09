@@ -14,7 +14,7 @@ int main(void) {
     if (!signature) signature = "";
     fprintf(stderr, "signature(%s)\n", signature);
 
-    struct Prototype_BlockBase *baseBlock = (struct Prototype_BlockBase *)block;
+    struct Prototype_BlockBase *baseBlock = (struct Prototype_BlockBase *)pblock;
     if (baseBlock->flags & (1 << 30)) {
         if (baseBlock->flags & (1 << 25))
             (((struct Prototype_BlockDescCopyDispSign *)baseBlock->desc)->signature) = "v@?";
