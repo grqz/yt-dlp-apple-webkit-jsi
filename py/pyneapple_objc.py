@@ -14,6 +14,7 @@ from ctypes import (
     c_ubyte, c_uint8,
     c_ulong, c_void_p, c_int,
     cast,
+    pointer,
     sizeof,
 )
 from ctypes.util import find_library
@@ -267,7 +268,7 @@ class ObjCBlock(Structure):
             flags=f,
             reserved=0,
             invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
-            desc=byref(self._desc),
+            desc=pointer(self._desc),
         )
 
     # @property
