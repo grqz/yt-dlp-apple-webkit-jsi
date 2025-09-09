@@ -1,7 +1,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 #include <stdio.h>
 
-int main() {
+int main(void) {
     void * __block ml = CFRunLoopGetMain();
     CFRunLoopPerformBlock(ml, kCFRunLoopDefaultMode, ^{
         fputs("CFRunLoopPerformBlock inner\n", stderr);
