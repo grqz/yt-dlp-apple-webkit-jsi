@@ -7,9 +7,14 @@ from contextlib import contextmanager, ExitStack
 from ctypes import (
     CDLL,
     CFUNCTYPE,
+    POINTER,
     Structure,
-    c_byte, c_char_p, c_size_t, c_uint8, c_void_p, c_int,
+    byref,
+    c_byte, c_char_p, c_size_t,
+    c_ubyte, c_uint8,
+    c_ulong, c_void_p, c_int,
     cast,
+    sizeof,
 )
 from ctypes.util import find_library
 from functools import wraps
@@ -219,7 +224,25 @@ class PyNeApple:
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
 
-class ObjCBlock:
+class ObjCBlockDescBase(Structure):
+    _fields_ = (
+        ('reserved', c_ulong),
+        ('size', c_ulong),
+    )
+
+
+class ObjCBlockDescWithSignature(ObjCBlockDescBase):
+    _fields_ = (('signature', c_char_p), )
+
+
+class ObjCBlock(Structure):
+    _fields_ = (
+        ('isa', c_void_p),
+        ('flags', c_int),
+        ('reserved', c_int),
+        ('invoke', POINTER(c_ubyte)),  # FnPtr
+        ('desc', POINTER(ObjCBlockDescBase)),
+    )
     BLOCK_ST = struct.Struct(b'@PiiPP')
     BLOCKDESC_SIGNATURE_ST = struct.Struct(b'@LLP')
     BLOCKDESC_ST = struct.Struct(b'@LL')
@@ -229,18 +252,27 @@ class ObjCBlock:
         f = 0
         if signature:  # Empty signatures are not acceptable, they should at least be v@?
             f |= 1 << 30
-            self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(
-                0, ObjCBlock.BLOCK_ST.size,
-                cast(c_char_p(signature), c_void_p).value)
+            self.desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
+            # self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(
+            #     0, ObjCBlock.BLOCK_ST.size,
+            #     cast(c_char_p(signature), c_void_p).value)
         else:
-            self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
-        self.block = ObjCBlock.BLOCK_ST.pack(
-            pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb),
-            cast(c_char_p(self.desc), c_void_p).value)
+            self.desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
+            # self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
+        # self.block = ObjCBlock.BLOCK_ST.pack(
+        #     pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb),
+        #     cast(c_char_p(self.desc), c_void_p).value)
+        super().__init__(
+            isa=pyneapple.p_NSConcreteMallocBlock,
+            flags=f,
+            reserved=0,
+            invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
+            desc=byref(self.desc),
+        )
 
-    @property
-    def _as_parameter_(self):
-        return cast(c_char_p(self.desc), c_void_p)
+    # @property
+    # def _as_parameter_(self):
+    #     return cast(c_char_p(self.desc), c_void_p)
 
 
 def main():
