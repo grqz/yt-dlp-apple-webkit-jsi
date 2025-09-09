@@ -13,7 +13,7 @@ int main(void) {
     char *signature = (char *)signatureof(pblock);
     if (!signature) signature = "";
     fprintf(stderr, "signature(%s)\n", signature);
-    ((void (*)(void *, void *, void *))CFRunLoopPerformBlock)(ml, &kCFRunLoopDefaultMode, pblock);
+    ((void (*)(void *, void *, void *))CFRunLoopPerformBlock)(ml, kCFRunLoopDefaultMode, pblock);
     CFRunLoopRun();
     fputs("main finish\n", stderr);
     return 0;
