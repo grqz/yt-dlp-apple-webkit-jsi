@@ -109,12 +109,14 @@ def main():
                     CGRect(), p_cfg,
                     argtypes=(CGRect, c_void_p))
                 pa.release_on_exit(p_webview)
+                debug_log('webview init')
 
             rp_navidg = pa.safe_new_object(Py_NaviDg)
             pa.release_on_exit(rp_navidg)
             pa.send_message(
                 p_webview, b'setNavigationDelegate:',
                 rp_navidg, argtypes=(c_void_p, ))
+            debug_log('webview set navidg')
 
             with ExitStack() as exsk:
                 ps_html = pa.safe_new_object(
@@ -140,8 +142,9 @@ def main():
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
+            debug_log(f'loading: local HTML@{HOST.decode()}')
             lrun()
-            print('loaded')
+            debug_log('loaded')
 
             block = pa.make_block(
                 lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop),
