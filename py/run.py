@@ -137,19 +137,24 @@ def main():
                 rp_navi = NotNull_VoidP(pa.send_message(
                     p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
                     restype=c_void_p, argtypes=(c_void_p, c_void_p)) or 0)
+                debug_log(f'Navigation started: {rp_navi}')
 
                 def cb_navi_done():
                     debug_log('Navigation done, stopping loop')
-                    lstop(mainloop)
+                    # lstop(mainloop)
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
             debug_log(f'loading: local HTML@{HOST.decode()}')
-            # pa.send_message(
-            #     p_navidg, b'webView:didFinishNavigation:',
-            #     p_webview, rp_navi,
-            #     argtypes=(c_void_p, c_void_p))
-            lrun()
+            rp_nvdg = c_void_p(pa.send_message(
+                p_webview, b'navigationDelegate', restype=c_void_p))
+            pa.send_message(
+                rp_nvdg, b'webView:didFinishNavigation:',
+                p_webview, rp_navi,
+                argtypes=(c_void_p, c_void_p))
+
+            print(f'{rp_nvdg=}')
+            # lrun()
             debug_log('loaded')
 
             block = pa.make_block(
