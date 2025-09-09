@@ -69,7 +69,7 @@ def main():
                 raise RuntimeError('Failed to allocate class PyForeignClass_NavigationDelegate, did you register twice?')
             pa.class_addMethod(
                 Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
-                as_fnptr(PFC_NaviDelegate, None, c_void_p, c_void_p, c_void_p, c_void_p),
+                as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p),
                 PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
             pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
             pa.objc_registerClassPair(Py_NaviDg)
