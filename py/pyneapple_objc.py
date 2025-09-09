@@ -229,7 +229,7 @@ class ObjCBlock:
         f = 0
         if signature:  # Empty signatures are not acceptable, they should at least be v@?
             f |= 1 << 30
-            self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(0, ObjCBlock.BLOCK_ST.size, signature)
+            self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(0, ObjCBlock.BLOCK_ST.size, cast(c_char_p(signature), c_void_p).value)
         else:
             self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
         self.block = ObjCBlock.BLOCK_ST.pack(pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb), cast(c_char_p(self.desc), c_void_p))
