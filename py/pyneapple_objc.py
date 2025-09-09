@@ -268,7 +268,7 @@ class ObjCBlock(Structure):
             flags=f,
             reserved=0,
             invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
-            desc=pointer(self._desc),
+            desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
         )
 
     # @property
