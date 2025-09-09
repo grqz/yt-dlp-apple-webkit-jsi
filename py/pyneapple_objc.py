@@ -254,15 +254,8 @@ class ObjCBlock(Structure):
         if signature:  # Empty signatures are not acceptable, they should at least be v@?
             f |= 1 << 30
             self._desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
-            # self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(
-            #     0, ObjCBlock.BLOCK_ST.size,
-            #     cast(c_char_p(signature), c_void_p).value)
         else:
             self._desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
-            # self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
-        # self.block = ObjCBlock.BLOCK_ST.pack(
-        #     pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb),
-        #     cast(c_char_p(self.desc), c_void_p).value)
         super().__init__(
             isa=pyneapple.p_NSConcreteMallocBlock,
             flags=f,
@@ -305,7 +298,10 @@ def main():
         lrun = cfn_at(cf(b'CFRunLoopRun').value, None)
         mainloop = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
 
-        block = pa.make_block(lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop), None, signature=b'v@?')
+        block = pa.make_block(
+            lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop), None,
+            signature=b'v8@?0')
+            # signature=b'v@?')
         cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
             mainloop, cf(b'kCFRunLoopDefaultMode').value,
             byref(block))
