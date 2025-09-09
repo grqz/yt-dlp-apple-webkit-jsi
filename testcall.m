@@ -21,6 +21,8 @@ int main(void) {
         else
             (((struct Prototype_BlockDescSign *)baseBlock->desc)->signature) = "v@?";
     }
+    void (^blk_newsig)(void);
+    *(void (^)(void) *)&blk_newsig = baseBlock;
     CFRunLoopPerformBlock(ml, kCFRunLoopDefaultMode, baseBlock);
     [baseBlock release];
     CFRunLoopRun();
