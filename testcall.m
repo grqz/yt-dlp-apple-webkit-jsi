@@ -14,14 +14,15 @@ int main(void) {
     if (!signature) signature = "";
     fprintf(stderr, "signature(%s)\n", signature);
 
-    struct Prototype_BlockBase *baseBlock = (struct Prototype_BlockBase *)pblock;
+    struct Prototype_BlockBase *baseBlock = (struct Prototype_BlockBase *)[pblock copy];
     if (baseBlock->flags & (1 << 30)) {
         if (baseBlock->flags & (1 << 25))
             (((struct Prototype_BlockDescCopyDispSign *)baseBlock->desc)->signature) = "v@?";
         else
             (((struct Prototype_BlockDescSign *)baseBlock->desc)->signature) = "v@?";
     }
-    CFRunLoopPerformBlock(ml, kCFRunLoopDefaultMode, blk);
+    CFRunLoopPerformBlock(ml, kCFRunLoopDefaultMode, baseBlock);
+    [baseBlock release];
     CFRunLoopRun();
     fputs("main finish\n", stderr);
     return 0;
