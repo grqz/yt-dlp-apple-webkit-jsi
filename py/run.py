@@ -151,7 +151,7 @@ def main():
 
                 def cb_navi_done():
                     debug_log('Navigation done, stopping loop')
-                    # lstop(mainloop)
+                    lstop(mainloop)
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
