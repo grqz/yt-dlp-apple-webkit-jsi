@@ -9,9 +9,8 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
-    byref,
-    c_byte, c_char_p, c_size_t,
-    c_ubyte, c_uint8,
+    c_byte, c_char_p,
+    c_size_t, c_ubyte, c_uint8,
     c_ulong, c_void_p, c_int,
     cast,
     pointer,
@@ -84,12 +83,16 @@ class DLError(OSError):
         return wraps(fn)(lambda *args: success_handle(DLError.handle(fn(*partial, *args), fname, ''.join(map(str, args)), errfn())))
 
 
-class VOIDP_NOTNULL:
+class NotNull_VoidP(c_void_p):
+    def __init__(self, value: int):
+        super().__init__(value)
+
     @property
-    def value(self) -> int: ...
+    def value(self) -> int:
+        return super().value
 
 
-DLSYM_FUNC = Callable[[bytes], VOIDP_NOTNULL]
+DLSYM_FUNC = Callable[[bytes], NotNull_VoidP]
 
 
 def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
@@ -134,7 +137,7 @@ class PyNeApple:
         'class_addProtocol', 'class_addMethod', 'class_addIvar',
         'objc_getProtocol', 'objc_allocateClassPair', 'objc_registerClassPair',
         'objc_getClass', 'pobjc_msgSend', 'pobjc_msgSendSuper',
-        'object_getClass',
+        'object_getClass', 'object_getInstanceVariable', 'object_setInstanceVariable',
         'sel_registerName',
     )
 
@@ -164,7 +167,7 @@ class PyNeApple:
 
             self.class_addProtocol = cfn_at(self._objc(b'class_addProtocol').value, c_byte, c_void_p, c_void_p)
             self.class_addMethod = cfn_at(self._objc(b'class_addMethod').value, c_byte, c_void_p, c_void_p, c_void_p, c_char_p)
-            self.class_addIvar = cfn_at(self._objc(b'class_addIvar').value, c_byte, c_void_p, c_char_p, c_size_t, c_uint8)
+            self.class_addIvar = cfn_at(self._objc(b'class_addIvar').value, c_byte, c_void_p, c_char_p, c_size_t, c_uint8, c_char_p)
 
             self.objc_getProtocol = cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
             self.objc_allocateClassPair = cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
@@ -174,6 +177,12 @@ class PyNeApple:
             self.pobjc_msgSendSuper = self._objc(b'objc_msgSendSuper').value
 
             self.object_getClass = cfn_at(self._objc(b'object_getClass').value, c_void_p, c_void_p)
+            self.object_getInstanceVariable = cfn_at(
+                self._objc(b'object_getInstanceVariable').value, c_void_p,
+                c_void_p, c_char_p, POINTER(c_void_p))
+            self.object_setInstanceVariable = cfn_at(
+                self._objc(b'object_setInstanceVariable').value, c_void_p,
+                c_void_p, c_char_p, c_void_p)
 
             self.sel_registerName = cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
             return self
@@ -221,6 +230,25 @@ class PyNeApple:
             cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
+    def safe_new_object(self, cls: c_void_p, init_name: bytes = b'init', *args, argtypes: tuple[Type, ...] = ()) -> NotNull_VoidP:
+        obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
+        if not obj.value:
+            raise RuntimeError(f'Failed to alloc object of class {cls}')
+        obj = c_void_p(self.send_message(obj, init_name, restype=c_void_p, *args, argtypes=argtypes))
+        if not obj.value:
+            self.send_message(obj, b'release')
+            raise RuntimeError(f'Failed to init object of class {cls}')
+        return NotNull_VoidP(obj.value)
+
+    def release_on_exit(self, obj: c_void_p):
+        self._stack.callback(lambda: self.send_message(obj, b'release'))
+
+    def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
+        Cls = c_void_p(self.objc_getClass(name))
+        if not Cls.value:
+            raise RuntimeError(f'Failed to get class {name.decode()}')
+        return NotNull_VoidP(Cls.value)
+
     def make_block(self, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
@@ -263,64 +291,3 @@ class ObjCBlock(Structure):
             invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
             desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
         )
-
-    # @property
-    # def _as_parameter_(self):
-    #     return cast(c_char_p(self.desc), c_void_p)
-
-
-def main():
-    # TODO: Try except here, as the traceback would otherwise be scattered
-    with PyNeApple() as pa:
-        class PFC_NaviDelegate:
-            # TODO: set ivar, or just do the initialisation in python fully with a dict
-            SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
-
-            @staticmethod
-            def webView0_didFinishNavigation1(this: c_void_p, sel: c_void_p, rp_webview: c_void_p, rp_navi: c_void_p) -> None:
-                ...
-
-        fndatn = pa.load_framework_from_path('Foundation')
-        cf = pa.load_framework_from_path('CoreFoundation')
-        wk = pa.load_framework_from_path('WebKit')
-        debug_log('Loaded libs')
-        NSString = c_void_p(pa.objc_getClass(b'NSString'))
-        NSObject = c_void_p(pa.objc_getClass(b'NSObject'))
-        debug_log(f'objc_getClass NSString@{NSString.value}')
-        nstring = c_void_p(pa.send_message(NSString, b'alloc', restype=c_void_p))
-        debug_log(f'Allocated NSString@{nstring.value}')
-        nstring = c_void_p(pa.send_message(nstring, b'initWithUTF8String:', b'Hello, World!', restype=c_void_p, argtypes=(c_char_p,)))
-        debug_log(f'Instantiated NSString@{nstring.value}')
-        cfn_at(fndatn(b'NSLog').value, None, c_void_p)(nstring)
-        debug_log('Logged NSString')
-
-        lstop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
-        lrun = cfn_at(cf(b'CFRunLoopRun').value, None)
-        mainloop = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
-
-        block = pa.make_block(
-            lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop),
-            None, POINTER(ObjCBlock),
-            # signature=b'v8@?0')
-            signature=b'v@?')
-        cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
-            mainloop, c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value),
-            byref(block))
-        lrun()
-
-        Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
-        if not Py_NaviDg:
-            raise RuntimeError('Failed to allocate class PyForeignClass_NavigationDelegate, did you register twice?')
-        pa.class_addMethod(
-            Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
-            CFUNCTYPE(None, c_void_p, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1),
-            PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-        pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
-        pa.objc_registerClassPair(Py_NaviDg)
-        debug_log('Registered PyForeignClass_NavigationDelegate')
-
-        return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main())

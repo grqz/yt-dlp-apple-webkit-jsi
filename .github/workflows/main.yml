@@ -5,7 +5,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-        python3 py/pyneapple_objc.py    
+        python3 -m py.run    
     - if: always()
       run: |
         make hello && ./hello

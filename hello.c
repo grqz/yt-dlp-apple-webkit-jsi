@@ -299,15 +299,15 @@ int main(void) {
     {
         void *pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(ClsWKWebViewConfiguration, selAlloc);
         pCfg = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, selInit);
-        void *pPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
-        ((FnProtov_i8_objc_msgSend)objc_msgSend)(pPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), 1);
+        void *rpPref = ((FnProtovp_objc_msgSend)objc_msgSend)(pCfg, sel_registerName("preferences"));
+        ((FnProtov_i8_objc_msgSend)objc_msgSend)(rpPref, sel_registerName("setJavaScriptCanOpenWindowsAutomatically:"), 1);
 
         void *psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
             ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
             selInitWithUTF8, (void *)"allowFileAccessFromFileURLs");
-        ((FnProtov_2vp_objc_msgSend)objc_msgSend)(pPref, selSetVal4K, kCFBooleanTrue, psSetKey);
+        ((FnProtov_2vp_objc_msgSend)objc_msgSend)(rpPref, selSetVal4K, kCFBooleanTrue, psSetKey);
         ((FnProtov_objc_msgSend)objc_msgSend)(psSetKey, selRelease);
-        
+
         psSetKey = ((FnProtovp_vp_objc_msgSend)objc_msgSend)(
             ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selAlloc),
             selInitWithUTF8, (void *)"allowUniversalAccessFromFileURLs");
