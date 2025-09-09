@@ -47,9 +47,15 @@ def main():
 
                 @staticmethod
                 def webView0_didFinishNavigation1(this: VOIDP_ARGTYPE, sel: VOIDP_ARGTYPE, rp_webview: VOIDP_ARGTYPE, rp_navi: VOIDP_ARGTYPE) -> None:
-                    print(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
+                    debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
+
+                SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION_WITHERROR = b'v@:@@@'
+
+                @staticmethod
+                def webView0_didFailNavigation1_withError2(this: VOIDP_ARGTYPE, sel: VOIDP_ARGTYPE, rp_webview: VOIDP_ARGTYPE, rp_navi: VOIDP_ARGTYPE, rp_error: VOIDP_ARGTYPE) -> None:
+                    debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFailNavigation: {rp_navi} withError: {rp_error}]')
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
@@ -73,6 +79,10 @@ def main():
                 Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
                 as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p),
                 PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
+            pa.class_addMethod(
+                Py_NaviDg, pa.sel_registerName(b'webView:didFailNavigation:withError:'),
+                as_fnptr(PFC_NaviDelegate.webView0_didFailNavigation1_withError2, None, c_void_p, c_void_p, c_void_p, c_void_p, c_void_p),
+                PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION_WITHERROR)
             pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
             pa.objc_registerClassPair(Py_NaviDg)
             debug_log('Registered PyForeignClass_NavigationDelegate')
@@ -148,13 +158,13 @@ def main():
             debug_log(f'loading: local HTML@{HOST.decode()}')
             rp_nvdg = c_void_p(pa.send_message(
                 p_webview, b'navigationDelegate', restype=c_void_p))
-            pa.send_message(
-                rp_nvdg, b'webView:didFinishNavigation:',
-                p_webview, rp_navi,
-                argtypes=(c_void_p, c_void_p))
+            # pa.send_message(
+            #     rp_nvdg, b'webView:didFinishNavigation:',
+            #     p_webview, rp_navi,
+            #     argtypes=(c_void_p, c_void_p))
 
-            print(f'{rp_nvdg=}')
-            # lrun()
+            debug_log(f'{rp_nvdg=}')
+            lrun()
             debug_log('loaded')
 
             block = pa.make_block(
