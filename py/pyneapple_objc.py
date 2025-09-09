@@ -303,7 +303,7 @@ def main():
             signature=b'v8@?0')
             # signature=b'v@?')
         cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
-            mainloop, cf(b'kCFRunLoopDefaultMode').value,
+            mainloop, c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value),
             byref(block))
         lrun()
 
