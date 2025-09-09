@@ -299,9 +299,10 @@ def main():
         mainloop = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
 
         block = pa.make_block(
-            lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop), None,
-            signature=b'v8@?0')
-            # signature=b'v@?')
+            lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop),
+            None, POINTER(ObjCBlock),
+            # signature=b'v8@?0')
+            signature=b'v@?')
         cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
             mainloop, c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value),
             byref(block))
