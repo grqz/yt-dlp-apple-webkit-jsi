@@ -306,9 +306,9 @@ def main():
         mainloop = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
 
         block = pa.make_block(lambda self: lstop(mainloop), None, signature=b'v@?')
-        cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, ObjCBlock)(
+        cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
             mainloop, cf(b'kCFRunLoopDefaultMode').value,
-            block)
+            byref(block))
         lrun()
 
         Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
