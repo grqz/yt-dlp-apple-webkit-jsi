@@ -45,6 +45,7 @@ def main():
 
                 @staticmethod
                 def webView0_didFinishNavigation1(this: c_void_p, sel: c_void_p, rp_webview: c_void_p, rp_navi: c_void_p) -> None:
+                    print(f'[(PyForeignClass_NavigationDelegate){this.value} webView: {rp_webview.value} didFinishNavigation: {rp_navi.value}]')
                     if cb := navidg_cbdct.get(rp_navi.value or 0):
                         cb()
 
