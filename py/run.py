@@ -35,6 +35,8 @@ class CGRect(Structure):
     )
 
 
+VOIDP_ARGTYPE = int | None
+
 def main():
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
@@ -44,9 +46,9 @@ def main():
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
 
                 @staticmethod
-                def webView0_didFinishNavigation1(this: c_void_p, sel: c_void_p, rp_webview: c_void_p, rp_navi: c_void_p) -> None:
-                    print(f'[(PyForeignClass_NavigationDelegate){this.value} webView: {rp_webview.value} didFinishNavigation: {rp_navi.value}]')
-                    if cb := navidg_cbdct.get(rp_navi.value or 0):
+                def webView0_didFinishNavigation1(this: VOIDP_ARGTYPE, sel: VOIDP_ARGTYPE, rp_webview: VOIDP_ARGTYPE, rp_navi: VOIDP_ARGTYPE) -> None:
+                    print(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
+                    if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
 
             pa.load_framework_from_path('Foundation')
