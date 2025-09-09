@@ -252,12 +252,12 @@ class ObjCBlock(Structure):
         f = 0
         if signature:  # Empty signatures are not acceptable, they should at least be v@?
             f |= 1 << 30
-            self.desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
+            self._desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
             # self.desc = ObjCBlock.BLOCKDESC_SIGNATURE_ST.pack(
             #     0, ObjCBlock.BLOCK_ST.size,
             #     cast(c_char_p(signature), c_void_p).value)
         else:
-            self.desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
+            self._desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
             # self.desc = ObjCBlock.BLOCKDESC_ST.pack(0, ObjCBlock.BLOCK_ST.size)
         # self.block = ObjCBlock.BLOCK_ST.pack(
         #     pyneapple.p_NSConcreteMallocBlock, f, 0, CFUNCTYPE(restype, *argtypes)(cb),
@@ -267,7 +267,7 @@ class ObjCBlock(Structure):
             flags=f,
             reserved=0,
             invoke=cast(CFUNCTYPE(restype, *argtypes)(cb), POINTER(c_ubyte)),
-            desc=byref(self.desc),
+            desc=byref(self._desc),
         )
 
     # @property
