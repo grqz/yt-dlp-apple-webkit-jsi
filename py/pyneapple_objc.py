@@ -315,7 +315,7 @@ def main():
             Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
             CFUNCTYPE(None, c_void_p, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1),
             PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-        pa.class_addProtocol(pa.objc_getProtocol(b'WKNavigationDelegate'))
+        pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
         pa.objc_registerClassPair(Py_NaviDg)
         debug_log('Registered PyForeignClass_NavigationDelegate')
 
