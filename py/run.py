@@ -140,16 +140,16 @@ def main():
 
                 def cb_navi_done():
                     debug_log('Navigation done, stopping loop')
-                    # lstop(mainloop)
+                    lstop(mainloop)
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
             debug_log(f'loading: local HTML@{HOST.decode()}')
-            pa.send_message(
-                p_navidg, b'webView:didFinishNavigation:',
-                p_webview, rp_navi,
-                argtypes=(c_void_p, c_void_p))
-            # lrun()
+            # pa.send_message(
+            #     p_navidg, b'webView:didFinishNavigation:',
+            #     p_webview, rp_navi,
+            #     argtypes=(c_void_p, c_void_p))
+            lrun()
             debug_log('loaded')
 
             block = pa.make_block(
