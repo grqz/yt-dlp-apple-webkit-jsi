@@ -2,7 +2,6 @@ import sys
 
 from contextlib import ExitStack
 from ctypes import (
-    CFUNCTYPE,
     POINTER,
     Structure,
     byref,
@@ -50,9 +49,9 @@ def main():
                     if cb := navidg_cbdct.get(rp_navi.value or 0):
                         cb()
 
-            fndatn = pa.load_framework_from_path('Foundation')
+            pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
-            wk = pa.load_framework_from_path('WebKit')
+            pa.load_framework_from_path('WebKit')
             debug_log('Loaded libs')
             NSString = pa.safe_objc_getClass(b'NSString')
             NSObject = pa.safe_objc_getClass(b'NSObject')
@@ -139,12 +138,16 @@ def main():
 
                 def cb_navi_done():
                     debug_log('Navigation done, stopping loop')
-                    lstop(mainloop)
+                    # lstop(mainloop)
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
             debug_log(f'loading: local HTML@{HOST.decode()}')
-            lrun()
+            pa.send_message(
+                p_navidg, b'webView:didFinishNavigation:',
+                p_webview, rp_navi,
+                argtypes=(c_void_p, c_void_p))
+            # lrun()
             debug_log('loaded')
 
             block = pa.make_block(

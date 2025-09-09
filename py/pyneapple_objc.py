@@ -10,7 +10,7 @@ from ctypes import (
     POINTER,
     Structure,
     c_byte, c_char_p,
-    c_size_t, c_ubyte, c_uint8,
+    c_size_t, c_uint8,
     c_ulong, c_void_p, c_int,
     cast,
     pointer,
@@ -223,11 +223,17 @@ class PyNeApple:
         return ret
 
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Any, argtypes: tuple[Type, ...] = (), is_super: bool = False) -> Optional[int]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Any, argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[int]: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, argtypes: tuple[Type, ...] = (), is_super: bool = False) -> None: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, argtypes: tuple[Type, ...], is_super: bool = False) -> None: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...] = (), is_super: bool = False) -> Optional[bytes]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[bytes]: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Any, is_super: bool = False) -> Optional[int]: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, is_super: bool = False) -> None: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Type[c_char_p], is_super: bool = False) -> Optional[bytes]: ...
 
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[Type] = None, argtypes: tuple[Type, ...] = (), is_super: bool = False):
         sel = c_void_p(self.sel_registerName(sel_name))
