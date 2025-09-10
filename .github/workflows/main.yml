@@ -15,7 +15,7 @@ jobs:
       with:
         python-version: ${{ matrix.pyvsn }}
     - run: |
-        sudo chmod 1777 /cores
+        # sudo chmod 1777 /cores
         ulimit -c unlimited
         python -m py.run
     - if: failure()
