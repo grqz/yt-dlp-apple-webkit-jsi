@@ -96,7 +96,7 @@ class NotNull_VoidP(c_void_p):
 
     @property
     def value(self) -> int:
-        return super().value
+        return super().value  # type: ignore
 
 
 DLSYM_FUNC = Callable[[bytes], NotNull_VoidP]
