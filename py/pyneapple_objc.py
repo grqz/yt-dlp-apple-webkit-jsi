@@ -248,11 +248,11 @@ class PyNeApple:
     def safe_new_object(self, cls: c_void_p, init_name: bytes = b'init', *args, argtypes: tuple[Type, ...] = ()) -> NotNull_VoidP:
         obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
         if not obj.value:
-            raise RuntimeError(f'Failed to alloc object of class {cls}')
+            raise RuntimeError(f'Failed to alloc object of class {cls.value}')
         obj = c_void_p(self.send_message(obj, init_name, restype=c_void_p, *args, argtypes=argtypes))
         if not obj.value:
             self.send_message(obj, b'release')
-            raise RuntimeError(f'Failed to init object of class {cls}')
+            raise RuntimeError(f'Failed to init object of class {cls.value}')
         return NotNull_VoidP(obj.value)
 
     def release_on_exit(self, obj: c_void_p):
