@@ -252,7 +252,7 @@ class PyNeApple:
         obj = c_void_p(self.send_message(obj, init_name, restype=c_void_p, *args, argtypes=argtypes))
         if not obj.value:
             self.send_message(obj, b'release')
-            raise RuntimeError(f'Failed to init object of class {cls.value}')
+            raise RuntimeError(f'Failed to {init_name.decode()} object of class {cls.value}')
         return NotNull_VoidP(obj.value)
 
     def release_on_exit(self, obj: c_void_p):

@@ -128,7 +128,7 @@ def main():
                     argtypes=(c_char_p, ))
                 exsk.callback(pa.send_message, ps_html, b'release')
                 ps_base_url = pa.safe_new_object(
-                    NSString, b'initWithUTF8String:', SCRIPT,
+                    NSString, b'initWithUTF8String:', HOST,
                     argtypes=(c_char_p, ))
                 exsk.callback(pa.send_message, ps_base_url, b'release')
                 purl_base = pa.safe_new_object(
