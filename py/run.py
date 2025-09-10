@@ -150,13 +150,6 @@ def main():
             debug_log(f'loading: local HTML@{HOST.decode()}')
             rp_nvdg = c_void_p(pa.send_message(
                 p_webview, b'navigationDelegate', restype=c_void_p))
-            conforms = bool(pa.class_conformsToProtocol(pa.object_getClass(rp_nvdg), pa.objc_getProtocol(b'WKNavigationDelegate')))
-            debug_log(f'{conforms=}')
-            debug_log(f'{(getmain() == mainloop)=}')
-            # pa.send_message(
-            #     rp_nvdg, b'webView:didFinishNavigation:',
-            #     p_webview, rp_navi,
-            #     argtypes=(c_void_p, c_void_p))
 
             debug_log(f'{rp_nvdg=}')
             lrun()
