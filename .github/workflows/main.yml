@@ -3,9 +3,9 @@ jobs:
   build:
     strategy:
       matrix:
-        pyvsn: ['3.9']  #, 'pypy3.10']
+        pyvsn: ['3.9', 'pypy3.10']
         # 13 is x86_64, 14 is arm64
-        os: ['macos-13']  #, 'macos-14']
+        os: ['macos-13', 'macos-14']
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 1
@@ -14,17 +14,9 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: |
-        # sudo chmod 1777 /cores
-        ulimit -c unlimited
-        python -m py.run
-    - if: failure()
-      run: |
-        ls -R ~/Library/Logs/DiagnosticReports
-        ls -R /cores
     - run: python -m py.dbg
+    - run: python -m py.run
   c:
-    if: 0
     strategy:
       matrix:
         os: ['macos-13', 'macos-14']
