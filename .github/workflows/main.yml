@@ -8,7 +8,6 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: '3.9'
-        cache: 'pip'
     - run: python -m py.run
     - run: python -m py.dbg
     - if: always()
