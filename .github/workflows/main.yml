@@ -1,11 +1,12 @@
 on: [workflow_dispatch]
 jobs:
   build:
-    runs-on: macos-latest
-    timeout-minutes: 1
     strategy:
       matrix:
-        pyvsn: ['3.9', '3.13', 'pypy3.10']
+        pyvsn: ['3.9', 'pypy3.10']
+        os: ['macos-13', 'macos-14']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 1
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v6
@@ -14,7 +15,10 @@ jobs:
     - run: python -m py.run
     - run: python -m py.dbg
   c:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: ['macos-13', 'macos-14']
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 1
     steps:
     - run: |
