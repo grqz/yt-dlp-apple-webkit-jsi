@@ -1,10 +1,15 @@
+from ctypes import c_bool
 from .pyneapple_objc import PyNeApple, debug_log
 from .run import CGRect
 
 with PyNeApple() as pa:
+    pa.load_framework_from_path('Foundation')
     pa.load_framework_from_path('WebKit')
 
+    NSThread = pa.safe_objc_getClass(b'NSThread')
     WKWebView = pa.safe_objc_getClass(b'WKWebView')
+
+    assert pa.send_message(NSThread, b'isMainThread', restype=c_bool), 'not on main?'
 
     therect = CGRect()
     p = pa.safe_new_object(WKWebView, b'initWithFrame:', therect, argtypes=(CGRect, ))
