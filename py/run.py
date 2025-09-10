@@ -167,6 +167,7 @@ def main():
         import traceback
         sys.stderr.write(traceback.format_exc())
         sys.stderr.flush()
+        return 1
     return 0
 
 
