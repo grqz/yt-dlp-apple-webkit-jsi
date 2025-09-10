@@ -14,15 +14,15 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: python -m py.dbg
     - run: |
-        # sudo chmod 1777 /cores
+        sudo chmod 1777 /cores
         ulimit -c unlimited
         python -m py.run
     - if: failure()
       run: |
         ls -R ~/Library/Logs/DiagnosticReports
         ls -R /cores
+    - run: python -m py.dbg
   c:
     if: 0
     strategy:
