@@ -46,7 +46,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: NotNull_VoidP) -> str: ...
 def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> Union[str, T]: ...
 
 
-def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p | NotNull_VoidP, *, default: T = None) -> Union[str, T]:
+def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, default: T = None) -> Union[str, T]:
     return py_typecast(bytes, pa.send_message(
         nsstr, b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
