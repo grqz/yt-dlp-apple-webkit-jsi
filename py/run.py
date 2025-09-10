@@ -82,7 +82,9 @@ def main():
             lstop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             lrun = cfn_at(cf(b'CFRunLoopRun').value, None)
             getmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
-            mainloop = getmain()
+            i_lcurrent = cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)()
+            mainloop = c_void_p(getmain())
+            assert i_lcurrent == mainloop.value
             kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
