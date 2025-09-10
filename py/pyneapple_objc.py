@@ -12,8 +12,7 @@ from ctypes import (
     c_bool,
     c_byte,
     c_char, c_char_p,
-    c_double,
-    c_float,
+    c_double, c_float,
     c_int, c_int16, c_int32, c_int64, c_int8,
     c_long, c_longdouble, c_longlong,
     c_short,
@@ -29,7 +28,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, TypeVar, Union, overload, cast as py_typecast
+from typing import Any, Callable, Generator, Optional, TypeVar, Union, overload, cast as py_typecast
 
 
 T = TypeVar('T')
@@ -159,41 +158,40 @@ class objc_super(Structure):
     )
 
 
-if TYPE_CHECKING:
-    class CRet:
-        Boolean = type[c_bool]
-        Py_Boolean = bool
+class CRet:
+    Boolean = type[c_bool]
+    Py_Boolean = bool
 
-        Char = type[c_char]
-        Py_Char = bytes
+    Char = type[c_char]
+    Py_Char = bytes
 
-        Str = type[c_wchar]
-        Py_Str = str
+    Str = type[c_wchar]
+    Py_Str = str
 
-        _IntegralBase = Union[
-            type[c_byte], type[c_ubyte], type[c_short], type[c_ushort], type[c_int], type[c_int8],
-            type[c_int16], type[c_int32], type[c_int64], type[c_uint], type[c_uint8], type[c_uint16],
-            type[c_uint32], type[c_uint64], type[c_long], type[c_ulong], type[c_longlong], type[c_ulonglong],
-            type[c_size_t], type[c_ssize_t],
-        ]
-        if sys.version_info >= (3, 12):
-            from ctypes import c_time_t
-            Integral = Union[_IntegralBase, type[c_time_t]]
-        else:
-            Integral = _IntegralBase
-        Py_Integral = int
+    _IntegralBase = Union[
+        type[c_byte], type[c_ubyte], type[c_short], type[c_ushort], type[c_int], type[c_int8],
+        type[c_int16], type[c_int32], type[c_int64], type[c_uint], type[c_uint8], type[c_uint16],
+        type[c_uint32], type[c_uint64], type[c_long], type[c_ulong], type[c_longlong], type[c_ulonglong],
+        type[c_size_t], type[c_ssize_t],
+    ]
+    if sys.version_info >= (3, 12):
+        from ctypes import c_time_t
+        Integral = Union[_IntegralBase, type[c_time_t]]
+    else:
+        Integral = _IntegralBase
+    Py_Integral = int
 
-        CharSeq = type[c_char_p]
-        Py_CharSeq = Union[bytes, None]
+    CharSeq = type[c_char_p]
+    Py_CharSeq = Union[bytes, None]
 
-        StrSeq = type[c_wchar_p]
-        Py_StrSeq = Union[str, None]
+    StrSeq = type[c_wchar_p]
+    Py_StrSeq = Union[str, None]
 
-        PVoid = type[c_void_p]
-        Py_PVoid = Union[int, None]
+    PVoid = type[c_void_p]
+    Py_PVoid = Union[int, None]
 
-        Float = Union[type[c_float], type[c_double], type[c_longdouble]]
-        Py_Float = float
+    Float = Union[type[c_float], type[c_double], type[c_longdouble]]
+    Py_Float = float
 
 
 class PyNeApple:
