@@ -37,6 +37,7 @@ class CGRect(Structure):
 
 VOIDP_ARGTYPE = int | None
 
+
 def main():
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
