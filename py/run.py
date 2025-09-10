@@ -18,6 +18,7 @@ from .pyneapple_objc import (
     as_fnptr,
     cfn_at,
     debug_log,
+    write_err,
 )
 from .config import HOST, HTML, SCRIPT
 
@@ -227,8 +228,7 @@ def main():
             debug_log(f'JS returned {s_rtype}: {s_result}')
     except Exception:
         import traceback
-        sys.stderr.write(traceback.format_exc())
-        sys.stderr.flush()
+        write_err(traceback.format_exc())
         return 1
     return 0
 

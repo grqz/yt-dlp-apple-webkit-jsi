@@ -40,21 +40,28 @@ class _DefaultTag:
 
 
 STDOUT_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
+STDERR_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
 
 
 @overload
-def debug_log(msg: T) -> T: ...
+def debug_log(msg: T, *, end='\n') -> T: ...
 @overload
-def debug_log(msg, *, ret: T) -> T: ...
+def debug_log(msg, *, end='\n', ret: T) -> T: ...
 
 
-def debug_log(msg, *, ret: Any = _DefaultTag):
-    os.write(1, (str(msg) + '\n').encode())
+def debug_log(msg, *, end='\n', ret: Any = _DefaultTag):
+    os.write(1, (str(msg) + end).encode())
     if STDOUT_IS_ISREG:
         os.fsync(1)
     if ret is _DefaultTag:
         ret = msg
     return ret
+
+
+def write_err(msg, end='\n'):
+    os.write(2, (str(msg) + end).encode())
+    if STDERR_IS_ISREG:
+        os.fsync(2)
 
 
 def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):
