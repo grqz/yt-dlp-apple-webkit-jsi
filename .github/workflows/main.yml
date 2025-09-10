@@ -14,11 +14,13 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
+    - run: ulimit -c unlimited
     - run: python -m py.run
     - if: failure()
       run: |
+        ulimit -c
         ls -R ~/Library/Logs/DiagnosticReports
-        ls -R /Library/Logs/DiagnosticReports/*.ips
+        ls -R /Library/Logs/DiagnosticReports
       # uses: actions/upload-artifact@v4
       # with:
       #   name: ips
