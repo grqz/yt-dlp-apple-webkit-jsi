@@ -64,7 +64,8 @@ def main():
 
             lstop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             lrun = cfn_at(cf(b'CFRunLoopRun').value, None)
-            mainloop = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
+            getmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
+            mainloop = getmain()
             kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
@@ -151,6 +152,7 @@ def main():
                 p_webview, b'navigationDelegate', restype=c_void_p))
             conforms = bool(pa.class_conformsToProtocol(pa.object_getClass(rp_nvdg), pa.objc_getProtocol(b'WKNavigationDelegate')))
             debug_log(f'{conforms=}')
+            debug_log(f'{(getmain() == mainloop)=}')
             # pa.send_message(
             #     rp_nvdg, b'webView:didFinishNavigation:',
             #     p_webview, rp_navi,
