@@ -22,5 +22,5 @@ jobs:
     timeout-minutes: 1
     steps:
     - run: |
-        make -j $(nproc) hello && ./hello
+        make hello && ./hello
         # make translated && ./translated
