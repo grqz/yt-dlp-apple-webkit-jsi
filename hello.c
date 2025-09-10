@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include <dlfcn.h>
-#include <unistd.h>
 
 #define SYSFWK(fwk) "/System/Library/Frameworks/" #fwk ".framework/" #fwk
 #define ALIGNOF_STRUCTURE(st) offsetof(struct { char c; st s; }, s)
@@ -350,8 +349,7 @@ int main(void) {
         ((FnProtov_objc_msgSend)objc_msgSend)(psHTMLString, selRelease); psHTMLString = NULL;
 
         fprintf(stderr, "Set up WKWebView, Navigating to: %s\n", szBaseURL);
-        // CFRunLoopRun();
-        sleep(5);
+        CFRunLoopRun();
         fputs("Navigation finished\n", stderr);
     }
 
