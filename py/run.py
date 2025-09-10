@@ -48,7 +48,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> U
 
 def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, default: T = None) -> Union[str, T]:
     return py_typecast(bytes, pa.send_message(
-        nsstr, b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
+        py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
 
 def main():
@@ -152,9 +152,9 @@ def main():
                     argtypes=(c_void_p, ))
                 exsk.callback(pa.send_message, purl_base, b'release')
 
-                rp_navi = NotNull_VoidP(pa.send_message(
+                rp_navi = py_typecast(NotNull_VoidP, pa.send_message(
                     p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
-                    restype=c_void_p, argtypes=(c_void_p, c_void_p)) or 0)
+                    restype=c_void_p, argtypes=(c_void_p, c_void_p)))
                 debug_log(f'Navigation started: {rp_navi}')
 
                 def cb_navi_done():
@@ -219,8 +219,8 @@ def main():
                 s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsresult_id))
             elif pa.instanceof(jsresult_id, NSNumber):
                 s_rtype = 'number'
-                s_result = str_from_nsstring(pa, NotNull_VoidP(py_typecast(
-                    int, pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+                s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
+                    pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
             else:
                 s_rtype = '<unknown type>'
                 s_result = '<unknown>'

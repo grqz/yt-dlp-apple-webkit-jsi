@@ -29,7 +29,7 @@ from ctypes import (
 from ctypes.util import find_library
 from functools import wraps
 from stat import S_ISREG
-from typing import Any, Callable, Generator, Optional, TypeVar, Union, overload, cast as py_typecast
+from typing import Any, Callable, Generator, Optional, Protocol, TypeVar, Union, overload, cast as py_typecast
 
 
 T = TypeVar('T')
@@ -105,13 +105,9 @@ class DLError(OSError):
         return wraps(fn)(lambda *args: success_handle(DLError.handle(fn(*partial, *args), fname, ''.join(map(str, args)), errfn())))
 
 
-class NotNull_VoidP(c_void_p):
-    def __init__(self, value: int):
-        super().__init__(value)
-
+class NotNull_VoidP(Protocol):
     @property
-    def value(self) -> int:
-        return py_typecast(int, super().value)
+    def value(self) -> int: ...
 
 
 DLSYM_FUNC = Callable[[bytes], NotNull_VoidP]
@@ -185,6 +181,9 @@ class CRet:
 
     Float = Union[type[c_float], type[c_double], type[c_longdouble]]
     Py_Float = float
+
+
+NULLABLE_VOIDP = Union[NotNull_VoidP, c_void_p]
 
 
 class PyNeApple:
@@ -276,39 +275,39 @@ class PyNeApple:
         return ret
 
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Boolean, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Boolean: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.Boolean, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Boolean: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Char, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Char: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.Char, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Char: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Str, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Str: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.Str, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Str: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Integral, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Integral: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.Integral, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Integral: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.CharSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_CharSeq: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.CharSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_CharSeq: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.StrSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_StrSeq: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.StrSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_StrSeq: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.PVoid, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_PVoid: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.PVoid, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_PVoid: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: None = None, argtypes: tuple[type, ...], is_super: bool = False) -> None: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: None = None, argtypes: tuple[type, ...], is_super: bool = False) -> None: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Boolean, is_super: bool = False) -> CRet.Py_Boolean: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.Boolean, is_super: bool = False) -> CRet.Py_Boolean: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Char, is_super: bool = False) -> CRet.Py_Char: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.Char, is_super: bool = False) -> CRet.Py_Char: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Str, is_super: bool = False) -> CRet.Py_Str: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.Str, is_super: bool = False) -> CRet.Py_Str: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Integral, is_super: bool = False) -> CRet.Py_Integral: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.Integral, is_super: bool = False) -> CRet.Py_Integral: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.CharSeq, is_super: bool = False) -> CRet.Py_CharSeq: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.CharSeq, is_super: bool = False) -> CRet.Py_CharSeq: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.StrSeq, is_super: bool = False) -> CRet.Py_StrSeq: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.StrSeq, is_super: bool = False) -> CRet.Py_StrSeq: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.PVoid, is_super: bool = False) -> CRet.Py_PVoid: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.PVoid, is_super: bool = False) -> CRet.Py_PVoid: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: None = None, is_super: bool = False) -> None: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: None = None, is_super: bool = False) -> None: ...
 
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[type] = None, argtypes: tuple[type, ...] = (), is_super: bool = False):
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: Optional[type] = None, argtypes: tuple[type, ...] = (), is_super: bool = False):
         sel = c_void_p(self.sel_registerName(sel_name))
         debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
@@ -316,17 +315,17 @@ class PyNeApple:
             cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
-    def safe_new_object(self, cls: c_void_p, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
-        obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
+    def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
+        obj = c_void_p(self.send_message(py_typecast(c_void_p, cls), b'alloc', restype=c_void_p))
         if not obj.value:
             raise RuntimeError(f'Failed to alloc object of class {cls.value}')
         obj = c_void_p(self.send_message(obj, init_name, restype=c_void_p, *args, argtypes=argtypes))
         if not obj.value:
             self.send_message(obj, b'release')
             raise RuntimeError(f'Failed to {init_name.decode()} object of class {cls.value}')
-        return NotNull_VoidP(obj.value)
+        return py_typecast(NotNull_VoidP, obj)
 
-    def release_on_exit(self, obj: c_void_p):
+    def release_on_exit(self, obj: NULLABLE_VOIDP):
         self._stack.callback(lambda: self.send_message(obj, b'release'))
 
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
@@ -334,12 +333,12 @@ class PyNeApple:
         if not Cls.value:
             raise RuntimeError(f'Failed to get class {name.decode()}')
         debug_log(f'getClass {name.decode()} = {Cls.value}')
-        return NotNull_VoidP(Cls.value)
+        return py_typecast(NotNull_VoidP, Cls.value)
 
     def make_block(self, cb: Callable, restype: Optional[type], *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
-    def instanceof(self, obj: c_void_p, cls: c_void_p) -> bool:
+    def instanceof(self, obj: NULLABLE_VOIDP, cls: NULLABLE_VOIDP) -> bool:
         return bool(self.send_message(
             obj, b'isKindOfClass:',
             cls, restype=c_byte, argtypes=(c_void_p, )))
