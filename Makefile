@@ -23,9 +23,6 @@ hello: hello.o config.o cbmap.o
 hello.o: hello.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-testcall: testcall.m
-	$(OBJC) $(OBJCFLAGS) $(LDFLAGS) $^ -o $@
-
 config.o: config.cpp
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
 

@@ -10,5 +10,4 @@ jobs:
     - if: always()
       run: |
         make hello && ./hello
-        make testcall && ./testcall
         # make translated && ./translated
