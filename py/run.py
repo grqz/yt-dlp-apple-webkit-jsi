@@ -152,9 +152,9 @@ def main():
                     argtypes=(c_void_p, ))
                 exsk.callback(pa.send_message, purl_base, b'release')
 
-                rp_navi = py_typecast(NotNull_VoidP, pa.send_message(
+                rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
                     p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
-                    restype=c_void_p, argtypes=(c_void_p, c_void_p)))
+                    restype=c_void_p, argtypes=(c_void_p, c_void_p))))
                 debug_log(f'Navigation started: {rp_navi}')
 
                 def cb_navi_done():

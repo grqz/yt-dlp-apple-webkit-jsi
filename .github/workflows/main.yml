@@ -3,11 +3,14 @@ jobs:
   build:
     runs-on: macos-latest
     timeout-minutes: 1
+    strategy:
+      matrix:
+        pyvsn: ['3.9', '3.13', 'pypy3.10']
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v6
       with:
-        python-version: 'pypy3.10'
+        python-version: ${{ matrix.pyvsn }}
     - run: python -m py.run
     - run: python -m py.dbg
     - if: always()
