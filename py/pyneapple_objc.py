@@ -45,8 +45,8 @@ def debug_log(msg, *, ret: T) -> T: ...
 
 
 def debug_log(msg, *, ret: Any = _DefaultTag):
-    sys.stdout.write(str(msg) + '\n')
-    sys.stdout.flush()
+    os.write(1, (str(msg) + '\n').encode())
+    os.fsync(1)
     if ret is _DefaultTag:
         ret = msg
     return ret
