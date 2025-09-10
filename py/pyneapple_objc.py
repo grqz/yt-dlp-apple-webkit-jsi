@@ -1,5 +1,6 @@
 import os
 import platform
+from stat import S_ISREG
 import struct
 import sys
 
@@ -38,6 +39,8 @@ class _DefaultTag:
     ...
 
 
+STDOUT_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
+
 @overload
 def debug_log(msg: T) -> T: ...
 @overload
@@ -46,7 +49,8 @@ def debug_log(msg, *, ret: T) -> T: ...
 
 def debug_log(msg, *, ret: Any = _DefaultTag):
     os.write(1, (str(msg) + '\n').encode())
-    os.fsync(1)
+    if STDOUT_IS_ISREG:
+        os.fsync(1)
     if ret is _DefaultTag:
         ret = msg
     return ret
