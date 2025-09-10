@@ -225,15 +225,6 @@ def main():
                 s_rtype = '<unknown type>'
                 s_result = '<unknown>'
             debug_log(f'JS returned {s_rtype}: {s_result}')
-
-            block = pa.make_block(
-                lambda this: debug_log(f'stopping loop for {this}', ret=None) or lstop(mainloop),
-                None, POINTER(ObjCBlock),
-                signature=b'v@?')
-            cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(
-                mainloop, c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value),
-                byref(block))
-            lrun()
     except Exception:
         import traceback
         sys.stderr.write(traceback.format_exc())
