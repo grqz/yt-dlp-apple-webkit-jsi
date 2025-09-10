@@ -15,7 +15,7 @@ jobs:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.run
     - if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ips
         path: ~/Library/Logs/DiagnosticReports/*.ips
