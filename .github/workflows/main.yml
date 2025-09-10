@@ -14,6 +14,11 @@ jobs:
       with:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.run
+    - if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ips
+        path: ~/Library/Logs/DiagnosticReports/*.ips
     - run: python -m py.dbg
   c:
     strategy:
