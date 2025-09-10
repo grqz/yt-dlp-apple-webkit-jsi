@@ -262,6 +262,7 @@ class PyNeApple:
         Cls = c_void_p(self.objc_getClass(name))
         if not Cls.value:
             raise RuntimeError(f'Failed to get class {name.decode()}')
+        debug_log(f'getClass {name.decode()} = {Cls.value}')
         return NotNull_VoidP(Cls.value)
 
     def make_block(self, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None) -> 'ObjCBlock':
