@@ -1,6 +1,5 @@
 import os
 import platform
-from stat import S_ISREG
 import struct
 import sys
 
@@ -29,6 +28,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from functools import wraps
+from stat import S_ISREG
 from typing import Any, Callable, Generator, Optional, TypeVar, Union, overload, cast as py_typecast
 
 
