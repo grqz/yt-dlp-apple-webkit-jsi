@@ -270,7 +270,7 @@ class PyNeApple:
 
     def instanceof(self, obj: c_void_p, cls: c_void_p) -> bool:
         return bool(self.send_message(
-            obj, b'isKindOfClass',
+            obj, b'isKindOfClass:',
             cls, restype=c_byte, argtypes=(c_void_p, )))
 
 
