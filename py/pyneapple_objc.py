@@ -41,6 +41,7 @@ class _DefaultTag:
 
 STDOUT_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
 
+
 @overload
 def debug_log(msg: T) -> T: ...
 @overload
