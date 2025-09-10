@@ -34,18 +34,6 @@ from typing import Any, Callable, Generator, Optional, TypeVar, Union, overload,
 T = TypeVar('T')
 
 
-@overload
-def ctypes_result_of(typ: Any) -> Optional[int]: ...
-@overload
-def ctypes_result_of(typ: type[c_char_p]) -> Optional[bytes]: ...
-@overload
-def ctypes_result_of(typ: type[None]) -> None: ...
-
-
-def ctypes_result_of(typ: Any) -> Any:
-    raise NotImplementedError
-
-
 class _DefaultTag:
     ...
 
