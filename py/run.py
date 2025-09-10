@@ -184,8 +184,10 @@ def main():
 
                 def completion_handler(self: VOIDP_ARGTYPE, id_result: VOIDP_ARGTYPE, err: VOIDP_ARGTYPE):
                     nonlocal jsresult_id, jsresult_err
-                    jsresult_id = c_void_p(id_result)
-                    jsresult_err = c_void_p(err)
+                    jsresult_id = c_void_p(pa.send_message(c_void_p(id_result or 0), b'copy', restype=c_void_p))
+                    pa.release_on_exit(jsresult_id)
+                    jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
+                    pa.release_on_exit(jsresult_err)
                     debug_log(f'JS done, stopping loop; {id_result=}, {err=}')
                     lstop(mainloop)
 

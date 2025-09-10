@@ -253,7 +253,6 @@ int main(void) {
     void *selDealloc = sel_registerName("dealloc");
     void *selInit = sel_registerName("init");
     void *selRelease = sel_registerName("release");
-    void *selClass = sel_registerName("class");
     void *selIsKindOfClass = sel_registerName("isKindOfClass:");
     void *selSetVal4K = sel_registerName("setValue:forKey:");
     void *selUTF8Str = sel_registerName("UTF8String");

@@ -9,19 +9,42 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
-    c_byte, c_char_p,
-    c_size_t, c_uint8,
-    c_ulong, c_void_p, c_int,
+    c_bool,
+    c_byte,
+    c_char, c_char_p,
+    c_double,
+    c_float,
+    c_int, c_int16, c_int32, c_int64, c_int8,
+    c_long, c_longdouble, c_longlong,
+    c_short,
+    c_size_t, c_ssize_t,
+    c_ubyte,
+    c_uint, c_uint16, c_uint32, c_uint64, c_uint8,
+    c_ulong, c_ulonglong, c_ushort,
+    c_void_p,
+    c_wchar, c_wchar_p,
     cast,
     pointer,
     sizeof,
 )
 from ctypes.util import find_library
 from functools import wraps
-from typing import Any, Callable, Generator, Optional, Type, TypeVar, overload, cast as py_typecast
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional, TypeVar, Union, overload, cast as py_typecast
 
 
 T = TypeVar('T')
+
+
+@overload
+def ctypes_result_of(typ: Any) -> Optional[int]: ...
+@overload
+def ctypes_result_of(typ: type[c_char_p]) -> Optional[bytes]: ...
+@overload
+def ctypes_result_of(typ: type[None]) -> None: ...
+
+
+def ctypes_result_of(typ: Any) -> Any:
+    raise NotImplementedError
 
 
 class _DefaultTag:
@@ -42,19 +65,19 @@ def debug_log(msg, *, ret: Any = _DefaultTag):
     return ret
 
 
-def setup_signature(c_fn, restype: Optional[Type] = None, *argtypes: Type):
+def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):
     c_fn.argtypes = argtypes
     c_fn.restype = restype
     return c_fn
 
 
-def cfn_at(addr: int, restype: Optional[Type] = None, *argtypes: Type) -> Callable:
+def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
     debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
-def as_fnptr(cb: Callable, restype: Optional[Type] = None, *argtypes: Type) -> c_void_p:
+def as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type) -> c_void_p:
     argss = ', '.join(str(t) for t in argtypes)
     fnptr = cast(CFUNCTYPE(restype, *argtypes)(cb), c_void_p)
     debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {fnptr.value}')
@@ -134,6 +157,43 @@ class objc_super(Structure):
         ('receiver', c_void_p),
         ('super_class', c_void_p),
     )
+
+
+if TYPE_CHECKING:
+    class CRet:
+        Boolean = type[c_bool]
+        Py_Boolean = bool
+
+        Char = type[c_char]
+        Py_Char = bytes
+
+        Str = type[c_wchar]
+        Py_Str = str
+
+        _IntegralBase = Union[
+            type[c_byte], type[c_ubyte], type[c_short], type[c_ushort], type[c_int], type[c_int8],
+            type[c_int16], type[c_int32], type[c_int64], type[c_uint], type[c_uint8], type[c_uint16],
+            type[c_uint32], type[c_uint64], type[c_long], type[c_ulong], type[c_longlong], type[c_ulonglong],
+            type[c_size_t], type[c_ssize_t],
+        ]
+        if sys.version_info >= (3, 12):
+            from ctypes import c_time_t
+            Integral = Union[_IntegralBase, type[c_time_t]]
+        else:
+            Integral = _IntegralBase
+        Py_Integral = int
+
+        CharSeq = type[c_char_p]
+        Py_CharSeq = Union[bytes, None]
+
+        StrSeq = type[c_wchar_p]
+        Py_StrSeq = Union[str, None]
+
+        PVoid = type[c_void_p]
+        Py_PVoid = Union[int, None]
+
+        Float = Union[type[c_float], type[c_double], type[c_longdouble]]
+        Py_Float = float
 
 
 class PyNeApple:
@@ -225,19 +285,39 @@ class PyNeApple:
         return ret
 
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[bytes]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Boolean, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Boolean: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Any, argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[int]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Char, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Char: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, argtypes: tuple[Type, ...], is_super: bool = False) -> None: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Str, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Str: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Type[c_char_p], is_super: bool = False) -> Optional[bytes]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.Integral, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_Integral: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Any, is_super: bool = False) -> Optional[int]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.CharSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_CharSeq: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, is_super: bool = False) -> None: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.StrSeq, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_StrSeq: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: CRet.PVoid, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_PVoid: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: None = None, argtypes: tuple[type, ...], is_super: bool = False) -> None: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Boolean, is_super: bool = False) -> CRet.Py_Boolean: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Char, is_super: bool = False) -> CRet.Py_Char: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Str, is_super: bool = False) -> CRet.Py_Str: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.Integral, is_super: bool = False) -> CRet.Py_Integral: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.CharSeq, is_super: bool = False) -> CRet.Py_CharSeq: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.StrSeq, is_super: bool = False) -> CRet.Py_StrSeq: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: CRet.PVoid, is_super: bool = False) -> CRet.Py_PVoid: ...
+    @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: None = None, is_super: bool = False) -> None: ...
 
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[Type] = None, argtypes: tuple[Type, ...] = (), is_super: bool = False):
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[type] = None, argtypes: tuple[type, ...] = (), is_super: bool = False):
         sel = c_void_p(self.sel_registerName(sel_name))
         debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
@@ -245,7 +325,7 @@ class PyNeApple:
             cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
-    def safe_new_object(self, cls: c_void_p, init_name: bytes = b'init', *args, argtypes: tuple[Type, ...] = ()) -> NotNull_VoidP:
+    def safe_new_object(self, cls: c_void_p, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
         obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
         if not obj.value:
             raise RuntimeError(f'Failed to alloc object of class {cls.value}')
@@ -265,7 +345,7 @@ class PyNeApple:
         debug_log(f'getClass {name.decode()} = {Cls.value}')
         return NotNull_VoidP(Cls.value)
 
-    def make_block(self, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None) -> 'ObjCBlock':
+    def make_block(self, cb: Callable, restype: Optional[type], *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
     def instanceof(self, obj: c_void_p, cls: c_void_p) -> bool:
@@ -298,7 +378,7 @@ class ObjCBlock(Structure):
     BLOCKDESC_ST = struct.Struct(b'@LL')
     BLOCK_TYPE = b'@?'
 
-    def __init__(self, pyneapple: PyNeApple, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None):
+    def __init__(self, pyneapple: PyNeApple, cb: Callable, restype: Optional[type], *argtypes: type, signature: Optional[bytes] = None):
         f = 0
         if signature:  # Empty signatures are not acceptable, they should at least be v@?
             f |= 1 << 30
