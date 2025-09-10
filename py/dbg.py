@@ -10,12 +10,12 @@ with PyNeApple() as pa:
     NSThread = pa.safe_objc_getClass(b'NSThread')
     WKWebView = pa.safe_objc_getClass(b'WKWebView')
 
+    assert pa.send_message(NSThread, b'isMainThread', restype=c_bool), 'not on main thread'
+
     i_lcurrent = cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)()
     i_lmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)()
 
     assert i_lcurrent == i_lmain, 'current loop not main'
-
-    assert pa.send_message(NSThread, b'isMainThread', restype=c_bool), 'not on main thread'
 
     therect = CGRect()
     p = pa.safe_new_object(WKWebView, b'initWithFrame:', therect, argtypes=(CGRect, ))
