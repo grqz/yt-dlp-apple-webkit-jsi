@@ -8,7 +8,7 @@ from ctypes import (
     c_byte, c_char_p,
     c_double, c_void_p,
 )
-from typing import Callable
+from typing import Callable, Optional
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -35,7 +35,7 @@ class CGRect(Structure):
     )
 
 
-VOIDP_ARGTYPE = int | None
+VOIDP_ARGTYPE = Optional[int]
 
 
 def main():

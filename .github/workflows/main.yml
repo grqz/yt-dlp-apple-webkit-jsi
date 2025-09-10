@@ -5,8 +5,11 @@ jobs:
     timeout-minutes: 1
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.9'
     - run: |
-        python3 -m py.run
+        python -m py.run
     - if: always()
       run: |
         make hello && ./hello
