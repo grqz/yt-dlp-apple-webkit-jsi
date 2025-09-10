@@ -13,7 +13,10 @@ jobs:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.run
     - run: python -m py.dbg
-    - if: always()
-      run: |
+  c:
+    runs-on: macos-latest
+    timeout-minutes: 1
+    steps:
+    - run: |
         make hello && ./hello
         # make translated && ./translated
