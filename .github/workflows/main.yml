@@ -7,7 +7,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v6
       with:
-        python-version: '3.9'
+        python-version: 'pypy3.10'
     - run: python -m py.run
     - run: python -m py.dbg
     - if: always()
