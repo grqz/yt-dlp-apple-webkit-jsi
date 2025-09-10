@@ -6,9 +6,10 @@ from ctypes import (
     Structure,
     byref,
     c_byte, c_char_p,
-    c_double, c_void_p,
+    c_double,
+    c_long, c_void_p,
 )
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar, cast as py_typecast, overload
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -36,6 +37,18 @@ class CGRect(Structure):
 
 
 VOIDP_ARGTYPE = Optional[int]
+T = TypeVar('T')
+
+
+@overload
+def str_from_nsstring(pa: PyNeApple, nsstr: NotNull_VoidP) -> str: ...
+@overload
+def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> str | T: ...
+
+
+def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p | NotNull_VoidP, *, default: T = None) -> str | T:
+    return py_typecast(bytes, pa.send_message(
+        nsstr, b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
 
 def main():
@@ -56,9 +69,12 @@ def main():
             cf = pa.load_framework_from_path('CoreFoundation')
             pa.load_framework_from_path('WebKit')
             debug_log('Loaded libs')
+            NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
+            NSNumber = pa.safe_objc_getClass(b'NSNumber')
             NSObject = pa.safe_objc_getClass(b'NSObject')
             NSURL = pa.safe_objc_getClass(b'NSURL')
+            WKContentWorld = pa.safe_objc_getClass(b'WKContentWorld')
             WKWebView = pa.safe_objc_getClass(b'WKWebView')
             WKWebViewConfiguration = c_void_p(pa.objc_getClass(b'WKWebViewConfiguration'))
 
@@ -142,21 +158,74 @@ def main():
                 debug_log(f'Navigation started: {rp_navi}')
 
                 def cb_navi_done():
-                    debug_log('Navigation done, stopping loop')
+                    debug_log('navigation done, stopping loop')
                     lstop(mainloop)
 
                 navidg_cbdct[rp_navi.value] = cb_navi_done
 
-            debug_log(f'loading: local HTML@{HOST.decode()}')
-            rp_nvdg = c_void_p(pa.send_message(
-                p_webview, b'navigationDelegate', restype=c_void_p))
+                debug_log(f'loading: local HTML@{HOST.decode()}')
+                lrun()
+            debug_log('navigation done')
 
-            debug_log(f'{rp_nvdg=}')
-            lrun()
-            debug_log('loaded')
+            jsresult_id = c_void_p()
+            jsresult_err = c_void_p()
+            with ExitStack() as exsk:
+                ps_script = pa.safe_new_object(
+                    NSString, b'initWithUTF8String:', SCRIPT,
+                    argtypes=(c_char_p, ))
+                exsk.callback(pa.send_message, ps_script, b'release')
+
+                pd_jsargs = pa.safe_new_object(NSDictionary)
+                exsk.callback(pa.send_message, pd_jsargs, b'release')
+
+                rp_pageworld = c_void_p(pa.send_message(
+                    WKContentWorld, b'pageWorld',
+                    restype=c_void_p))
+
+                def completion_handler(self: VOIDP_ARGTYPE, id_result: VOIDP_ARGTYPE, err: VOIDP_ARGTYPE):
+                    nonlocal jsresult_id, jsresult_err
+                    jsresult_id = c_void_p(id_result)
+                    jsresult_err = c_void_p(err)
+                    debug_log(f'JS done, stopping loop; {id_result=}, {err=}')
+                    lstop(mainloop)
+
+                chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
+
+                pa.send_message(
+                    # Requires iOS 15.0+, maybe test its availability first?
+                    p_webview, b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
+                    ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
+                    argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
+
+                lrun()
+
+            if jsresult_err:
+                code = pa.send_message(jsresult_err, b'code', restype=c_long)
+                s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
+                    jsresult_err, b'domain', restype=c_void_p)), default='<unknown>')
+                s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
+                    c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
+                    b'description', restype=c_void_p)), default='<no description provided>')
+                raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
+
+            debug_log('JS execution completed')
+            if not jsresult_id:
+                s_rtype = 'nothing'
+                s_result = 'nil'
+            elif pa.instanceof(jsresult_id, NSString):
+                s_rtype = 'string'
+                s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsresult_id))
+            elif pa.instanceof(jsresult_id, NSNumber):
+                s_rtype = 'number'
+                s_result = str_from_nsstring(pa, NotNull_VoidP(py_typecast(
+                    int, pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+            else:
+                s_rtype = '<unknown type>'
+                s_result = '<unknown>'
+            debug_log(f'JS returned {s_rtype}: {s_result}')
 
             block = pa.make_block(
-                lambda self: debug_log('stopping loop', ret=None) or lstop(mainloop),
+                lambda this: debug_log(f'stopping loop for {this}', ret=None) or lstop(mainloop),
                 None, POINTER(ObjCBlock),
                 signature=b'v@?')
             cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))(

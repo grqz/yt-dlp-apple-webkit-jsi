@@ -388,11 +388,11 @@ int main(void) {
 
     if (!userData) {
         fputs("Javascript returned nil\n", stderr);
-    } else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSString, selClass))) {
+    } else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ClsNSString)) {
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(userData, selUTF8Str);
         fprintf(stderr, "Javascript returned string: %s\n", szRet);
     }
-    else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ((FnProtovp_objc_msgSend)objc_msgSend)(ClsNSNumber, selClass))) {
+    else if (((FnProtoi8_vp_objc_msgSend)objc_msgSend)(userData, selIsKindOfClass, ClsNSNumber)) {
         void *rpsStrVal = ((FnProtovp_objc_msgSend)objc_msgSend)(userData, sel_registerName("stringValue"));
         const char *szRet = ((FnProtovp_objc_msgSend)objc_msgSend)(rpsStrVal, selUTF8Str);
         fprintf(stderr, "Javascript returned Number: %s\n", szRet);

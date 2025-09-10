@@ -18,7 +18,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from functools import wraps
-from typing import Any, Callable, Generator, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Generator, Optional, Type, TypeVar, overload, cast as py_typecast
 
 
 T = TypeVar('T')
@@ -96,7 +96,7 @@ class NotNull_VoidP(c_void_p):
 
     @property
     def value(self) -> int:
-        return super().value  # type: ignore
+        return py_typecast(int, super().value)
 
 
 DLSYM_FUNC = Callable[[bytes], NotNull_VoidP]
@@ -225,17 +225,17 @@ class PyNeApple:
         return ret
 
     @overload
+    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[bytes]: ...
+    @overload
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Any, argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[int]: ...
     @overload
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, argtypes: tuple[Type, ...], is_super: bool = False) -> None: ...
     @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Type[c_char_p], argtypes: tuple[Type, ...], is_super: bool = False) -> Optional[bytes]: ...
+    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Type[c_char_p], is_super: bool = False) -> Optional[bytes]: ...
     @overload
     def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Any, is_super: bool = False) -> Optional[int]: ...
     @overload
     def send_message(self, obj: c_void_p, sel_name: bytes, *, is_super: bool = False) -> None: ...
-    @overload
-    def send_message(self, obj: c_void_p, sel_name: bytes, *, restype: Type[c_char_p], is_super: bool = False) -> Optional[bytes]: ...
 
     def send_message(self, obj: c_void_p, sel_name: bytes, *args, restype: Optional[Type] = None, argtypes: tuple[Type, ...] = (), is_super: bool = False):
         sel = c_void_p(self.sel_registerName(sel_name))
@@ -267,6 +267,11 @@ class PyNeApple:
 
     def make_block(self, cb: Callable, restype: Optional[Type], *argtypes: Type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
+
+    def instanceof(self, obj: c_void_p, cls: c_void_p) -> bool:
+        return bool(self.send_message(
+            obj, b'isKindOfClass',
+            cls, restype=c_byte, argtypes=(c_void_p, )))
 
 
 class ObjCBlockDescBase(Structure):
