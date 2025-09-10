@@ -16,17 +16,13 @@ jobs:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.dbg
     - run: |
-        sudo chmod 1777 /cores
+        # sudo chmod 1777 /cores
         ulimit -c unlimited
         python -m py.run
     - if: failure()
       run: |
         ls -R ~/Library/Logs/DiagnosticReports
         ls -R /cores
-      # uses: actions/upload-artifact@v4
-      # with:
-      #   name: ips
-      #   path: ~/Library/Logs/DiagnosticReports/*.ips
   c:
     if: 0
     strategy:
