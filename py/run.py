@@ -10,7 +10,7 @@ from ctypes import (
     c_double,
     c_long, c_void_p,
 )
-from typing import Callable, Coroutine, Optional, TypeVar, Union, cast as py_typecast, overload
+from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, cast as py_typecast, overload
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -96,19 +96,48 @@ def main():
                 CFRunLoopPerformBlock(loop, mode, pa.make_block(pycb))
                 CFRunLoopWakeUp(loop)
 
-            def runcoro_on_current(coro: Coroutine[None, None, T], *, default: U = None) -> Union[T, U]:
+            def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
+                active_cbs = set()
                 ret: Union[T, U] = default
+                rexc: Optional[BaseException] = None
 
-                def _coro_step():
-                    nonlocal ret
+                def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
+                    nonlocal ret, rexc
+                    fut: co_Fut
                     try:
-                        coro.send(None)
+                        if exc is not None:
+                            fut = coro.throw(exc)
+                        else:
+                            fut = coro.send(v)
                     except StopIteration as e:
                         CFRunLoopStop(currloop)
                         ret = e.value
+                    except BaseException as e:
+                        CFRunLoopStop(currloop)
+                        rexc = e
+
+                    def _on_fut_done(f: co_Fut):
+                        try:
+                            fut_res = f.result()
+                        except BaseException as fut_err:
+                            def _exc_cb(fut_err=fut_err):
+                                _coro_step(exc=fut_err)
+                                active_cbs.remove(_exc_cb)
+                            scheduled = _exc_cb
+                        else:
+                            def _normal_cb():
+                                _coro_step(fut_res)
+                                active_cbs.remove(_normal_cb)
+                            scheduled = _normal_cb
+                        active_cbs.add(scheduled)
+                        schedule_on(currloop, scheduled)
+                    fut.add_done_callback(_on_fut_done)
+
                 schedule_on(currloop, _coro_step)
                 CFRunLoopRun()
+                if rexc is not None:
+                    raise rexc from None
                 return ret
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
