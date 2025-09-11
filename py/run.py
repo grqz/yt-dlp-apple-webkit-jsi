@@ -1,6 +1,5 @@
 import sys
 
-from asyncio import Future as co_Fut
 from contextlib import ExitStack
 from ctypes import (
     POINTER,
@@ -10,7 +9,7 @@ from ctypes import (
     c_double,
     c_long, c_void_p,
 )
-from typing import Any, Callable, Coroutine, Optional, TypeVar, Union, cast as py_typecast, overload
+from typing import Any, Awaitable, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast as py_typecast, overload
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -22,6 +21,47 @@ from .pyneapple_objc import (
     write_err,
 )
 from .config import HOST, HTML, SCRIPT
+
+
+VOIDP_ARGTYPE = Optional[int]
+T = TypeVar('T')
+U = TypeVar('U')
+
+
+class CFEL_Future(Awaitable[T]):
+    def __init__(self):
+        self._cbs: list[Callable[['CFEL_Future[T]'], None]] = []
+        self._done = False
+        self._result: Optional[T] = None
+
+    def result(self) -> T:
+        if not self._done:
+            raise RuntimeError('result method called upon a future that is not yet resolved')
+        return py_typecast(T, self._result)
+
+    def add_done_callback(self, cb: Callable[['CFEL_Future[T]'], None]) -> None:
+        if not self._done:
+            self._cbs.append(cb)
+        else:
+            cb(self)
+
+    def set_result(self, res: T) -> None:
+        if self._done:
+            raise RuntimeError('double resolve')
+        self._result = res
+        self._done = True
+        for cb in self._cbs:
+            cb(self)
+        self._cbs.clear()
+
+    def done(self) -> bool:
+        return self._done
+
+    def __await__(self) -> Generator[Any, Any, T]:
+        if self._done:
+            return py_typecast(T, self._result)
+        else:
+            yield self
 
 
 class DoubleDouble(Structure):
@@ -36,11 +76,6 @@ class CGRect(Structure):
         ('orig', DoubleDouble),
         ('size', DoubleDouble),
     )
-
-
-VOIDP_ARGTYPE = Optional[int]
-T = TypeVar('T')
-U = TypeVar('U')
 
 
 @overload
@@ -106,7 +141,7 @@ def main():
                 def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
                     nonlocal ret, rexc
                     debug_log(f'coro step: {v=}; {exc=}')
-                    fut: co_Fut
+                    fut: CFEL_Future
                     try:
                         if exc is not None:
                             fut = coro.throw(exc)
@@ -125,7 +160,7 @@ def main():
                     else:
                         debug_log(f'attaching done cb to: {fut=}')
 
-                    def _on_fut_done(f: co_Fut):
+                    def _on_fut_done(f: CFEL_Future):
                         debug_log(f'fut done: {fut=}')
                         try:
                             fut_res = f.result()
@@ -150,6 +185,7 @@ def main():
                         active_cbs.remove(_on_fut_done)
                     active_cbs.add(_on_fut_done)
                     fut.add_done_callback(_on_fut_done)
+                    debug_log(f'added done callback {_on_fut_done=}')
 
                 schedule_on(currloop, _coro_step)
                 CFRunLoopRun()
@@ -216,7 +252,7 @@ def main():
                     p_navidg, argtypes=(c_void_p, ))
                 debug_log('webview set navidg')
 
-                fut_navidone: co_Fut[None] = co_Fut()
+                fut_navidone: CFEL_Future[None] = CFEL_Future()
                 with ExitStack() as exsk:
                     ps_html = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', HTML,
@@ -248,7 +284,7 @@ def main():
                     await fut_navidone
                 debug_log('navigation done')
 
-                fut_jsdone: co_Fut[tuple[c_void_p, c_void_p]] = co_Fut()
+                fut_jsdone: CFEL_Future[tuple[c_void_p, c_void_p]] = CFEL_Future()
                 with ExitStack() as exsk:
                     ps_script = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', SCRIPT,
