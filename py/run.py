@@ -154,7 +154,7 @@ def main():
                 active_cbs: set,
                 loop: c_void_p,
                 default: U = None,
-                finish: Callable[[bool, Union[BaseException, StopIteration]], None]
+                finish: Callable[[BaseException], None]
             ) -> CFEL_CoroResult[Union[T, U]]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
                 res = CFEL_CoroResult[Union[T, U]](default)
@@ -171,12 +171,12 @@ def main():
                             fut = coro.send(v)
                     except StopIteration as si:
                         debug_log(f'stopping with return value: {si.value=}')
-                        finish(True, si)
+                        finish(si)
                         res.ret = si.value
                         return
                     except BaseException as e:
                         debug_log(f'will throw exc raised from coro: {e=}')
-                        finish(False, e)
+                        finish(e)
                         res.rexc = e
                         return
                     else:
@@ -215,7 +215,7 @@ def main():
 
             def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
                 active_cbs = set()
-                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=currloop, default=default, finish=lambda s, e: CFRunLoopStop(currloop))
+                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=currloop, default=default, finish=lambda exc: CFRunLoopStop(currloop))
                 CFRunLoopRun()
                 debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
                 if res.rexc is not None:
@@ -229,7 +229,7 @@ def main():
                 cv = Condition()
                 active_cbs = set()
 
-                def finish(s: bool, e: Union[BaseException, StopIteration]):
+                def finish(e: Union[BaseException, StopIteration]):
                     nonlocal finished
                     with cv:
                         finished = True

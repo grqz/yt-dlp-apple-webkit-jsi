@@ -19,9 +19,11 @@ jobs:
     - run: python -m py.dbg
     - run: |
         ulimit -c unlimited
+        sudo chmod a+rw /cores
         python -m py.run
     - if: failure()
       run: |
+        ls -R .
         ls -R ~/Library/Logs
         ls -R /Library/Logs
         ls -R /private/var/log
