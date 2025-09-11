@@ -1,4 +1,5 @@
 import dataclasses
+import os
 import sys
 
 from contextlib import AsyncExitStack, ExitStack
@@ -106,6 +107,8 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
 
 
 def main():
+    debug_log(f'PID: {os.getpid()}')
+    os.symlink(f'/cores/core.{os.getpid()}', 'core')
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
         with PyNeApple() as pa:

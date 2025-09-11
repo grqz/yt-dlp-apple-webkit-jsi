@@ -10,7 +10,7 @@ jobs:
           - 'macos-15'  # arm64
       fail-fast: false
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v6
@@ -29,14 +29,13 @@ jobs:
         ls -R /private/var/log
         ls -R ~/Library/Logs/DiagnosticReports
         ls -R /cores
+        lldb -c core
     - if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-cores
-        path: |
-          /private/var/log/DiagnosticMessages
-          /private/var/log/asl
-          /cores
+        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-core
+        path: core
+        compression-level: 9
   c:
     strategy:
       matrix:
