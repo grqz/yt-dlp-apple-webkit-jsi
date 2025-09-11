@@ -17,16 +17,25 @@ jobs:
       with:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.dbg
-    - run: python -m py.run
+    - run: |
+        ulimit -c unlimited
+        python -m py.run
+    - if: failure()
+      run: |
+        ls -R ~/Library/Logs
+        ls -R /Library/Logs
+        ls -R /private/var/log
+        grep crash /var/log/system.log
+        ls -R ~/Library/Logs/DiagnosticReports
+        ls -R ~/Library/Logs/CrashReporter
+        ls /cores
   c:
     strategy:
       matrix:
         os:
           - 'macos-13'  # x86_64
           - 'macos-14'  # arm64
-          - 'macos-14-large'  # x86_64
           - 'macos-15'  # arm64
-          - 'macos-15-large'  # x86_64
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 1

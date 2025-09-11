@@ -32,22 +32,27 @@ U = TypeVar('U')
 
 class CFEL_Future(Awaitable[T]):
     def __init__(self):
+        debug_log(f'fut {id(self)} init')
         self._cbs: list[Callable[['CFEL_Future[T]'], None]] = []
         self._done = False
         self._result: Optional[T] = None
 
     def result(self) -> T:
+        debug_log(f'fut {id(self)} result')
         if not self._done:
             raise RuntimeError('result method called upon a future that is not yet resolved')
         return py_typecast(T, self._result)
 
     def add_done_callback(self, cb: Callable[['CFEL_Future[T]'], None]) -> None:
         if not self._done:
+            debug_log(f'futu {id(self)} add_done_callback')
             self._cbs.append(cb)
         else:
+            debug_log(f'futd {id(self)} add_done_callback')
             cb(self)
 
     def set_result(self, res: T) -> None:
+        debug_log(f'fut {id(self)} set_result')
         if self._done:
             raise RuntimeError('double resolve')
         self._result = res
@@ -57,12 +62,15 @@ class CFEL_Future(Awaitable[T]):
         self._cbs.clear()
 
     def done(self) -> bool:
+        debug_log(f'fut {id(self)} done')
         return self._done
 
     def __await__(self) -> Generator[Any, Any, T]:
         if self._done:
+            debug_log(f'futd {id(self)} __await__')
             return py_typecast(T, self._result)
         else:
+            debug_log(f'futu {id(self)} __await__')
             yield self
 
 
