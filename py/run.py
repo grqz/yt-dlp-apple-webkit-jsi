@@ -1,5 +1,6 @@
 import sys
 
+from asyncio import Future as co_Fut
 from contextlib import ExitStack
 from ctypes import (
     POINTER,
@@ -9,7 +10,7 @@ from ctypes import (
     c_double,
     c_long, c_void_p,
 )
-from typing import Callable, Optional, TypeVar, Union, cast as py_typecast, overload
+from typing import Callable, Coroutine, Optional, TypeVar, Union, cast as py_typecast, overload
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -39,6 +40,7 @@ class CGRect(Structure):
 
 VOIDP_ARGTYPE = Optional[int]
 T = TypeVar('T')
+U = TypeVar('U')
 
 
 @overload
@@ -79,13 +81,35 @@ def main():
             WKWebView = pa.safe_objc_getClass(b'WKWebView')
             WKWebViewConfiguration = c_void_p(pa.objc_getClass(b'WKWebViewConfiguration'))
 
-            lstop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
-            lrun = cfn_at(cf(b'CFRunLoopRun').value, None)
-            getmain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
-            i_lcurrent = cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)()
-            mainloop = c_void_p(getmain())
-            assert i_lcurrent == mainloop.value
+            CFRunLoopStop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
+            CFRunLoopRun = cfn_at(cf(b'CFRunLoopRun').value, None)
+            CFRunLoopGetMain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
+            kCFRunLoopDefaultMode = c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value)
+            CFRunLoopPerformBlock = cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))
+            CFRunLoopWakeUp = cfn_at(cf(b'CFRunLoopWakeUp').value, None, c_void_p)
+            currloop = c_void_p(cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
+            mainloop = c_void_p(CFRunLoopGetMain())
+            assert currloop.value == mainloop.value
             kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
+
+            def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, mode: c_void_p = kCFRunLoopDefaultMode):
+                CFRunLoopPerformBlock(loop, mode, pa.make_block(pycb))
+                CFRunLoopWakeUp(loop)
+
+            def runcoro_on_current(coro: Coroutine[None, None, T], *, default: U = None) -> T | U:
+                # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
+                ret: Union[T, U] = default
+
+                def _coro_step():
+                    nonlocal ret
+                    try:
+                        coro.send(None)
+                    except StopIteration as e:
+                        CFRunLoopStop(currloop)
+                        ret = e.value
+                schedule_on(currloop, _coro_step)
+                CFRunLoopRun()
+                return ret
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
             if not Py_NaviDg:
@@ -101,7 +125,7 @@ def main():
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()
 
-            def real_main():
+            async def real_main():
                 with ExitStack() as exsk:
                     p_cfg = pa.safe_new_object(WKWebViewConfiguration)
                     exsk.callback(pa.send_message, p_cfg, b'release')
@@ -145,6 +169,7 @@ def main():
                     p_navidg, argtypes=(c_void_p, ))
                 debug_log('webview set navidg')
 
+                fut_navidone: co_Fut[None] = co_Fut()
                 with ExitStack() as exsk:
                     ps_html = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', HTML,
@@ -166,14 +191,17 @@ def main():
 
                     def cb_navi_done():
                         debug_log('navigation done, stopping loop')
-                        lstop(mainloop)
+                        fut_navidone.set_result(None)
 
                     navidg_cbdct[rp_navi.value] = cb_navi_done
 
                     debug_log(f'loading: local HTML@{HOST.decode()}')
-                    lrun()
+
+                CFRunLoopWakeUp(mainloop)
+                await fut_navidone
                 debug_log('navigation done')
 
+                fut_jsdone: co_Fut[tuple[c_void_p, c_void_p]] = co_Fut()
                 with ExitStack() as exsk:
                     ps_script = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', SCRIPT,
@@ -194,7 +222,8 @@ def main():
                         jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
                         pa.release_on_exit(jsresult_err)
                         debug_log(f'JS done, stopping loop; {id_result=}, {err=}')
-                        lstop(mainloop)
+                        fut_jsdone.set_result((jsresult_id, jsresult_err))
+                        CFRunLoopStop(mainloop)
 
                     chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
 
@@ -204,9 +233,11 @@ def main():
                         ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                         argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                    lrun()
+                CFRunLoopWakeUp(mainloop)
+                await fut_jsdone
+                CFRunLoopStop(mainloop)
 
-            real_main()
+            runcoro_on_current(real_main())
 
             if jsresult_err:
                 code = pa.send_message(jsresult_err, b'code', restype=c_long)

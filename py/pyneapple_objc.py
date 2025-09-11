@@ -342,7 +342,7 @@ class PyNeApple:
         debug_log(f'getClass {name.decode()} = {Cls.value}')
         return py_typecast(NotNull_VoidP, Cls.value)
 
-    def make_block(self, cb: Callable, restype: Optional[type], *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
+    def make_block(self, cb: Callable, restype: Optional[type] = None, *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
 
     def instanceof(self, obj: NULLABLE_VOIDP, cls: NULLABLE_VOIDP) -> bool:
