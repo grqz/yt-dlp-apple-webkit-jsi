@@ -389,3 +389,6 @@ class ObjCBlock(Structure):
             invoke=as_fnptr(cb, restype, *argtypes),
             desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
         )
+
+    def __hash__(self):
+        return id(self)
