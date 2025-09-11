@@ -3,9 +3,13 @@ jobs:
   build:
     strategy:
       matrix:
-        pyvsn: ['3.9', '3.10', '3.13', 'pypy3.10']
-        # 13 is x86_64, 14 is arm64
-        os: ['macos-13', 'macos-14']
+        pyvsn: ['3.9', '3.10', '3.11', '3.12', '3.13', 'pypy3.10', 'pypy3.11']
+        os:
+          - 'macos-13'  # x86_64
+          - 'macos-14'  # arm64
+          - 'macos-14-large'  # x86_64
+          - 'macos-15'  # arm64
+          - 'macos-15-large'  # x86_64
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 1
@@ -19,7 +23,12 @@ jobs:
   c:
     strategy:
       matrix:
-        os: ['macos-13', 'macos-14']
+        os:
+          - 'macos-13'  # x86_64
+          - 'macos-14'  # arm64
+          - 'macos-14-large'  # x86_64
+          - 'macos-15'  # arm64
+          - 'macos-15-large'  # x86_64
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 1

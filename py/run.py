@@ -1,7 +1,7 @@
 import dataclasses
 import sys
 
-from contextlib import ExitStack
+from contextlib import AsyncExitStack, ExitStack
 from ctypes import (
     POINTER,
     Structure,
@@ -163,13 +163,11 @@ def main():
                             fut = coro.send(v)
                     except StopIteration as si:
                         debug_log(f'stopping with return value: {si.value=}')
-                        # CFRunLoopStop(currloop)
                         finish(True, si)
                         res.ret = si.value
                         return
                     except BaseException as e:
                         debug_log(f'will throw exc raised from coro: {e=}')
-                        # CFRunLoopStop(currloop)
                         finish(False, e)
                         res.rexc = e
                         return
@@ -251,7 +249,7 @@ def main():
 
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()
-            # TODO: replace with Coroutine return
+            # TODO: replace with Coroutine return?
 
             async def real_main():
                 with ExitStack() as exsk:
@@ -298,8 +296,7 @@ def main():
                 debug_log('webview set navidg')
 
                 fut_navidone: CFEL_Future[None] = CFEL_Future()
-                # TODO: replace with `async with AsyncExitStack`
-                with ExitStack() as exsk:
+                async with AsyncExitStack() as exsk:
                     ps_html = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', HTML,
                         argtypes=(c_char_p, ))
@@ -330,8 +327,7 @@ def main():
                 debug_log('navigation done')
 
                 fut_jsdone: CFEL_Future[tuple[c_void_p, c_void_p]] = CFEL_Future()
-                # TODO: replace with `async with AsyncExitStack`
-                with ExitStack() as exsk:
+                async with AsyncExitStack() as exsk:
                     ps_script = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', SCRIPT,
                         argtypes=(c_char_p, ))
@@ -363,7 +359,7 @@ def main():
 
                     await fut_jsdone
 
-            # TODO: jsresult_id, jsresult_err
+            # TODO: jsresult_id, jsresult_err =
             runcoro_on_loop(real_main(), loop=mainloop)
 
             if jsresult_err:
