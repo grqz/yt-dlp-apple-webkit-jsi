@@ -8,7 +8,12 @@ lc = ctypes.CDLL(None, use_errno=True)
 psize = os.sysconf('SC_PAGE_SIZE')
 pmask = ~(psize - 1)
 
-code = bytes.fromhex('20 00 00 8b 00 a8 00 91 c0 03 5f d6')
+code = (
+    b'\x20\x00\x00\x8b'  # ADD x0, x1, x0
+    b'\x00\xa8\x00\x91'  # ADD x0, x0, #0x2a
+    b'\xc0\x03\x5f\xd6'  # RET
+)
+# https://shell-storm.org/online/Online-Assembler-and-Disassembler/?inst=ADD+x0%2C+x1%2C+x0%0D%0AADD+x0%2C+x0%2C+%230x2a%0D%0ARET%0D%0A&arch=arm64&as_format=python#assembly
 
 alloclen = (len(code) + psize - 1) // psize * psize
 print(f'{alloclen=}')
