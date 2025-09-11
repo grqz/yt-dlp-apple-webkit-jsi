@@ -1,3 +1,4 @@
+import dataclasses
 import sys
 
 from contextlib import ExitStack
@@ -9,7 +10,8 @@ from ctypes import (
     c_double,
     c_long, c_void_p,
 )
-from typing import Any, Awaitable, Callable, Coroutine, Generator, Optional, TypeVar, Union, cast as py_typecast, overload
+from threading import Condition
+from typing import Any, Awaitable, Callable, Coroutine, Generator, Generic, Optional, TypeVar, Union, cast as py_typecast, overload
 
 from .pyneapple_objc import (
     NotNull_VoidP,
@@ -62,6 +64,12 @@ class CFEL_Future(Awaitable[T]):
             return py_typecast(T, self._result)
         else:
             yield self
+
+
+@dataclasses.dataclass
+class CFEL_CoroResult(Generic[T]):
+    ret: T
+    rexc: Optional[BaseException] = None
 
 
 class DoubleDouble(Structure):
@@ -124,22 +132,28 @@ def main():
             CFRunLoopWakeUp = cfn_at(cf(b'CFRunLoopWakeUp').value, None, c_void_p)
             currloop = c_void_p(cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
             mainloop = c_void_p(CFRunLoopGetMain())
-            assert currloop.value == mainloop.value
+            if currloop.value != mainloop.value:
+                debug_log('warning: running code on another loop is an experimental feature')
             kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
             def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, mode: c_void_p = kCFRunLoopDefaultMode):
                 CFRunLoopPerformBlock(loop, mode, pa.make_block(pycb))
                 CFRunLoopWakeUp(loop)
 
-            def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
+            def _runcoro_on_loop_base(
+                coro: Coroutine[Any, Any, T],
+                *,
+                loop: c_void_p,
+                default: U = None,
+                finish: Callable[[bool, Union[BaseException, StopIteration]], None]
+            ) -> CFEL_CoroResult[Union[T, U]]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
                 active_cbs = set()
-                ret: Union[T, U] = default
-                rexc: Optional[BaseException] = None
-                debug_log(f'starting coroutine: {coro=}')
+                res = CFEL_CoroResult[Union[T, U]](default)
+                debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
                 def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
-                    nonlocal ret, rexc
+                    nonlocal res
                     debug_log(f'coro step: {v=}; {exc=}')
                     fut: CFEL_Future
                     try:
@@ -149,13 +163,15 @@ def main():
                             fut = coro.send(v)
                     except StopIteration as si:
                         debug_log(f'stopping with return value: {si.value=}')
-                        CFRunLoopStop(currloop)
-                        ret = si.value
+                        # CFRunLoopStop(currloop)
+                        finish(True, si)
+                        res.ret = si.value
                         return
                     except BaseException as e:
                         debug_log(f'will throw exc raised from coro: {e=}')
-                        CFRunLoopStop(currloop)
-                        rexc = e
+                        # CFRunLoopStop(currloop)
+                        finish(False, e)
+                        res.rexc = e
                         return
                     else:
                         debug_log(f'attaching done cb to: {fut=}')
@@ -181,18 +197,43 @@ def main():
                                 active_cbs.remove(_normal_cb)
                             scheduled = _normal_cb
                         active_cbs.add(scheduled)
-                        schedule_on(currloop, scheduled)
+                        schedule_on(loop, scheduled)
                         active_cbs.remove(_on_fut_done)
                     active_cbs.add(_on_fut_done)
                     fut.add_done_callback(_on_fut_done)
                     debug_log(f'added done callback {_on_fut_done=}')
 
-                schedule_on(currloop, _coro_step)
+                schedule_on(loop, _coro_step)
+                return res
+
+            def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
+                res = _runcoro_on_loop_base(coro, loop=currloop, default=default, finish=lambda s, e: CFRunLoopStop(currloop))
                 CFRunLoopRun()
-                debug_log(f'runcoro_on_current done: {rexc=}; {ret=}')
-                if rexc is not None:
-                    raise rexc from None
-                return ret
+                debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
+                if res.rexc is not None:
+                    raise res.rexc from None
+                return res.ret
+
+            def runcoro_on_loop(coro: Coroutine[Any, Any, T], *, loop=mainloop, default: U = None) -> Union[T, U]:
+                if loop.value == currloop.value:
+                    return runcoro_on_current(coro, default=default)
+                finished = False
+                cv = Condition()
+
+                def finish(s: bool, e: Union[BaseException, StopIteration]):
+                    nonlocal finished
+                    with cv:
+                        finished = True
+                        cv.notify()
+                res = _runcoro_on_loop_base(coro, loop=loop, default=default, finish=finish)
+                with cv:
+                    while not finished:
+                        cv.wait()
+
+                debug_log(f'runcoro_on_loop done: {res.rexc=}; {res.ret=}')
+                if res.rexc is not None:
+                    raise res.rexc from None
+                return res.ret
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
             if not Py_NaviDg:
@@ -207,6 +248,7 @@ def main():
 
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()
+            # TODO: replace with Coroutine return
 
             async def real_main():
                 with ExitStack() as exsk:
@@ -253,6 +295,7 @@ def main():
                 debug_log('webview set navidg')
 
                 fut_navidone: CFEL_Future[None] = CFEL_Future()
+                # TODO: replace with `async with AsyncExitStack`
                 with ExitStack() as exsk:
                     ps_html = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', HTML,
@@ -280,11 +323,11 @@ def main():
 
                     debug_log(f'loading: local HTML@{HOST.decode()}')
 
-                    # CFRunLoopWakeUp(mainloop)
                     await fut_navidone
                 debug_log('navigation done')
 
                 fut_jsdone: CFEL_Future[tuple[c_void_p, c_void_p]] = CFEL_Future()
+                # TODO: replace with `async with AsyncExitStack`
                 with ExitStack() as exsk:
                     ps_script = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', SCRIPT,
@@ -306,7 +349,6 @@ def main():
                         pa.release_on_exit(jsresult_err)
                         debug_log(f'JS done, resolving future; {id_result=}, {err=}')
                         fut_jsdone.set_result((jsresult_id, jsresult_err))
-                        # CFRunLoopStop(mainloop)
 
                     chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
 
@@ -316,11 +358,10 @@ def main():
                         ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                         argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                    # CFRunLoopWakeUp(mainloop)
                     await fut_jsdone
-                # CFRunLoopStop(mainloop)
 
-            runcoro_on_current(real_main())
+            # TODO: jsresult_id, jsresult_err
+            runcoro_on_loop(real_main(), loop=mainloop)
 
             if jsresult_err:
                 code = pa.send_message(jsresult_err, b'code', restype=c_long)
