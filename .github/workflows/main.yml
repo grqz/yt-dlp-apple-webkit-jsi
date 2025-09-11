@@ -29,12 +29,12 @@ jobs:
         ls -R /private/var/log
         ls -R ~/Library/Logs/DiagnosticReports
         ls -R /cores
-        lldb -c core
+        lldb -c core --batch -o 'thread backtrace all' | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.pyvsn }}-core
-        path: core
+        path: st.txt
         compression-level: 9
   c:
     strategy:
