@@ -143,12 +143,12 @@ def main():
             def _runcoro_on_loop_base(
                 coro: Coroutine[Any, Any, T],
                 *,
+                active_cbs: set,
                 loop: c_void_p,
                 default: U = None,
                 finish: Callable[[bool, Union[BaseException, StopIteration]], None]
             ) -> CFEL_CoroResult[Union[T, U]]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
-                active_cbs = set()
                 res = CFEL_CoroResult[Union[T, U]](default)
                 debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
@@ -177,7 +177,7 @@ def main():
                         debug_log(f'attaching done cb to: {fut=}')
 
                     def _on_fut_done(f: CFEL_Future):
-                        debug_log(f'fut done: {fut=}')
+                        debug_log(f'fut done: {f=}')
                         try:
                             fut_res = f.result()
                         except BaseException as fut_err:
@@ -203,11 +203,13 @@ def main():
                     fut.add_done_callback(_on_fut_done)
                     debug_log(f'added done callback {_on_fut_done=}')
 
+                active_cbs.add(_coro_step)
                 schedule_on(loop, _coro_step)
                 return res
 
             def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
-                res = _runcoro_on_loop_base(coro, loop=currloop, default=default, finish=lambda s, e: CFRunLoopStop(currloop))
+                active_cbs = set()
+                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=currloop, default=default, finish=lambda s, e: CFRunLoopStop(currloop))
                 CFRunLoopRun()
                 debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
                 if res.rexc is not None:
@@ -219,13 +221,14 @@ def main():
                     return runcoro_on_current(coro, default=default)
                 finished = False
                 cv = Condition()
+                active_cbs = set()
 
                 def finish(s: bool, e: Union[BaseException, StopIteration]):
                     nonlocal finished
                     with cv:
                         finished = True
                         cv.notify()
-                res = _runcoro_on_loop_base(coro, loop=loop, default=default, finish=finish)
+                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=loop, default=default, finish=finish)
                 with cv:
                     while not finished:
                         cv.wait()
