@@ -3,7 +3,7 @@ jobs:
   build:
     strategy:
       matrix:
-        pyvsn: ['3.9', 'pypy3.10']
+        pyvsn: ['3.9', '3.10', '3.13', 'pypy3.10']
         # 13 is x86_64, 14 is arm64
         os: ['macos-13', 'macos-14']
       fail-fast: false
