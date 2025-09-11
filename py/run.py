@@ -147,14 +147,23 @@ def main():
                 debug_log('warning: running code on another loop is an experimental feature')
             kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
-            def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, mode: c_void_p = kCFRunLoopDefaultMode):
-                CFRunLoopPerformBlock(loop, mode, pa.make_block(pycb))
+            def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode: c_void_p = kCFRunLoopDefaultMode):
+                block: ObjCBlock
+
+                def _pycb_real():
+                    pycb()
+                    var_keepalive.remove(_pycb_real)
+                    var_keepalive.remove(block)
+                var_keepalive.add(_pycb_real)
+                block = pa.make_block(_pycb_real)
+                var_keepalive.add(block)
+                CFRunLoopPerformBlock(loop, mode, byref(block))
                 CFRunLoopWakeUp(loop)
 
             def _runcoro_on_loop_base(
                 coro: Coroutine[Any, Any, T],
                 *,
-                active_cbs: set,
+                var_keepalive: set,
                 loop: c_void_p,
                 default: U = None,
                 finish: Callable[[BaseException], None]
@@ -195,7 +204,7 @@ def main():
                             def _exc_cb(fut_err=fut_err):
                                 debug_log(f'fut exc cb: calling _coro_step with {fut_err=}')
                                 _coro_step(exc=fut_err)
-                                active_cbs.remove(_exc_cb)
+                                # var_keepalive.remove(_exc_cb)
                             scheduled = _exc_cb
                         else:
                             debug_log(f'fut res: {fut_res=}, scheduling done callback')
@@ -203,22 +212,22 @@ def main():
                             def _normal_cb():
                                 debug_log(f'fut cb, calling _coro_step with {fut_res=}')
                                 _coro_step(fut_res)
-                                active_cbs.remove(_normal_cb)
+                                # var_keepalive.remove(_normal_cb)
                             scheduled = _normal_cb
-                        active_cbs.add(scheduled)
-                        schedule_on(loop, scheduled)
-                        active_cbs.remove(_on_fut_done)
-                    active_cbs.add(_on_fut_done)
+                        # var_keepalive.add(scheduled)
+                        schedule_on(loop, scheduled, var_keepalive=var_keepalive)
+                        # var_keepalive.remove(_on_fut_done)
+                    # var_keepalive.add(_on_fut_done)
                     fut.add_done_callback(_on_fut_done)
                     debug_log(f'added done callback {_on_fut_done=}')
 
-                active_cbs.add(_coro_step)
-                schedule_on(loop, _coro_step)
+                # var_keepalive.add(_coro_step)
+                schedule_on(loop, _coro_step, var_keepalive=var_keepalive)
                 return res
 
             def runcoro_on_current(coro: Coroutine[Any, Any, T], *, default: U = None) -> Union[T, U]:
-                active_cbs = set()
-                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=currloop, default=default, finish=lambda exc: CFRunLoopStop(currloop))
+                var_keepalive = set()
+                res = _runcoro_on_loop_base(coro, var_keepalive=var_keepalive, loop=currloop, default=default, finish=lambda exc: CFRunLoopStop(currloop))
                 CFRunLoopRun()
                 debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
                 if res.rexc is not None:
@@ -230,14 +239,14 @@ def main():
                     return runcoro_on_current(coro, default=default)
                 finished = False
                 cv = Condition()
-                active_cbs = set()
+                var_keepalive = set()
 
                 def finish(e: Union[BaseException, StopIteration]):
                     nonlocal finished
                     with cv:
                         finished = True
                         cv.notify()
-                res = _runcoro_on_loop_base(coro, active_cbs=active_cbs, loop=loop, default=default, finish=finish)
+                res = _runcoro_on_loop_base(coro, var_keepalive=var_keepalive, loop=loop, default=default, finish=finish)
                 with cv:
                     while not finished:
                         cv.wait()
