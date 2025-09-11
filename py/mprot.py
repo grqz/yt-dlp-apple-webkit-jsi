@@ -3,6 +3,16 @@ import mmap
 import os
 import typing
 
+
+def pycb(a, b):
+    return a + b + 0x2a
+
+proto = ctypes.CFUNCTYPE(ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64)
+fnptr = proto(pycb)
+print(f'{proto(fnptr)(1, 2)=}')
+print(f'{proto(fnptr)(0, 38)=}')
+
+
 lc = ctypes.CDLL(None, use_errno=True)
 
 psize = os.sysconf('SC_PAGE_SIZE')
