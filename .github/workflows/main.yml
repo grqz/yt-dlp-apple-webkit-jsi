@@ -20,6 +20,8 @@ jobs:
     - run: |
         ulimit -c unlimited
         sudo chmod a+rw /cores
+        export NSZombieEnabled=YES
+        export PYTHONMALLOC=debug
         python -m py.run
     - if: failure()
       run: |
