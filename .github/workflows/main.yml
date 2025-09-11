@@ -27,10 +27,8 @@ jobs:
         ls -R ~/Library/Logs
         ls -R /Library/Logs
         ls -R /private/var/log
-        # grep crash /var/log/system.log
         ls -R ~/Library/Logs/DiagnosticReports
-        ls -R ~/Library/Logs/CrashReporter
-        ls /cores
+        ls -R /cores
     - if: failure()
       uses: actions/upload-artifact@v4
       with:
@@ -38,6 +36,7 @@ jobs:
         path: |
           /private/var/log/DiagnosticMessages
           /private/var/log/asl
+          /cores
   c:
     strategy:
       matrix:
