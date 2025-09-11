@@ -101,41 +101,59 @@ def main():
                 active_cbs = set()
                 ret: Union[T, U] = default
                 rexc: Optional[BaseException] = None
+                debug_log(f'starting coroutine: {coro=}')
 
                 def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
                     nonlocal ret, rexc
+                    debug_log(f'coro step: {v=}; {exc=}')
                     fut: co_Fut
                     try:
                         if exc is not None:
                             fut = coro.throw(exc)
                         else:
                             fut = coro.send(v)
-                    except StopIteration as e:
+                    except StopIteration as si:
+                        debug_log(f'stopping with return value: {si.value=}')
                         CFRunLoopStop(currloop)
-                        ret = e.value
+                        ret = si.value
+                        return
                     except BaseException as e:
+                        debug_log(f'will throw exc raised from coro: {e=}')
                         CFRunLoopStop(currloop)
                         rexc = e
+                        return
+                    else:
+                        debug_log(f'attaching done cb to: {fut=}')
 
                     def _on_fut_done(f: co_Fut):
+                        debug_log(f'fut done: {fut=}')
                         try:
                             fut_res = f.result()
                         except BaseException as fut_err:
+                            debug_log(f'fut exc: {fut_err=}, scheduling exc callback')
+
                             def _exc_cb(fut_err=fut_err):
+                                debug_log(f'fut exc cb: calling _coro_step with {fut_err=}')
                                 _coro_step(exc=fut_err)
                                 active_cbs.remove(_exc_cb)
                             scheduled = _exc_cb
                         else:
+                            debug_log(f'fut res: {fut_res=}, scheduling done callback')
+
                             def _normal_cb():
+                                debug_log(f'fut cb, calling _coro_step with {fut_res=}')
                                 _coro_step(fut_res)
                                 active_cbs.remove(_normal_cb)
                             scheduled = _normal_cb
                         active_cbs.add(scheduled)
                         schedule_on(currloop, scheduled)
+                        active_cbs.remove(_on_fut_done)
+                    active_cbs.add(_on_fut_done)
                     fut.add_done_callback(_on_fut_done)
 
                 schedule_on(currloop, _coro_step)
                 CFRunLoopRun()
+                debug_log(f'runcoro_on_current done: {rexc=}; {ret=}')
                 if rexc is not None:
                     raise rexc from None
                 return ret
