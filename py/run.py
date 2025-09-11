@@ -190,15 +190,15 @@ def main():
                     debug_log(f'Navigation started: {rp_navi}')
 
                     def cb_navi_done():
-                        debug_log('navigation done, stopping loop')
+                        debug_log('navigation done, resolving future')
                         fut_navidone.set_result(None)
 
                     navidg_cbdct[rp_navi.value] = cb_navi_done
 
                     debug_log(f'loading: local HTML@{HOST.decode()}')
 
-                CFRunLoopWakeUp(mainloop)
-                await fut_navidone
+                    # CFRunLoopWakeUp(mainloop)
+                    await fut_navidone
                 debug_log('navigation done')
 
                 fut_jsdone: co_Fut[tuple[c_void_p, c_void_p]] = co_Fut()
@@ -221,7 +221,7 @@ def main():
                         pa.release_on_exit(jsresult_id)
                         jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
                         pa.release_on_exit(jsresult_err)
-                        debug_log(f'JS done, stopping loop; {id_result=}, {err=}')
+                        debug_log(f'JS done, resolving future; {id_result=}, {err=}')
                         fut_jsdone.set_result((jsresult_id, jsresult_err))
                         # CFRunLoopStop(mainloop)
 
@@ -233,8 +233,8 @@ def main():
                         ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                         argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                CFRunLoopWakeUp(mainloop)
-                await fut_jsdone
+                    # CFRunLoopWakeUp(mainloop)
+                    await fut_jsdone
                 # CFRunLoopStop(mainloop)
 
             runcoro_on_current(real_main())
