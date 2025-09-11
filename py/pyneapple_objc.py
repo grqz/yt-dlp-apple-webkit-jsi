@@ -178,13 +178,13 @@ class CRet:
     Py_Integral = int
 
     CharSeq = type[c_char_p]
-    Py_CharSeq = Union[bytes, None]
+    Py_CharSeq = Optional[bytes]
 
     StrSeq = type[c_wchar_p]
-    Py_StrSeq = Union[str, None]
+    Py_StrSeq = Optional[str]
 
     PVoid = type[c_void_p]
-    Py_PVoid = Union[int, None]
+    Py_PVoid = Optional[int]
 
     Float = Union[type[c_float], type[c_double], type[c_longdouble]]
     Py_Float = float

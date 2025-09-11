@@ -14,6 +14,7 @@ from threading import Condition
 from typing import Any, Awaitable, Callable, Coroutine, Generator, Generic, Optional, TypeVar, Union, cast as py_typecast, overload
 
 from .pyneapple_objc import (
+    CRet,
     NotNull_VoidP,
     ObjCBlock,
     PyNeApple,
@@ -25,7 +26,6 @@ from .pyneapple_objc import (
 from .config import HOST, HTML, SCRIPT
 
 
-VOIDP_ARGTYPE = Optional[int]
 T = TypeVar('T')
 U = TypeVar('U')
 
@@ -106,7 +106,7 @@ def main():
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
 
                 @staticmethod
-                def webView0_didFinishNavigation1(this: VOIDP_ARGTYPE, sel: VOIDP_ARGTYPE, rp_webview: VOIDP_ARGTYPE, rp_navi: VOIDP_ARGTYPE) -> None:
+                def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
@@ -341,7 +341,7 @@ def main():
                         WKContentWorld, b'pageWorld',
                         restype=c_void_p))
 
-                    def completion_handler(self: VOIDP_ARGTYPE, id_result: VOIDP_ARGTYPE, err: VOIDP_ARGTYPE):
+                    def completion_handler(self: CRet.Py_PVoid, id_result: CRet.Py_PVoid, err: CRet.Py_PVoid):
                         nonlocal jsresult_id, jsresult_err
                         jsresult_id = c_void_p(pa.send_message(c_void_p(id_result or 0), b'copy', restype=c_void_p))
                         pa.release_on_exit(jsresult_id)
