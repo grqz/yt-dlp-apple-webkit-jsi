@@ -96,7 +96,7 @@ def main():
                 CFRunLoopPerformBlock(loop, mode, pa.make_block(pycb))
                 CFRunLoopWakeUp(loop)
 
-            def runcoro_on_current(coro: Coroutine[None, None, T], *, default: U = None) -> T | U:
+            def runcoro_on_current(coro: Coroutine[None, None, T], *, default: U = None) -> Union[T, U]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
                 ret: Union[T, U] = default
 
