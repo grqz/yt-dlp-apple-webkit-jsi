@@ -10,7 +10,7 @@ jobs:
           - 'macos-15'  # arm64
       fail-fast: false
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 1
+    timeout-minutes: 3
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v6
@@ -27,10 +27,17 @@ jobs:
         ls -R ~/Library/Logs
         ls -R /Library/Logs
         ls -R /private/var/log
-        grep crash /var/log/system.log
+        # grep crash /var/log/system.log
         ls -R ~/Library/Logs/DiagnosticReports
         ls -R ~/Library/Logs/CrashReporter
         ls /cores
+    - if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-cores
+        path: |
+          /private/var/log/DiagnosticMessages
+          /private/var/log/asl
   c:
     strategy:
       matrix:
