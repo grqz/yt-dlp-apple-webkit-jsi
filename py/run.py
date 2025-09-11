@@ -223,7 +223,7 @@ def main():
                         pa.release_on_exit(jsresult_err)
                         debug_log(f'JS done, stopping loop; {id_result=}, {err=}')
                         fut_jsdone.set_result((jsresult_id, jsresult_err))
-                        CFRunLoopStop(mainloop)
+                        # CFRunLoopStop(mainloop)
 
                     chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
 
@@ -235,7 +235,7 @@ def main():
 
                 CFRunLoopWakeUp(mainloop)
                 await fut_jsdone
-                CFRunLoopStop(mainloop)
+                # CFRunLoopStop(mainloop)
 
             runcoro_on_current(real_main())
 
