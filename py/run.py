@@ -205,8 +205,8 @@ def main():
             if currloop.value != mainloop.value:
                 debug_log('warning: running code on another loop is an experimental feature')
             CFNumberGetValue = cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
-            kCFNumberFloat64Type = c_long.from_address(cf(b'kCFNumberFloat64Type').value)
-            kCFNumberLongLongType = c_long.from_address(cf(b'kCFNumberLongLongType').value)
+            kCFNumberFloat64Type = c_long(6)
+            kCFNumberLongLongType = c_long(11)
             CFDictionaryApplyFunction = cfn_at(cf(b'CFDictionaryApplyFunction').value, None, c_void_p, c_void_p, c_void_p)
             CFArrayGetCount = cfn_at(cf(b'CFArrayGetCount').value, c_long, c_void_p)
             CFArrayGetValueAtIndex = cfn_at(cf(b'CFArrayGetValueAtIndex').value, c_void_p, c_void_p, c_long)
