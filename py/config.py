@@ -2,6 +2,7 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = rb'''
 return await (async ()=>{  // IIAFE
+wrapResult = x=>{ x._self_ = _res; x._getSelf = () => _res; return x; };
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
@@ -224,8 +225,8 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 // return `:.:${document.URL}: ${pot}`;
-return {result: 'success', debugInfo: [document.URL], data: pot};
+return wrapResult({result: 'success', debugInfo: [document.URL], data: pot});
 //} catch(e) {return `:E:${document.URL}: ${e}`;}
-} catch(e) {return {result: 'error', debugInfo: [document.URL], error: e};}
+} catch(e) {return wrapResult({result: 'error', debugInfo: [document.URL], error: e});}
 })();
 '''
