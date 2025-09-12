@@ -25,14 +25,13 @@ jobs:
         export PYTHONMALLOC=debug
         python -m py.run
     - if: failure()
-      run: |
-        # ls -R .
-        # ls -R ~/Library/Logs
-        # ls -R /Library/Logs
-        # ls -R /private/var/log
-        # ls -R ~/Library/Logs/DiagnosticReports
-        # ls -R /cores
-        lldb -c core --batch -o 'thread backtrace all' | tee st.txt
+      run: >
+        lldb -c core --batch
+          -o 'settings set target.x86-disassembly-flavor intel'
+          -o 'thread backtrace all'
+          -o 'register read'
+          -o 'disassemble --pc --count 50'
+        | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
       with:
