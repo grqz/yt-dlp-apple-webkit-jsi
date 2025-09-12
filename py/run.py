@@ -120,16 +120,15 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
         py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
 
-PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
-
-
 def main():
     debug_log(f'PID: {os.getpid()}')
-    if os.path.lexists(PATH2CORE):
-        debug_log(f'removing exisiting file at {PATH2CORE}')
-        os.remove(PATH2CORE)
-    debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
-    os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
+    if os.getenv('CI'):
+        PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
+        if os.path.lexists(PATH2CORE):
+            debug_log(f'removing exisiting file at {PATH2CORE}')
+            os.remove(PATH2CORE)
+        debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
+        os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
         with PyNeApple() as pa:
