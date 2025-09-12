@@ -106,15 +106,21 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
         py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
 
+PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
+
+
 def main():
     debug_log(f'PID: {os.getpid()}')
-    os.symlink(f'/cores/core.{os.getpid()}', 'core')
+    if os.path.exists(PATH2CORE):
+        os.unlink(PATH2CORE)
+    os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
         with PyNeApple() as pa:
             class PFC_NaviDelegate:
                 CBDICT_TYPE = dict[int, Callable[[], None]]
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
+                IM_WEBVIEW_DIDFINISHNAVIGATION = b'webView:didFinishNavigation:'
 
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
@@ -134,6 +140,7 @@ def main():
             WKContentWorld = pa.safe_objc_getClass(b'WKContentWorld')
             WKWebView = pa.safe_objc_getClass(b'WKWebView')
             WKWebViewConfiguration = c_void_p(pa.objc_getClass(b'WKWebViewConfiguration'))
+            WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
 
             CFRunLoopStop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             CFRunLoopRun = cfn_at(cf(b'CFRunLoopRun').value, None)
@@ -258,14 +265,22 @@ def main():
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
             if not Py_NaviDg:
-                raise RuntimeError('Failed to allocate class PyForeignClass_NavigationDelegate, did you register twice?')
-            pa.class_addMethod(
-                Py_NaviDg, pa.sel_registerName(b'webView:didFinishNavigation:'),
-                as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p),
-                PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-            pa.class_addProtocol(Py_NaviDg, pa.objc_getProtocol(b'WKNavigationDelegate'))
-            pa.objc_registerClassPair(Py_NaviDg)
-            debug_log('Registered PyForeignClass_NavigationDelegate')
+                debug_log('Failed to allocate class PyForeignClass_NavigationDelegate')
+                if not pa.class_conformsToProtocol(Py_NaviDg, WKNavigationDelegate):
+                    raise RuntimeError(
+                        'class PyForeignClass_NavigationDelegate already exists '
+                        'but does not conform to the WKNavigationDelegate protocol')
+                imeth = pa.class_getInstanceMethod(Py_NaviDg, pa.sel_registerName(PFC_NaviDelegate.IM_WEBVIEW_DIDFINISHNAVIGATION))
+                pa.method_setImplementation(imeth, as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p))
+                debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
+            else:
+                pa.class_addMethod(
+                    Py_NaviDg, pa.sel_registerName(PFC_NaviDelegate.IM_WEBVIEW_DIDFINISHNAVIGATION),
+                    as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p),
+                    PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
+                pa.class_addProtocol(Py_NaviDg, WKNavigationDelegate)
+                pa.objc_registerClassPair(Py_NaviDg)
+                debug_log('Registered PyForeignClass_NavigationDelegate')
 
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()

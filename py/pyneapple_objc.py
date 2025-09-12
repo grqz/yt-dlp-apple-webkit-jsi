@@ -199,10 +199,11 @@ class PyNeApple:
         '_objc', '_system',
         'p_NSConcreteMallocBlock',
         'class_addProtocol', 'class_addMethod', 'class_addIvar',
-        'class_conformsToProtocol',
+        'class_conformsToProtocol', 'class_getInstanceMethod',
         'objc_getProtocol', 'objc_allocateClassPair', 'objc_registerClassPair',
         'objc_getClass', 'pobjc_msgSend', 'pobjc_msgSendSuper',
         'object_getClass', 'object_getInstanceVariable', 'object_setInstanceVariable',
+        'method_setImplementation',
         'sel_registerName',
     )
 
@@ -234,6 +235,7 @@ class PyNeApple:
             self.class_addMethod = cfn_at(self._objc(b'class_addMethod').value, c_byte, c_void_p, c_void_p, c_void_p, c_char_p)
             self.class_addIvar = cfn_at(self._objc(b'class_addIvar').value, c_byte, c_void_p, c_char_p, c_size_t, c_uint8, c_char_p)
             self.class_conformsToProtocol = cfn_at(self._objc(b'class_conformsToProtocol').value, c_byte, c_void_p, c_void_p)
+            self.class_getInstanceMethod = cfn_at(self._objc(b'class_getInstanceMethod').value, c_void_p, c_void_p, c_void_p)
 
             self.objc_getProtocol = cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
             self.objc_allocateClassPair = cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
@@ -249,6 +251,8 @@ class PyNeApple:
             self.object_setInstanceVariable = cfn_at(
                 self._objc(b'object_setInstanceVariable').value, c_void_p,
                 c_void_p, c_char_p, c_void_p)
+
+            self.method_setImplementation = cfn_at(self._objc(b'method_setImplementation').value, c_void_p, c_void_p, c_void_p)
 
             self.sel_registerName = cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
             return self
