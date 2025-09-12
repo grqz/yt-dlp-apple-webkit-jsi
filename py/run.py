@@ -142,7 +142,10 @@ def main():
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
 
-                fptr_webView0_didFinishNavigation1 = as_fnptr(_webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p)
+                fptr_webView0_didFinishNavigation1: c_void_p
+            PFC_NaviDelegate.fptr_webView0_didFinishNavigation1 = as_fnptr(
+                PFC_NaviDelegate._webView0_didFinishNavigation1, None,
+                c_void_p, c_void_p, c_void_p, c_void_p)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
