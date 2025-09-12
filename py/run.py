@@ -181,9 +181,7 @@ def main():
 
                 def _pycb_real():
                     pycb()
-                    var_keepalive.remove(_pycb_real)
                     var_keepalive.remove(block)
-                var_keepalive.add(_pycb_real)
                 block = pa.make_block(_pycb_real)
                 var_keepalive.add(block)
                 CFRunLoopPerformBlock(loop, mode, byref(block))
