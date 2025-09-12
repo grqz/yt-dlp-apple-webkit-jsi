@@ -151,6 +151,7 @@ def main():
             cf = pa.load_framework_from_path('CoreFoundation')
             pa.load_framework_from_path('WebKit')
             debug_log('Loaded libs')
+            # NSArray = pa.safe_objc_getClass(b'NSArray')
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
             NSNumber = pa.safe_objc_getClass(b'NSNumber')
@@ -442,7 +443,8 @@ def main():
                 s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
                     pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
             else:
-                s_rtype = '<unknown type>'
+                clsname = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsresult_id)))
+                s_rtype = f'<unknown type: {clsname.decode()}>'
                 s_result = '<unknown>'
             debug_log(f'JS returned {s_rtype}: {s_result}')
     except Exception:
