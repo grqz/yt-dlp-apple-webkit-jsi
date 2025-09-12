@@ -27,10 +27,10 @@ jobs:
     - if: failure()
       run: >
         lldb -c core --batch
-          -o 'settings set target.x86-disassembly-flavor intel'
-          -o 'thread backtrace all'
-          -o 'register read'
-          -o 'disassemble --pc --count 50'
+        -o 'settings set target.x86-disassembly-flavor intel'
+        -o 'thread backtrace all'
+        -o 'register read'
+        -o 'disassemble --pc --count 50'
         | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
