@@ -17,7 +17,8 @@ jobs:
       with:
         python-version: ${{ matrix.pyvsn }}
     - run: python -m py.dbg
-    - run: |
+    - name: real run
+      run: |
         ulimit -c unlimited
         sudo chmod a+rw /cores
         export NSZombieEnabled=YES
