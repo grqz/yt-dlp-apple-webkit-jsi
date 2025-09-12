@@ -383,6 +383,7 @@ class ObjCBlock(Structure):
         ('invoke', c_void_p),  # FnPtr
         ('desc', POINTER(ObjCBlockDescBase)),
     )
+    __slots__ = '_invoke', '_desc'
     BLOCK_ST = struct.Struct(b'@PiiPP')
     BLOCKDESC_SIGNATURE_ST = struct.Struct(b'@LLP')
     BLOCKDESC_ST = struct.Struct(b'@LL')
@@ -400,7 +401,7 @@ class ObjCBlock(Structure):
             isa=pyneapple.p_NSConcreteMallocBlock,
             flags=f,
             reserved=0,
-            invoke=self._invoke,
+            invoke=cast(self._invoke, c_void_p),
             desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
         )
 
