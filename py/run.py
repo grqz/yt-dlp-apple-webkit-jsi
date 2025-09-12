@@ -147,7 +147,9 @@ def main():
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
 
-            PFC_NaviDelegate.webView0_didFinishNavigation1 = CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1)
+            PFC_NaviDelegate.webView0_didFinishNavigation1 = CFUNCTYPE(
+                None,
+                c_void_p, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
