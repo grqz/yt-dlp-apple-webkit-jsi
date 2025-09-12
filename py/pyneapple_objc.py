@@ -76,10 +76,17 @@ def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callab
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
-def as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type) -> c_void_p:
+def _UB_as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type) -> c_void_p:
     argss = ', '.join(str(t) for t in argtypes)
     fnptr = cast(CFUNCTYPE(restype, *argtypes)(cb), c_void_p)
     debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {fnptr.value}')
+    return fnptr
+
+
+def as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type):
+    argss = ', '.join(str(t) for t in argtypes)
+    fnptr = CFUNCTYPE(restype, *argtypes)(cb)
+    debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {cast(fnptr, c_void_p).value}')
     return fnptr
 
 

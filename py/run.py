@@ -33,6 +33,7 @@ from .pyneapple_objc import (
     NotNull_VoidP,
     ObjCBlock,
     PyNeApple,
+    # _UB_as_fnptr,
     as_fnptr,
     cfn_at,
     debug_log,
@@ -125,8 +126,10 @@ PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file
 
 def main():
     debug_log(f'PID: {os.getpid()}')
-    if os.path.exists(PATH2CORE):
-        os.unlink(PATH2CORE)
+    if os.path.lexists(PATH2CORE):
+        debug_log(f'removing exisiting file at {PATH2CORE}')
+        os.remove(PATH2CORE)
+    debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
     os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
@@ -142,7 +145,7 @@ def main():
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
 
-                fptr_webView0_didFinishNavigation1: c_void_p
+                fptr_webView0_didFinishNavigation1: Any
             PFC_NaviDelegate.fptr_webView0_didFinishNavigation1 = as_fnptr(
                 PFC_NaviDelegate._webView0_didFinishNavigation1, None,
                 c_void_p, c_void_p, c_void_p, c_void_p)
