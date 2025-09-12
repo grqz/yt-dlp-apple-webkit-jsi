@@ -383,7 +383,7 @@ class ObjCBlock(Structure):
             self._desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
         else:
             self._desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
-        self._invoke = CFUNCTYPE(restype=restype, *argtypes)(cb)
+        self._invoke = CFUNCTYPE(restype, *argtypes)(cb)
         super().__init__(
             isa=pyneapple.p_NSConcreteMallocBlock,
             flags=f,
