@@ -78,6 +78,7 @@ def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callab
 
 
 def _UB_as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type) -> c_void_p:
+    raise RuntimeError('Undefined behavior')
     argss = ', '.join(str(t) for t in argtypes)
     fnptr = cast(CFUNCTYPE(restype, *argtypes)(cb), c_void_p)
     debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {fnptr.value}')

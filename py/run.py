@@ -141,12 +141,13 @@ def main():
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
                 SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
 
-                @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
+
+            PFC_NaviDelegate.webView0_didFinishNavigation1 = CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)(PFC_NaviDelegate.webView0_didFinishNavigation1)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
