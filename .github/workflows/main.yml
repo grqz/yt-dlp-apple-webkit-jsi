@@ -16,7 +16,6 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: python -m py.dbg
     - name: real run
       run: |
         ulimit -c unlimited
@@ -52,4 +51,3 @@ jobs:
     - uses: actions/checkout@v4
     - run: |
         make hello && ./hello
-        # make translated && ./translated
