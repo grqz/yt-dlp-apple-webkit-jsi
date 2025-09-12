@@ -24,7 +24,6 @@ from ctypes import (
     c_void_p,
     c_wchar, c_wchar_p,
     cast,
-    # pointer,
     sizeof,
 )
 from ctypes.util import find_library
@@ -78,6 +77,7 @@ def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callab
 
 
 class DLError(OSError):
+    __slots__ = ()
     UNKNOWN_ERROR = b'<unknown error>'
 
     def __init__(self, fname: bytes, arg: str, err: Optional[bytes]) -> None:
@@ -146,6 +146,7 @@ class objc_super(Structure):
         ('receiver', c_void_p),
         ('super_class', c_void_p),
     )
+    __slots__ = ()
 
 
 class CRet:
@@ -297,7 +298,9 @@ class PyNeApple:
     @overload
     def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: CRet.PVoid, argtypes: tuple[type, ...], is_super: bool = False) -> CRet.Py_PVoid: ...
     @overload
-    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: None = None, argtypes: tuple[type, ...], is_super: bool = False) -> None: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: type[T], argtypes: tuple[type, ...], is_super: bool = False) -> T: ...
+    @overload
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype=None, argtypes: tuple[type, ...], is_super: bool = False) -> None: ...
     @overload
     def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.Boolean, is_super: bool = False) -> CRet.Py_Boolean: ...
     @overload
@@ -313,7 +316,9 @@ class PyNeApple:
     @overload
     def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: CRet.PVoid, is_super: bool = False) -> CRet.Py_PVoid: ...
     @overload
-    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: None = None, is_super: bool = False) -> None: ...
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype: type[T], is_super: bool = False) -> T: ...
+    @overload
+    def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *, restype=None, is_super: bool = False) -> None: ...
 
     def send_message(self, obj: NULLABLE_VOIDP, sel_name: bytes, *args, restype: Optional[type] = None, argtypes: tuple[type, ...] = (), is_super: bool = False):
         sel = c_void_p(self.sel_registerName(sel_name))
@@ -357,10 +362,12 @@ class ObjCBlockDescBase(Structure):
         ('reserved', c_ulong),
         ('size', c_ulong),
     )
+    __slots__ = ()
 
 
 class ObjCBlockDescWithSignature(ObjCBlockDescBase):
     _fields_ = (('signature', c_char_p), )
+    __slots__ = ()
 
 
 class ObjCBlock(Structure):

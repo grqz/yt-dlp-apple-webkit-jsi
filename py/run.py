@@ -7,10 +7,18 @@ from ctypes import (
     POINTER,
     Structure,
     byref,
+    c_bool,
     c_byte,
+    # c_char,
     c_char_p,
     c_double,
+    c_float,
+    c_int16,
+    c_int32,
+    c_int64,
+    c_int8,
     c_long,
+    c_uint64,
     c_void_p,
 )
 from dataclasses import dataclass
@@ -46,6 +54,8 @@ U = TypeVar('U')
 
 
 class CFEL_Future(Awaitable[T]):
+    __slots__ = '_cbs', '_done', '_result'
+
     def __init__(self):
         debug_log(f'fut {id(self)} init')
         self._cbs: list[Callable[['CFEL_Future[T]'], None]] = []
@@ -100,6 +110,7 @@ class DoubleDouble(Structure):
         ('x', c_double),
         ('y', c_double),
     )
+    __slots__ = ()
 
 
 class CGRect(Structure):
@@ -107,6 +118,23 @@ class CGRect(Structure):
         ('orig', DoubleDouble),
         ('size', DoubleDouble),
     )
+    __slots__ = ()
+
+
+class MacTypes:
+    SInt8 = c_int8
+    Py_SInt8 = int
+    SInt16 = c_int16
+    Py_SInt16 = int
+    SInt32 = c_int32
+    Py_SInt32 = int
+    SInt64 = c_int64
+    Py_SInt64 = int
+
+    Float32 = c_float
+    Py_Float32 = float
+    Float64 = c_double
+    Py_Float64 = float
 
 
 @overload
@@ -118,6 +146,10 @@ def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> U
 def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, default: T = None) -> Union[str, T]:
     return py_typecast(bytes, pa.send_message(
         py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
+
+
+class _UnkownStructureTag:
+    ...
 
 
 def main():
@@ -151,7 +183,7 @@ def main():
             cf = pa.load_framework_from_path('CoreFoundation')
             pa.load_framework_from_path('WebKit')
             debug_log('Loaded libs')
-            # NSArray = pa.safe_objc_getClass(b'NSArray')
+            NSArray = pa.safe_objc_getClass(b'NSArray')
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
             NSNumber = pa.safe_objc_getClass(b'NSNumber')
@@ -172,7 +204,30 @@ def main():
             mainloop = c_void_p(CFRunLoopGetMain())
             if currloop.value != mainloop.value:
                 debug_log('warning: running code on another loop is an experimental feature')
-            kcf_true = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
+            CFNumberGetValue = cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
+            kCFNumberFloat64Type = c_long.from_address(cf(b'kCFNumberFloat64Type').value)
+            kCFNumberLongLongType = c_long.from_address(cf(b'kCFNumberLongLongType').value)
+            CFDictionaryApplyFunction = cfn_at(cf(b'CFDictionaryApplyFunction').value, None, c_void_p, c_void_p, c_void_p)
+            CFArrayGetCount = cfn_at(cf(b'CFArrayGetCount').value, c_long, c_void_p)
+            CFArrayGetValueAtIndex = cfn_at(cf(b'CFArrayGetValueAtIndex').value, c_void_p, c_void_p, c_long)
+
+            type_to_largest: dict[bytes, tuple[c_long, Union[type[c_int64], type[c_uint64], type[c_double]]]] = {
+                b'c': (kCFNumberLongLongType, c_int64),
+                b'C': (kCFNumberLongLongType, c_uint64),
+                b's': (kCFNumberLongLongType, c_int64),
+                b'S': (kCFNumberLongLongType, c_uint64),
+                b'i': (kCFNumberLongLongType, c_int64),
+                b'I': (kCFNumberLongLongType, c_uint64),
+                b'l': (kCFNumberLongLongType, c_int64),
+                b'L': (kCFNumberLongLongType, c_uint64),
+                b'q': (kCFNumberLongLongType, c_int64),
+                b'Q': (kCFNumberLongLongType, c_uint64),
+
+                b'f': (kCFNumberFloat64Type, c_double),
+                b'd': (kCFNumberFloat64Type, c_double),
+            }
+
+            kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
             def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode: c_void_p = kCFRunLoopDefaultMode):
                 block: ObjCBlock
@@ -229,7 +284,6 @@ def main():
                             def _exc_cb(fut_err=fut_err):
                                 debug_log(f'fut exc cb: calling _coro_step with {fut_err=}')
                                 _coro_step(exc=fut_err)
-                                # var_keepalive.remove(_exc_cb)
                             scheduled = _exc_cb
                         else:
                             debug_log(f'fut res: {fut_res=}, scheduling done callback')
@@ -329,7 +383,7 @@ def main():
                     exsk.callback(pa.send_message, p_setkey0, b'release')
                     pa.send_message(
                         rp_pref, b'setValue:forKey:',
-                        kcf_true, p_setkey0,
+                        kCFBooleanTrue, p_setkey0,
                         argtypes=(c_void_p, c_void_p))
                     rp_pref = None
 
@@ -339,7 +393,7 @@ def main():
                     exsk.callback(pa.send_message, p_setkey1, b'release')
                     pa.send_message(
                         p_cfg, b'setValue:forKey:',
-                        kcf_true, p_setkey1,
+                        kCFBooleanTrue, p_setkey1,
                         argtypes=(c_void_p, c_void_p))
 
                     p_webview = pa.safe_new_object(
@@ -432,21 +486,67 @@ def main():
                 raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
 
             debug_log('JS execution completed')
-            if not jsresult_id:
-                s_rtype = 'nothing'
-                s_result = 'nil'
-            elif pa.instanceof(jsresult_id, NSString):
-                s_rtype = 'string'
-                s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsresult_id))
-            elif pa.instanceof(jsresult_id, NSNumber):
-                s_rtype = 'number'
-                s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
-                    pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
-            else:
-                clsname = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsresult_id)))
-                s_rtype = f'<unknown type: {clsname.decode()}>'
-                s_result = '<unknown>'
-            debug_log(f'JS returned {s_rtype}: {s_result}')
+
+            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p):
+                if not jsobj or not jsobj.value:
+                    debug_log(f'nil@{jsobj.value}')
+                    return None
+                elif pa.instanceof(jsobj, NSString):
+                    debug_log(f'str@{jsobj.value}')
+                    return str_from_nsstring(pa, jsobj)
+                elif pa.instanceof(jsobj, NSNumber):
+                    debug_log(f'num s @{jsobj.value}')
+                    kcf_numtyp, restyp = type_to_largest[py_typecast(bytes, pa.send_message(
+                        jsobj, b'objCType', restype=c_char_p))]
+                    res = restyp()
+                    if not CFNumberGetValue(jsobj, kcf_numtyp, byref(res)):
+                        sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
+                            pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+                        raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
+                    debug_log(f'num e {res.value.__class__.__name__}@{jsobj.value}')
+                    return res.value
+                elif pa.instanceof(jsobj, NSDictionary):
+                    d = {}
+
+                    @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
+                    def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
+                        nonlocal d
+                        debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
+                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k))
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v))
+                        debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
+                        d[k_] = v_
+
+                    CFDictionaryApplyFunction(jsobj, visitor, jsobj)
+                    return d
+                elif pa.instanceof(jsobj, NSArray):
+                    larr = CFArrayGetCount(jsobj)
+                    arr = []
+                    for i in range(larr):
+                        v = CFArrayGetValueAtIndex(jsobj, i)
+                        debug_log(f'visit s arr@{jsobj.value=}; {v=}')
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v))
+                        debug_log(f'visit e arr@{jsobj.value=}; {v_=}')
+                        arr.append(v_)
+                    return arr
+                else:
+                    return _UnkownStructureTag
+            # if not jsresult_id:
+            #     s_rtype = 'nothing'
+            #     s_result = 'nil'
+            # elif pa.instanceof(jsresult_id, NSString):
+            #     s_rtype = 'string'
+            #     s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsresult_id))
+            # elif pa.instanceof(jsresult_id, NSNumber):
+            #     s_rtype = 'number'
+            #     s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
+            #         pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+            # else:
+            #     clsname = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsresult_id)))
+            #     s_rtype = f'<unknown type: {clsname.decode()}>'
+            #     s_result = '<unknown>'
+            # debug_log(f'JS returned {s_rtype}: {s_result}')
+            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id)!r}')
     except Exception:
         import traceback
         write_err(traceback.format_exc())
