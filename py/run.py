@@ -143,9 +143,6 @@ def main():
                         cb()
 
                 fptr_webView0_didFinishNavigation1: c_void_p
-            PFC_NaviDelegate.fptr_webView0_didFinishNavigation1 = as_fnptr(
-                PFC_NaviDelegate._webView0_didFinishNavigation1, None,
-                c_void_p, c_void_p, c_void_p, c_void_p)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
@@ -283,6 +280,9 @@ def main():
                 return res.ret
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
+            PFC_NaviDelegate.fptr_webView0_didFinishNavigation1 = as_fnptr(
+                PFC_NaviDelegate._webView0_didFinishNavigation1, None,
+                c_void_p, c_void_p, c_void_p, c_void_p)
             if not Py_NaviDg:
                 Py_NaviDg = pa.safe_objc_getClass(b'PyForeignClass_NavigationDelegate')
                 debug_log('Failed to allocate class PyForeignClass_NavigationDelegate')
