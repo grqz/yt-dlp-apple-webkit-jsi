@@ -7,12 +7,26 @@ from ctypes import (
     POINTER,
     Structure,
     byref,
-    c_byte, c_char_p,
+    c_byte,
+    c_char_p,
     c_double,
-    c_long, c_void_p,
+    c_long,
+    c_void_p,
 )
 from threading import Condition
-from typing import Any, Awaitable, Callable, Coroutine, Generator, Generic, Optional, TypeVar, Union, cast as py_typecast, overload
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Generator,
+    Generic,
+    Optional,
+    TypeVar,
+    Union,
+    cast as py_typecast,
+    overload
+)
 
 from .pyneapple_objc import (
     CRet,
