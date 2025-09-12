@@ -77,21 +77,6 @@ def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callab
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
-def _UB_as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type) -> c_void_p:
-    raise RuntimeError('Undefined behavior')
-    argss = ', '.join(str(t) for t in argtypes)
-    fnptr = cast(CFUNCTYPE(restype, *argtypes)(cb), c_void_p)
-    debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {fnptr.value}')
-    return fnptr
-
-
-def as_fnptr(cb: Callable, restype: Optional[type] = None, *argtypes: type):
-    argss = ', '.join(str(t) for t in argtypes)
-    fnptr = CFUNCTYPE(restype, *argtypes)(cb)
-    debug_log(f'Casting python callable {cb} to {restype}(*)({argss}) at {cast(fnptr, c_void_p).value}')
-    return fnptr
-
-
 class DLError(OSError):
     UNKNOWN_ERROR = b'<unknown error>'
 
@@ -398,7 +383,7 @@ class ObjCBlock(Structure):
             self._desc = ObjCBlockDescWithSignature(reserved=0, size=sizeof(ObjCBlock), signature=signature)
         else:
             self._desc = ObjCBlockDescBase(reserved=0, size=sizeof(ObjCBlock))
-        self._invoke = as_fnptr(cb, restype, *argtypes)
+        self._invoke = CFUNCTYPE(restype=restype, *argtypes)(cb)
         super().__init__(
             isa=pyneapple.p_NSConcreteMallocBlock,
             flags=f,

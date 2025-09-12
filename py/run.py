@@ -34,8 +34,6 @@ from .pyneapple_objc import (
     NotNull_VoidP,
     ObjCBlock,
     PyNeApple,
-    # _UB_as_fnptr,
-    # as_fnptr,
     cfn_at,
     debug_log,
     write_err,
