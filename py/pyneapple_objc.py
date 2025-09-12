@@ -200,7 +200,8 @@ class PyNeApple:
         'p_NSConcreteMallocBlock',
         'class_addProtocol', 'class_addMethod', 'class_addIvar',
         'class_conformsToProtocol', 'class_getInstanceMethod',
-        'objc_getProtocol', 'objc_allocateClassPair', 'objc_registerClassPair',
+        'objc_getProtocol',
+        'objc_allocateClassPair', 'objc_registerClassPair', 'objc_disposeClassPair',
         'objc_getClass', 'pobjc_msgSend', 'pobjc_msgSendSuper',
         'object_getClass', 'object_getInstanceVariable', 'object_setInstanceVariable',
         'method_setImplementation',
@@ -240,6 +241,7 @@ class PyNeApple:
             self.objc_getProtocol = cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
             self.objc_allocateClassPair = cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
             self.objc_registerClassPair = cfn_at(self._objc(b'objc_registerClassPair').value, None, c_void_p)
+            self.objc_disposeClassPair = cfn_at(self._objc(b'objc_disposeClassPair').value, None, c_void_p)
             self.objc_getClass = cfn_at(self._objc(b'objc_getClass').value, c_void_p, c_char_p)
             self.pobjc_msgSend = self._objc(b'objc_msgSend').value
             self.pobjc_msgSendSuper = self._objc(b'objc_msgSendSuper').value

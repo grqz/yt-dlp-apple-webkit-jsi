@@ -134,13 +134,15 @@ def main():
             class PFC_NaviDelegate:
                 CBDICT_TYPE = dict[int, Callable[[], None]]
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
-                IM_WEBVIEW_DIDFINISHNAVIGATION = b'webView:didFinishNavigation:'
+                SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
 
                 @staticmethod
-                def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
+                def _webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
+
+                fptr_webView0_didFinishNavigation1 = as_fnptr(_webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
@@ -279,21 +281,35 @@ def main():
 
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
             if not Py_NaviDg:
+                Py_NaviDg = pa.safe_objc_getClass(b'PyForeignClass_NavigationDelegate')
                 debug_log('Failed to allocate class PyForeignClass_NavigationDelegate')
                 if not pa.class_conformsToProtocol(Py_NaviDg, WKNavigationDelegate):
                     raise RuntimeError(
                         'class PyForeignClass_NavigationDelegate already exists '
                         'but does not conform to the WKNavigationDelegate protocol')
-                imeth = pa.class_getInstanceMethod(Py_NaviDg, pa.sel_registerName(PFC_NaviDelegate.IM_WEBVIEW_DIDFINISHNAVIGATION))
-                pa.method_setImplementation(imeth, as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p))
-                debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
+                imeth = pa.class_getInstanceMethod(Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION)
+                if not imeth:
+                    pa.class_addMethod(
+                        Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
+                        PFC_NaviDelegate.fptr_webView0_didFinishNavigation1,
+                        PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
+                    debug_log('Added the implementation for PyForeignClass_NavigationDelegate')
+                else:
+                    pa.method_setImplementation(imeth, PFC_NaviDelegate.fptr_webView0_didFinishNavigation1)
+                    debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
             else:
-                pa.class_addMethod(
-                    Py_NaviDg, pa.sel_registerName(PFC_NaviDelegate.IM_WEBVIEW_DIDFINISHNAVIGATION),
-                    as_fnptr(PFC_NaviDelegate.webView0_didFinishNavigation1, None, c_void_p, c_void_p, c_void_p, c_void_p),
-                    PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-                pa.class_addProtocol(Py_NaviDg, WKNavigationDelegate)
+                if not pa.class_addMethod(
+                        Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
+                        PFC_NaviDelegate.fptr_webView0_didFinishNavigation1,
+                        PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION):
+                    pa.objc_disposeClassPair(Py_NaviDg)
+                    raise RuntimeError('class_addMethod failed')
+                if not pa.class_addProtocol(Py_NaviDg, WKNavigationDelegate):
+                    pa.objc_disposeClassPair(Py_NaviDg)
+                    raise RuntimeError('class_addProtocol failed')
                 pa.objc_registerClassPair(Py_NaviDg)
+                assert pa.class_conformsToProtocol(Py_NaviDg, WKNavigationDelegate), (
+                    'class does not conform to protocol after addProtocol')
                 debug_log('Registered PyForeignClass_NavigationDelegate')
 
             jsresult_id = c_void_p()
