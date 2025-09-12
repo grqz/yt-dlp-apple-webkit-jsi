@@ -26,17 +26,17 @@ jobs:
         python -m py.run
     - if: failure()
       run: |
-        ls -R .
-        ls -R ~/Library/Logs
-        ls -R /Library/Logs
-        ls -R /private/var/log
-        ls -R ~/Library/Logs/DiagnosticReports
-        ls -R /cores
+        # ls -R .
+        # ls -R ~/Library/Logs
+        # ls -R /Library/Logs
+        # ls -R /private/var/log
+        # ls -R ~/Library/Logs/DiagnosticReports
+        # ls -R /cores
         lldb -c core --batch -o 'thread backtrace all' | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-core
+        name: ${{ matrix.os }}-${{ matrix.pyvsn }}-bt
         path: st.txt
         compression-level: 9
   c:
