@@ -9,6 +9,7 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    byref,
     c_bool,
     c_byte,
     c_char, c_char_p,
@@ -23,7 +24,7 @@ from ctypes import (
     c_void_p,
     c_wchar, c_wchar_p,
     cast,
-    pointer,
+    # pointer,
     sizeof,
 )
 from ctypes.util import find_library
@@ -402,7 +403,7 @@ class ObjCBlock(Structure):
             flags=f,
             reserved=0,
             invoke=cast(self._invoke, c_void_p),
-            desc=cast(pointer(self._desc), POINTER(ObjCBlockDescBase)),
+            desc=cast(byref(self._desc), POINTER(ObjCBlockDescBase)),
         )
 
     def __hash__(self):

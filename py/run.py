@@ -4,6 +4,7 @@ import sys
 
 from contextlib import AsyncExitStack, ExitStack
 from ctypes import (
+    CFUNCTYPE,
     POINTER,
     Structure,
     byref,
@@ -34,7 +35,7 @@ from .pyneapple_objc import (
     ObjCBlock,
     PyNeApple,
     # _UB_as_fnptr,
-    as_fnptr,
+    # as_fnptr,
     cfn_at,
     debug_log,
     write_err,
@@ -140,16 +141,12 @@ def main():
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
                 SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
 
+                @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                 @staticmethod
-                def _webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
+                def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
-
-                fptr_webView0_didFinishNavigation1: Any
-            PFC_NaviDelegate.fptr_webView0_didFinishNavigation1 = as_fnptr(
-                PFC_NaviDelegate._webView0_didFinishNavigation1, None,
-                c_void_p, c_void_p, c_void_p, c_void_p)
 
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
@@ -296,19 +293,16 @@ def main():
                 if not imeth:
                     pa.class_addMethod(
                         Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                        PFC_NaviDelegate.fptr_webView0_didFinishNavigation1,
+                        PFC_NaviDelegate.webView0_didFinishNavigation1,
                         PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
                     debug_log('Added the implementation for PyForeignClass_NavigationDelegate')
                 else:
-                    pa.method_setImplementation(imeth, PFC_NaviDelegate.fptr_webView0_didFinishNavigation1)
+                    pa.method_setImplementation(imeth, PFC_NaviDelegate.webView0_didFinishNavigation1)
                     debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
             else:
-                global referenced
                 if not pa.class_addMethod(
                         Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                        referenced := as_fnptr(
-                            PFC_NaviDelegate._webView0_didFinishNavigation1, None,
-                            c_void_p, c_void_p, c_void_p, c_void_p),
+                        PFC_NaviDelegate.webView0_didFinishNavigation1,
                         PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION):
                     pa.objc_disposeClassPair(Py_NaviDg)
                     raise RuntimeError('class_addMethod failed')
