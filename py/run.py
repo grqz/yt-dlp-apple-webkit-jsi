@@ -1,8 +1,7 @@
-import dataclasses
 import os
 import sys
 
-from contextlib import AsyncExitStack, ExitStack
+from contextlib import AsyncExitStack
 from ctypes import (
     CFUNCTYPE,
     POINTER,
@@ -14,6 +13,7 @@ from ctypes import (
     c_long,
     c_void_p,
 )
+from dataclasses import dataclass
 from threading import Condition
 from typing import (
     Any,
@@ -89,7 +89,7 @@ class CFEL_Future(Awaitable[T]):
             yield self
 
 
-@dataclasses.dataclass
+@dataclass
 class CFEL_CoroResult(Generic[T]):
     ret: T
     rexc: Optional[BaseException] = None
@@ -121,7 +121,6 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
 
 
 PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
-referenced = None
 
 
 def main():
@@ -238,16 +237,11 @@ def main():
                             def _normal_cb():
                                 debug_log(f'fut cb, calling _coro_step with {fut_res=}')
                                 _coro_step(fut_res)
-                                # var_keepalive.remove(_normal_cb)
                             scheduled = _normal_cb
-                        # var_keepalive.add(scheduled)
                         schedule_on(loop, scheduled, var_keepalive=var_keepalive)
-                        # var_keepalive.remove(_on_fut_done)
-                    # var_keepalive.add(_on_fut_done)
                     fut.add_done_callback(_on_fut_done)
                     debug_log(f'added done callback {_on_fut_done=}')
 
-                # var_keepalive.add(_coro_step)
                 schedule_on(loop, _coro_step, var_keepalive=var_keepalive)
                 return res
 
@@ -317,10 +311,9 @@ def main():
 
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()
-            # TODO: replace with Coroutine return?
 
             async def real_main():
-                with ExitStack() as exsk:
+                async with AsyncExitStack() as exsk:
                     p_cfg = pa.safe_new_object(WKWebViewConfiguration)
                     exsk.callback(pa.send_message, p_cfg, b'release')
 
@@ -427,7 +420,6 @@ def main():
 
                     await fut_jsdone
 
-            # TODO: jsresult_id, jsresult_err =
             runcoro_on_loop(real_main(), loop=mainloop)
 
             if jsresult_err:
