@@ -12,7 +12,6 @@ jobs:
           - 'macos-13'  # x86_64
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
-      fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     steps:
@@ -48,7 +47,6 @@ jobs:
           - 'macos-13'  # x86_64
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
-      fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 1
     steps:
