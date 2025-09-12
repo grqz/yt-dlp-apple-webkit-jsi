@@ -122,6 +122,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
 
 
 PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
+referenced = None
 
 
 def main():
@@ -302,9 +303,10 @@ def main():
                     pa.method_setImplementation(imeth, PFC_NaviDelegate.fptr_webView0_didFinishNavigation1)
                     debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
             else:
+                global referenced
                 if not pa.class_addMethod(
                         Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                        as_fnptr(
+                        referenced := as_fnptr(
                             PFC_NaviDelegate._webView0_didFinishNavigation1, None,
                             c_void_p, c_void_p, c_void_p, c_void_p),
                         PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION):
