@@ -151,7 +151,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
 
 @dataclass
 class _UnknownStructure:
-    typename: bytes
+    typename: str
 
 
 def main():
@@ -516,8 +516,8 @@ def main():
                     debug_log(f'num e {n_res.value.__class__.__name__}@{jsobj.value}')
                     return n_res.value
                 elif pa.instanceof(jsobj, NSDate):
-                    dte = py_typecast(float, CFDateGetAbsoluteTime(jsobj))
-                    py_dte = dt.datetime.fromtimestamp(dte + 978307200.0, dt.timezone.utc)
+                    dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
+                    py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
                     visited[jsobj.value] = py_dte
                     return py_dte
                 elif pa.instanceof(jsobj, NSDictionary):
@@ -541,19 +541,14 @@ def main():
                     visited[jsobj.value] = arr
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
-                        debug_log(f'visit s arr@{jsobj.value=}; {v=}')
+                        debug_log(f'visit s arr@{jsobj.value}; {v=}')
                         v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
-                        debug_log(f'visit e arr@{jsobj.value=}; {v_=}')
+                        debug_log(f'visit e arr@{jsobj.value}; {v_=}')
                         arr.append(v_)
                     return arr
                 else:
-                    cls = pa.object_getClass(jsobj)
-                    isdct = pa.send_message(cls, b'isSubclassOfClass:', NSDictionary, restype=c_byte, argtypes=(c_void_p, ))
-                    isarr = pa.send_message(cls, b'isSubclassOfClass:', NSArray, restype=c_byte, argtypes=(c_void_p, ))
-                    isnum = pa.send_message(cls, b'isSubclassOfClass:', NSNumber, restype=c_byte, argtypes=(c_void_p, ))
-                    isstr = pa.send_message(cls, b'isSubclassOfClass:', NSString, restype=c_byte, argtypes=(c_void_p, ))
-                    tn = py_typecast(bytes, pa.class_getName(cls))
-                    debug_log(f'{isdct=}; {isarr=}; {isnum=}; {isstr=}; {tn=}')
+                    tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
+                    debug_log(f'unk@{jsobj.value=}; {tn=}')
                     unk_res = _UnknownStructure(tn)
                     visited[jsobj.value] = unk_res
                     return unk_res
