@@ -1,6 +1,6 @@
 HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
 HOST = rb'''https://www.youtube.com/robots.txt'''
-SCRIPT = rb'''
+SCRIPT = r'''
 return await (async ()=>{  // IIAFE
 const wrapResult = x=>{
     Object.defineProperty(x, 'computed', {
@@ -20,7 +20,7 @@ const wrapResult = x=>{
     x.inf = Infinity,
     x.ninf = -Infinity,
     x.nzr = -0,
-    x._bstr = 'a\u0000\n\tbx',
+    x._bstr = 'a\u0000\n\tbあx',
     x.bint = 123456789012345678901234567890n,
     //x.sym = Symbol('I'),  // unsupported
     //x.si = Symbol.iterator,  // unsupported
@@ -259,4 +259,4 @@ return wrapResult({result: 'success', debugInfo: [document.URL], data: pot});
 //} catch(e) {return `:E:${document.URL}: ${e}`;}
 } catch(e) {return wrapResult({result: 'error', debugInfo: [document.URL], error: e});}
 })();
-'''
+'''.encode()

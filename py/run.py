@@ -152,10 +152,14 @@ def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> U
 def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, default: T = None) -> Union[str, T]:
     if not nsstr.value:
         return default
-    length = pa.send_message(nsstr, b'length', restype=c_ulong)
-    pvoid_utf8str = py_typecast(int, pa.send_message(
-        py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_void_p))
-    return bytes((c_char * length).from_address(pvoid_utf8str)).decode()
+    length = pa.send_message(nsstr, b'lengthOfBytesUsingEncoding:', NSUTF8StringEncoding, restype=c_ulong, argtypes=(c_ulong, ))
+    if not length:
+        assert pa.send_message(nsstr, b'canBeConvertedToEncoding:', NSUTF8StringEncoding, restype=c_byte, argtypes=(c_ulong, )), (
+            'NSString cannot be losslessly converted to UTF-8')
+        return ''
+    return bytes((c_char * length).from_address(
+        py_typecast(int, pa.send_message(
+            py_typecast(c_void_p, nsstr), b'UTF8String', restype=POINTER(c_char))))).decode()
 
 
 @dataclass
