@@ -28,8 +28,8 @@ const wrapResult = x=>{
     x.set = new Set([3, 5, 2]),
     x.re = /\s*\d+\s*/gi,
     //x.wm = new WeakMap,  // unsupported
-    x.ws = new WeakSet,
-    //x.td = new TextDecoder,
+    //x.ws = new WeakSet,  // unsupported
+    x.td = new TextDecoder,
     x.__proto__ = {in: 32},
     x;
 };
