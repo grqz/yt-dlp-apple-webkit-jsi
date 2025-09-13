@@ -39,7 +39,7 @@ const wrapResult = ()=>{
     x.arrWithBlank = new Array(5),
     x.arrWithBlank[0] = 'first',
     x.arrWithBlank[4] = 'last',
-    x.args = [arguments],
+    //x.args = [arguments],
     x;
 };
 try {
