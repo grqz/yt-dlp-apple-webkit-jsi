@@ -487,24 +487,30 @@ def main():
 
             debug_log('JS execution completed')
 
-            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p):
-                if not jsobj or not jsobj.value:
+            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, visited: dict[int, Any]):
+                if not jsobj.value:
                     debug_log(f'nil@{jsobj.value}')
                     return None
+                elif visitedobj := visited.get(jsobj.value):
+                    debug_log(f'visited@{jsobj.value}')
+                    return visitedobj
                 elif pa.instanceof(jsobj, NSString):
                     debug_log(f'str@{jsobj.value}')
-                    return str_from_nsstring(pa, jsobj)
+                    s_res = str_from_nsstring(pa, jsobj)
+                    visited[jsobj.value] = s_res
+                    return s_res
                 elif pa.instanceof(jsobj, NSNumber):
                     debug_log(f'num s @{jsobj.value}')
                     kcf_numtyp, restyp = type_to_largest[py_typecast(bytes, pa.send_message(
                         jsobj, b'objCType', restype=c_char_p))]
-                    res = restyp()
-                    if not CFNumberGetValue(jsobj, kcf_numtyp, byref(res)):
+                    n_res = restyp()
+                    if not CFNumberGetValue(jsobj, kcf_numtyp, byref(n_res)):
                         sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
                             pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
                         raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
-                    debug_log(f'num e {res.value.__class__.__name__}@{jsobj.value}')
-                    return res.value
+                    visited[jsobj.value] = n_res
+                    debug_log(f'num e {n_res.value.__class__.__name__}@{jsobj.value}')
+                    return n_res.value
                 elif pa.instanceof(jsobj, NSDictionary):
                     d = {}
 
@@ -512,12 +518,13 @@ def main():
                     def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                         nonlocal d
                         debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
-                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k))
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v))
+                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
                         debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                         d[k_] = v_
 
                     CFDictionaryApplyFunction(jsobj, visitor, jsobj)
+                    visited[jsobj.value] = d
                     return d
                 elif pa.instanceof(jsobj, NSArray):
                     larr = CFArrayGetCount(jsobj)
@@ -525,11 +532,13 @@ def main():
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
                         debug_log(f'visit s arr@{jsobj.value=}; {v=}')
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v))
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
                         debug_log(f'visit e arr@{jsobj.value=}; {v_=}')
                         arr.append(v_)
+                    visited[jsobj.value] = arr
                     return arr
                 else:
+                    visited[jsobj.value] = _UnkownStructureTag
                     return _UnkownStructureTag
             # if not jsresult_id:
             #     s_rtype = 'nothing'
@@ -546,7 +555,7 @@ def main():
             #     s_rtype = f'<unknown type: {clsname.decode()}>'
             #     s_result = '<unknown>'
             # debug_log(f'JS returned {s_rtype}: {s_result}')
-            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id)!r}')
+            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, {})!r}')
     except Exception:
         import traceback
         write_err(traceback.format_exc())
