@@ -22,13 +22,14 @@ const wrapResult = x=>{
     x.nzr = -0,
     x._bstr = 'a\u0000\n\tbx',
     x.bint = 123456789012345678901234567890n,
-    //x.sym = Symbol('I'),
-    x.si = Symbol.iterator,
+    //x.sym = Symbol('I'),  // unsupported
+    //x.si = Symbol.iterator,  // unsupported
     x.ab = new ArrayBuffer(8),
     x.set = new Set([3, 5, 2]),
     x.re = /\s*\d+\s*/gi,
-    //x.wm = new WeakMap,
+    x.wm = new WeakMap,
     //x.ws = new WeakSet,
+    //x.td = new TextDecoder,
     x.__proto__ = {in: 32},
     x;
 };
