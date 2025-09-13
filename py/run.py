@@ -159,7 +159,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
         assert pa.send_message(nsstr, b'canBeConvertedToEncoding:', NSUTF8StringEncoding, restype=c_byte, argtypes=(c_ulong, )), (
             'NSString cannot be losslessly converted to UTF-8')
         return ''
-    return string_at(py_typecast(int, pa.send_message(nsstr, b'UTF8String', restype=c_void_p))).decode()
+    return string_at(py_typecast(int, pa.send_message(nsstr, b'UTF8String', restype=c_void_p)), length).decode()
 
 
 @dataclass
