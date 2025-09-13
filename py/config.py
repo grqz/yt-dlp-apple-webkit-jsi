@@ -31,7 +31,7 @@ const wrapResult = x=>{
     //x.ws = new WeakSet,  // unsupported
     //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},
-    x;
+    x.bint;
 };
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
