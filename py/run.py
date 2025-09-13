@@ -489,7 +489,6 @@ def main():
             debug_log('JS execution completed')
 
             def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, visited: dict[int, Any]):
-                debug_log(f'traversing JS result in class {pa.class_getName(pa.objc_getClass(jsobj))}')
                 if not jsobj.value:
                     debug_log(f'nil@{jsobj.value}')
                     return None
@@ -540,7 +539,7 @@ def main():
                         arr.append(v_)
                     return arr
                 else:
-                    cls = pa.object_getClass(jsresult_id)
+                    cls = pa.object_getClass(jsobj)
                     isdct = pa.send_message(cls, b'isSubclassOfClass:', NSDictionary, restype=c_byte, argtypes=(c_void_p, ))
                     isarr = pa.send_message(cls, b'isSubclassOfClass:', NSArray, restype=c_byte, argtypes=(c_void_p, ))
                     isnum = pa.send_message(cls, b'isSubclassOfClass:', NSNumber, restype=c_byte, argtypes=(c_void_p, ))
