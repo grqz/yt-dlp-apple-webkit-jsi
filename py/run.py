@@ -512,9 +512,10 @@ def main():
                         sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
                             pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
                         raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
-                    visited[jsobj.value] = n_res
-                    debug_log(f'num e {n_res.value.__class__.__name__}@{jsobj.value}')
-                    return n_res.value
+                    n_resv = n_res.value
+                    visited[jsobj.value] = n_resv
+                    debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
+                    return n_resv
                 elif pa.instanceof(jsobj, NSDate):
                     dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
                     py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
