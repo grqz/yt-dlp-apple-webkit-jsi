@@ -24,6 +24,7 @@ from ctypes import (
     string_at,
 )
 from dataclasses import dataclass
+from pprint import pformat
 from threading import Condition
 from typing import (
     Any,
@@ -565,7 +566,8 @@ def main():
                     visited[jsobj.value] = unk_res
                     return unk_res
 
-            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)!r}')
+            result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
+            print(f'{pformat(result_pyobj)}')
     except Exception:
         import traceback
         logger.write_err(traceback.format_exc())

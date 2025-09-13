@@ -21,7 +21,7 @@ const wrapResult = ()=>{
     x.inf = Infinity,  // math.inf
     x.ninf = -Infinity,  // -math.inf
     x.nzr = -0,  // -0.0
-    x._bstr = 'a\u0000\n\tbあx',  // preserved
+    x._bstr = 'a\u0000\n\tbあx',  // unicode is supported, and the string does not get truncated at '\0'
     x.bint = 123456789012345678901234567890n,  // same as undefined
     //x.sym = Symbol('I'),  // unsupported
     //x.si = Symbol.iterator,  // unsupported
@@ -39,7 +39,7 @@ const wrapResult = ()=>{
     x.arrWithBlank = new Array(5),
     x.arrWithBlank[0] = 'first',
     x.arrWithBlank[4] = 'last',
-    //x.args = [arguments],
+    //x.args = [arguments],  // unsupported
     x;
 };
 try {
