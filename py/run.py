@@ -19,6 +19,7 @@ from ctypes import (
     c_int64,
     c_int8,
     c_long,
+    c_uint32,
     c_uint64,
     c_ulong,
     c_void_p,
@@ -139,6 +140,9 @@ class MacTypes:
     Py_Float64 = float
 
 
+NSUTF8StringEncoding = 4
+
+
 @overload
 def str_from_nsstring(pa: PyNeApple, nsstr: NotNull_VoidP) -> str: ...
 @overload
@@ -149,8 +153,9 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
     if not nsstr.value:
         return default
     length = pa.send_message(nsstr, b'length', restype=c_ulong)
-    return bytes(pa.send_message(
-        py_typecast(c_void_p, nsstr), b'UTF8String', restype=(c_char * length))).decode()
+    pvoid_utf8str = py_typecast(int, pa.send_message(
+        py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_void_p))
+    return bytes((c_char * length).from_address(pvoid_utf8str)).decode()
 
 
 @dataclass
