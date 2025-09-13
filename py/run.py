@@ -10,7 +10,7 @@ from ctypes import (
     byref,
     c_bool,
     c_byte,
-    # c_char,
+    c_char,
     c_char_p,
     c_double,
     c_float,
@@ -20,6 +20,7 @@ from ctypes import (
     c_int8,
     c_long,
     c_uint64,
+    c_ulong,
     c_void_p,
 )
 from dataclasses import dataclass
@@ -145,8 +146,11 @@ def str_from_nsstring(pa: PyNeApple, nsstr: c_void_p, *, default: T = None) -> U
 
 
 def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, default: T = None) -> Union[str, T]:
-    return py_typecast(bytes, pa.send_message(
-        py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
+    if not nsstr.value:
+        return default
+    length = pa.send_message(nsstr, b'length', restype=c_ulong)
+    return bytes(pa.send_message(
+        py_typecast(c_void_p, nsstr), b'UTF8String', restype=(c_char * length))).decode()
 
 
 @dataclass
@@ -207,7 +211,7 @@ def main():
             mainloop = c_void_p(CFRunLoopGetMain())
             if currloop.value != mainloop.value:
                 debug_log('warning: running code on another loop is an experimental feature')
-            CFDateGetAbsoluteTime = cfn_at(cf(b'CFNumberGetValue').value, c_double, c_void_p)
+            CFDateGetAbsoluteTime = cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
             CFNumberGetValue = cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
             kCFNumberFloat64Type = c_long(6)
             kCFNumberLongLongType = c_long(11)
@@ -517,7 +521,8 @@ def main():
                     debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
                     return n_resv
                 elif pa.instanceof(jsobj, NSDate):
-                    dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
+                    dte1970 = py_typecast(float, CFDateGetAbsoluteTime(jsobj)) + 978307200.0
+                    # dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
                     py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
                     visited[jsobj.value] = py_dte
                     return py_dte
