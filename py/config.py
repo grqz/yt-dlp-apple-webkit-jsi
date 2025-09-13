@@ -2,7 +2,35 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = rb'''
 return await (async ()=>{  // IIAFE
-const wrapResult = x=>{ x._self_ = x; x.dt = new Date; x.u8arr = new Uint8Array(3, 46, 7); x.carr = [3]; x.carr.push(x.carr); return x; };
+const wrapResult = x=>{
+    Object.defineProperty(x, 'computed', {
+        get() { return this._value * 2; },
+        set(v) { this._value = v / 2; },
+        enumerable: true
+    });
+    x._value = 30;
+    return x._self_ = x,
+    x.dt = new Date,
+    x.u8arr = new Uint8Array(3, 46, 7),
+    x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
+    x.carr[0][1] = x.carr,
+    x.map = new Map(x.carr),
+    x.nan = NaN,
+    x.inf = Infinity,
+    x.ninf = -Infinity,
+    x.nzr = -0,
+    x._bstr = 'a\u0000\n\tbx',
+    x.bint = 123456789012345678901234567890n,
+    x.sym = Symbol('I'),
+    x.si = Symbol.iterator,
+    x.ab = new ArrayBuffer(8),
+    x.set = new Set([3, 5, 2]),
+    x.re = /\s*\d+\s*/gi,
+    x.wm = new WeakMap,
+    x.ws = new WeakSet,
+    x.__proto__ = {in: 32},
+    x;
+};
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
