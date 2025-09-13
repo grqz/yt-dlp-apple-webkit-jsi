@@ -29,7 +29,7 @@ const wrapResult = x=>{
     x.re = /\s*\d+\s*/gi,
     //x.wm = new WeakMap,  // unsupported
     //x.ws = new WeakSet,  // unsupported
-    x.td = new TextDecoder,
+    //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},
     x;
 };
