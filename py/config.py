@@ -25,9 +25,9 @@ const wrapResult = x=>{
     x.si = Symbol.iterator,
     x.ab = new ArrayBuffer(8),
     x.set = new Set([3, 5, 2]),
-    x.re = /\s*\d+\s*/gi,
-    x.wm = new WeakMap,
-    x.ws = new WeakSet,
+    //x.re = /\s*\d+\s*/gi,
+    //x.wm = new WeakMap,
+    //x.ws = new WeakSet,
     x.__proto__ = {in: 32},
     x;
 };
