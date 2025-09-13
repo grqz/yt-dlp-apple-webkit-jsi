@@ -7,33 +7,34 @@ const wrapResult = x=>{
         get() { return this._value * 2; },
         set(v) { this._value = v / 2; },
         enumerable: true
-    });
-    x._value = 30;
-    return x._self_ = x,
-    x.dt = new Date,
-    x.u8arr = new Uint8Array(3, 46, 7),
+    });  // will appear as 60.0
+    x._value = 30;  // will be a float
+    return x._self_ = x,  // this will be another object, whose _self_ points to itself
+    x.dt = new Date,  // dt.datetime in utc
+    x.u8arr = new Uint8Array([3, 46, 7]),
     x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
     x.carr[0][1] = x.carr,
-    x.map = new Map(x.carr),
+    x.map = new Map(x.carr),  // same as _self_ above
     x.mapNoCirc = new Map([[3,7],[4,2],[8,0]]),
-    x.nan = NaN,
-    x.inf = Infinity,
-    x.ninf = -Infinity,
-    x.nzr = -0,
-    x._bstr = 'a\u0000\n\tbあx',
-    x.bint = 123456789012345678901234567890n,  // discarded
+    x.nan = NaN,  // math.nan
+    x.inf = Infinity,  // math.inf
+    x.ninf = -Infinity,  // -math.inf
+    x.nzr = -0,  // -0.0
+    x._bstr = 'a\u0000\n\tbあx',  // preserved
+    x.bint = 123456789012345678901234567890n,  // discarded/nil if at top level
     //x.sym = Symbol('I'),  // unsupported
     //x.si = Symbol.iterator,  // unsupported
-    x.ab = new ArrayBuffer(8),
-    x.set = new Set([3, 5, 2]),
-    x.re = /\s*\d+\s*/gi,
-    x['ああ'] = null,
-    x['あ'] = undefined,
+    x.ab = new ArrayBuffer(8),  // {}
+    x.set = new Set([3, 5, 2]),  // {}
+    x.re = /\s*\d+\s*/gi,  // {}
+    x['ああ'] = null,  // <null object>
+    x['あ'] = undefined,  // discarded/nil if at top level
     //x.wm = new WeakMap,  // unsupported
     //x.ws = new WeakSet,  // unsupported
     //x.td = new TextDecoder,  // unsupported
-    x.__proto__ = {in: 32},
-    x.booleanv = [true, false],
+    x.__proto__ = {in: 32},  // discarded
+    x.booleanv = [true, false],  // coerced to [1, 0]
+    x.arrBint = [123456789012345678901234567890n],  // todo: test
     x;
 };
 try {
