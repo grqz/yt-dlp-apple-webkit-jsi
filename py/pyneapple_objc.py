@@ -53,15 +53,21 @@ def debug_log(msg, *, end='\n', ret: Any = _DefaultTag):
     os.write(1, (str(msg) + end).encode())
     if STDOUT_IS_ISREG:
         os.fsync(1)
-    if ret is _DefaultTag:
-        ret = msg
-    return ret
+    return msg if ret is _DefaultTag else ret
+
+
+def dummy_debug_log(msg, *, end='\n', ret: Any = _DefaultTag):
+    return msg if ret is _DefaultTag else ret
 
 
 def write_err(msg, end='\n'):
     os.write(2, (str(msg) + end).encode())
     if STDERR_IS_ISREG:
         os.fsync(2)
+
+
+def dummy_write_err(msg, end='\n'):
+    pass
 
 
 def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):

@@ -21,20 +21,20 @@ const wrapResult = x=>{
     x.ninf = -Infinity,  // -math.inf
     x.nzr = -0,  // -0.0
     x._bstr = 'a\u0000\n\tbあx',  // preserved
-    x.bint = 123456789012345678901234567890n,  // discarded/nil if at top level
+    x.bint = 123456789012345678901234567890n,  // same as undefined
     //x.sym = Symbol('I'),  // unsupported
     //x.si = Symbol.iterator,  // unsupported
     x.ab = new ArrayBuffer(8),  // {}
     x.set = new Set([3, 5, 2]),  // {}
     x.re = /\s*\d+\s*/gi,  // {}
     x['ああ'] = null,  // <null object>
-    x['あ'] = undefined,  // discarded/nil if at top level
+    x['あ'] = undefined,  // discarded in dictionaries/nil if at top level/undefined in arrays
     //x.wm = new WeakMap,  // unsupported
     //x.ws = new WeakSet,  // unsupported
     //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},  // discarded
     x.booleanv = [true, false],  // coerced to [1, 0]
-    x.arrBint = [123456789012345678901234567890n, undefined],  // todo: test
+    x.arrBint = [123456789012345678901234567890n, undefined],  // [<null object>, <null object>]
     x;
 };
 try {

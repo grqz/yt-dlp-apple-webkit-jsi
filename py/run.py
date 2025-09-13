@@ -45,7 +45,7 @@ from .pyneapple_objc import (
     ObjCBlock,
     PyNeApple,
     cfn_at,
-    debug_log,
+    dummy_debug_log as debug_log,
     write_err,
 )
 from .config import HOST, HTML, SCRIPT
@@ -573,21 +573,7 @@ def main():
                     unk_res = _UnknownStructure(tn)
                     visited[jsobj.value] = unk_res
                     return unk_res
-            # if not jsresult_id:
-            #     s_rtype = 'nothing'
-            #     s_result = 'nil'
-            # elif pa.instanceof(jsresult_id, NSString):
-            #     s_rtype = 'string'
-            #     s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsresult_id))
-            # elif pa.instanceof(jsresult_id, NSNumber):
-            #     s_rtype = 'number'
-            #     s_result = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
-            #         pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
-            # else:
-            #     clsname = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsresult_id)))
-            #     s_rtype = f'<unknown type: {clsname.decode()}>'
-            #     s_result = '<unknown>'
-            # debug_log(f'JS returned {s_rtype}: {s_result}')
+
             print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)!r}')
     except Exception:
         import traceback
