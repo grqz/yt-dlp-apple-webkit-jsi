@@ -21,17 +21,19 @@ const wrapResult = x=>{
     x.ninf = -Infinity,
     x.nzr = -0,
     x._bstr = 'a\u0000\n\tbあx',
-    x.bint = 123456789012345678901234567890n,
+    x.bint = 123456789012345678901234567890n,  // discarded
     //x.sym = Symbol('I'),  // unsupported
     //x.si = Symbol.iterator,  // unsupported
     x.ab = new ArrayBuffer(8),
     x.set = new Set([3, 5, 2]),
     x.re = /\s*\d+\s*/gi,
+    x['ああ'] = null,
+    x['あ'] = undefined,
     //x.wm = new WeakMap,  // unsupported
     //x.ws = new WeakSet,  // unsupported
     //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},
-    x.bint;
+    x;
 };
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
