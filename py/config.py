@@ -10,7 +10,7 @@ const wrapResult = ()=>{
         enumerable: true
     }),  // will appear as 60.0
     x._value = 30,  // will be a float
-    return x._self_ = x,  // this will be another object, whose _self_ points to itself
+    x._self_ = x,  // this will be another object, whose _self_ points to itself
     x.dt = new Date,  // dt.datetime in utc
     x.u8arr = new Uint8Array([3, 46, 7]),
     x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
