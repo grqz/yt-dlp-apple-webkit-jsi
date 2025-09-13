@@ -148,8 +148,9 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
         py_typecast(c_void_p, nsstr), b'UTF8String', restype=c_char_p)).decode() if nsstr.value else default
 
 
-class _UnkownStructureTag:
-    ...
+@dataclass
+class _UnknownStructure:
+    typename: bytes
 
 
 def main():
@@ -538,8 +539,9 @@ def main():
                         arr.append(v_)
                     return arr
                 else:
-                    visited[jsobj.value] = _UnkownStructureTag
-                    return _UnkownStructureTag
+                    unk_res = _UnknownStructure(py_typecast(bytes, pa.class_getName(pa.object_getClass(jsresult_id))))
+                    visited[jsobj.value] = unk_res
+                    return unk_res
             # if not jsresult_id:
             #     s_rtype = 'nothing'
             #     s_result = 'nil'
