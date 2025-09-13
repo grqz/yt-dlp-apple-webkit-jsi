@@ -45,10 +45,9 @@ from .pyneapple_objc import (
     ObjCBlock,
     PyNeApple,
     cfn_at,
-    dummy_debug_log as debug_log,
-    write_err,
 )
 from .config import HOST, HTML, SCRIPT
+from .logging import dummy_debug_log as debug_log, write_err
 
 
 T = TypeVar('T')
