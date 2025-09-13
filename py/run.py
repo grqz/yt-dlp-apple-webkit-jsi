@@ -7,6 +7,7 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    addressof,
     byref,
     c_bool,
     c_byte,
@@ -157,9 +158,8 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
         assert pa.send_message(nsstr, b'canBeConvertedToEncoding:', NSUTF8StringEncoding, restype=c_byte, argtypes=(c_ulong, )), (
             'NSString cannot be losslessly converted to UTF-8')
         return ''
-    return bytes((c_char * length).from_address(
-        py_typecast(int, pa.send_message(
-            py_typecast(c_void_p, nsstr), b'UTF8String', restype=POINTER(c_char))))).decode()
+    return bytes((c_char * length).from_address(addressof(pa.send_message(
+        nsstr, b'UTF8String', restype=POINTER(c_char))))).decode()
 
 
 @dataclass
