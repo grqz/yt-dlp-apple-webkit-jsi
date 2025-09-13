@@ -15,7 +15,7 @@ const wrapResult = x=>{
     x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
     x.carr[0][1] = x.carr,
     x.map = new Map(x.carr),
-    x.mapNoCirc = new Map([3,7],[4,2],[8,0]),
+    x.mapNoCirc = new Map([[3,7],[4,2],[8,0]]),
     x.nan = NaN,
     x.inf = Infinity,
     x.ninf = -Infinity,
