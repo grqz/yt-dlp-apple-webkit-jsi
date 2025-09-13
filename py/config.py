@@ -34,7 +34,7 @@ const wrapResult = x=>{
     //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},  // discarded
     x.booleanv = [true, false],  // coerced to [1, 0]
-    x.arrBint = [123456789012345678901234567890n],  // todo: test
+    x.arrBint = [123456789012345678901234567890n, undefined],  // todo: test
     x;
 };
 try {

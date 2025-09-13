@@ -164,6 +164,10 @@ class _UnknownStructure:
     typename: str
 
 
+class _NullTag:
+    ...
+
+
 def main():
     debug_log(f'PID: {os.getpid()}')
     if os.getenv('CI'):
@@ -584,7 +588,7 @@ def main():
             #     s_rtype = f'<unknown type: {clsname.decode()}>'
             #     s_result = '<unknown>'
             # debug_log(f'JS returned {s_rtype}: {s_result}')
-            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={})!r}')
+            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)!r}')
     except Exception:
         import traceback
         write_err(traceback.format_exc())
