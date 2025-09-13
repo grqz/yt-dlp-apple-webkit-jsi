@@ -513,6 +513,7 @@ def main():
                     return n_res.value
                 elif pa.instanceof(jsobj, NSDictionary):
                     d = {}
+                    visited[jsobj.value] = d
 
                     @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                     def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
@@ -524,18 +525,17 @@ def main():
                         d[k_] = v_
 
                     CFDictionaryApplyFunction(jsobj, visitor, jsobj)
-                    visited[jsobj.value] = d
                     return d
                 elif pa.instanceof(jsobj, NSArray):
                     larr = CFArrayGetCount(jsobj)
                     arr = []
+                    visited[jsobj.value] = arr
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
                         debug_log(f'visit s arr@{jsobj.value=}; {v=}')
                         v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
                         debug_log(f'visit e arr@{jsobj.value=}; {v_=}')
                         arr.append(v_)
-                    visited[jsobj.value] = arr
                     return arr
                 else:
                     visited[jsobj.value] = _UnkownStructureTag
