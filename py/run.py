@@ -7,11 +7,9 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
-    addressof,
     byref,
     c_bool,
     c_byte,
-    c_char,
     c_char_p,
     c_double,
     c_float,
@@ -20,7 +18,6 @@ from ctypes import (
     c_int64,
     c_int8,
     c_long,
-    c_uint32,
     c_uint64,
     c_ulong,
     c_void_p,
@@ -202,6 +199,7 @@ def main():
             NSDate = pa.safe_objc_getClass(b'NSDate')
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
+            NSNull = pa.safe_objc_getClass(b'NSNull')
             NSNumber = pa.safe_objc_getClass(b'NSNumber')
             NSObject = pa.safe_objc_getClass(b'NSObject')
             NSURL = pa.safe_objc_getClass(b'NSURL')
@@ -504,13 +502,17 @@ def main():
 
             debug_log('JS execution completed')
 
-            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, visited: dict[int, Any]):
+            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, *, visited: dict[int, Any], nil=None, null=None):
                 if not jsobj.value:
                     debug_log(f'nil@{jsobj.value}')
-                    return None
+                    return nil
                 elif visitedobj := visited.get(jsobj.value):
                     debug_log(f'visited@{jsobj.value}')
                     return visitedobj
+                elif pa.instanceof(jsobj, NSNull):
+                    debug_log(f'null@{jsobj.value}')
+                    visited[jsobj.value] = null
+                    return null
                 elif pa.instanceof(jsobj, NSString):
                     debug_log(f'str@{jsobj.value}')
                     s_res = str_from_nsstring(pa, jsobj)
@@ -543,8 +545,8 @@ def main():
                     def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                         nonlocal d
                         debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
-                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited)
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
+                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, nil=nil, null=null)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
                         debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                         d[k_] = v_
 
@@ -557,7 +559,7 @@ def main():
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
                         debug_log(f'visit s arr@{jsobj.value}; {v=}')
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
                         debug_log(f'visit e arr@{jsobj.value}; {v_=}')
                         arr.append(v_)
                     return arr
@@ -582,7 +584,7 @@ def main():
             #     s_rtype = f'<unknown type: {clsname.decode()}>'
             #     s_result = '<unknown>'
             # debug_log(f'JS returned {s_rtype}: {s_result}')
-            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, {})!r}')
+            print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={})!r}')
     except Exception:
         import traceback
         write_err(traceback.format_exc())

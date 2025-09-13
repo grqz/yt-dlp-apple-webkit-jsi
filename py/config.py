@@ -33,6 +33,7 @@ const wrapResult = x=>{
     //x.ws = new WeakSet,  // unsupported
     //x.td = new TextDecoder,  // unsupported
     x.__proto__ = {in: 32},
+    x.booleanv = [true, false],
     x;
 };
 try {
