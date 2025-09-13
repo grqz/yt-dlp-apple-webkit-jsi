@@ -15,6 +15,7 @@ const wrapResult = x=>{
     x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
     x.carr[0][1] = x.carr,
     x.map = new Map(x.carr),
+    x.mapNoCirc = new Map([3,7],[4,2],[8,0]),
     x.nan = NaN,
     x.inf = Infinity,
     x.ninf = -Infinity,
@@ -26,8 +27,8 @@ const wrapResult = x=>{
     x.ab = new ArrayBuffer(8),
     x.set = new Set([3, 5, 2]),
     //x.re = /\s*\d+\s*/gi,
-    //x.wm = new WeakMap,
-    //x.ws = new WeakSet,
+    x.wm = new WeakMap,
+    x.ws = new WeakSet,
     x.__proto__ = {in: 32},
     x;
 };
