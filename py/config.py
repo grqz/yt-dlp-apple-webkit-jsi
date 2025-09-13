@@ -2,7 +2,7 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = rb'''
 return await (async ()=>{  // IIAFE
-wrapResult = x=>{ x._self_ = x; return x; };
+const wrapResult = x=>{ x._self_ = x; x.dt = new Date; x.u8arr = new Uint8Array(3, 46, 7); x.carr = [3]; x.carr.push(x.carr); return x; };
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
