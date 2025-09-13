@@ -44,10 +44,9 @@ from .pyneapple_objc import (
     NotNull_VoidP,
     ObjCBlock,
     PyNeApple,
-    cfn_at,
 )
 from .config import HOST, HTML, SCRIPT
-from .logging import dummy_debug_log as debug_log, write_err
+from .logging import Logger
 
 
 T = TypeVar('T')
@@ -58,27 +57,22 @@ class CFEL_Future(Awaitable[T]):
     __slots__ = '_cbs', '_done', '_result'
 
     def __init__(self):
-        debug_log(f'fut {id(self)} init')
         self._cbs: list[Callable[['CFEL_Future[T]'], None]] = []
         self._done = False
         self._result: Optional[T] = None
 
     def result(self) -> T:
-        debug_log(f'fut {id(self)} result')
         if not self._done:
             raise RuntimeError('result method called upon a future that is not yet resolved')
         return py_typecast(T, self._result)
 
     def add_done_callback(self, cb: Callable[['CFEL_Future[T]'], None]) -> None:
         if not self._done:
-            debug_log(f'futu {id(self)} add_done_callback')
             self._cbs.append(cb)
         else:
-            debug_log(f'futd {id(self)} add_done_callback')
             cb(self)
 
     def set_result(self, res: T) -> None:
-        debug_log(f'fut {id(self)} set_result')
         if self._done:
             raise RuntimeError('double resolve')
         self._result = res
@@ -88,15 +82,12 @@ class CFEL_Future(Awaitable[T]):
         self._cbs.clear()
 
     def done(self) -> bool:
-        debug_log(f'fut {id(self)} done')
         return self._done
 
     def __await__(self) -> Generator[Any, Any, T]:
         if self._done:
-            debug_log(f'futd {id(self)} __await__')
             return py_typecast(T, self._result)
         else:
-            debug_log(f'futu {id(self)} __await__')
             yield self
 
 
@@ -168,17 +159,18 @@ class _NullTag:
 
 
 def main():
-    debug_log(f'PID: {os.getpid()}')
+    logger = Logger()
+    logger.debug_log(f'PID: {os.getpid()}')
     if os.getenv('CI'):
         PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
         if os.path.lexists(PATH2CORE):
-            debug_log(f'removing exisiting file at {PATH2CORE}')
+            logger.debug_log(f'removing exisiting file at {PATH2CORE}')
             os.remove(PATH2CORE)
-        debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
+        logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
     navidg_cbdct: 'PFC_NaviDelegate.CBDICT_TYPE' = {}
     try:
-        with PyNeApple() as pa:
+        with PyNeApple(logger=logger) as pa:
             class PFC_NaviDelegate:
                 CBDICT_TYPE = dict[int, Callable[[], None]]
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
@@ -186,7 +178,7 @@ def main():
 
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
-                    debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
+                    logger.debug_log(f'[(PyForeignClass_NavigationDelegate){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                     if cb := navidg_cbdct.get(rp_navi or 0):
                         cb()
 
@@ -197,7 +189,7 @@ def main():
             pa.load_framework_from_path('Foundation')
             cf = pa.load_framework_from_path('CoreFoundation')
             pa.load_framework_from_path('WebKit')
-            debug_log('Loaded libs')
+            logger.debug_log('Loaded libs')
             NSArray = pa.safe_objc_getClass(b'NSArray')
             NSDate = pa.safe_objc_getClass(b'NSDate')
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
@@ -211,23 +203,23 @@ def main():
             WKWebViewConfiguration = c_void_p(pa.objc_getClass(b'WKWebViewConfiguration'))
             WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
 
-            CFRunLoopStop = cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
-            CFRunLoopRun = cfn_at(cf(b'CFRunLoopRun').value, None)
-            CFRunLoopGetMain = cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
+            CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
+            CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)
+            CFRunLoopGetMain = pa.cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
             kCFRunLoopDefaultMode = c_void_p.from_address(cf(b'kCFRunLoopDefaultMode').value)
-            CFRunLoopPerformBlock = cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))
-            CFRunLoopWakeUp = cfn_at(cf(b'CFRunLoopWakeUp').value, None, c_void_p)
-            currloop = c_void_p(cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
+            CFRunLoopPerformBlock = pa.cfn_at(cf(b'CFRunLoopPerformBlock').value, None, c_void_p, c_void_p, POINTER(ObjCBlock))
+            CFRunLoopWakeUp = pa.cfn_at(cf(b'CFRunLoopWakeUp').value, None, c_void_p)
+            currloop = c_void_p(pa.cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
             mainloop = c_void_p(CFRunLoopGetMain())
             if currloop.value != mainloop.value:
-                debug_log('warning: running code on another loop is an experimental feature')
-            CFDateGetAbsoluteTime = cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
-            CFNumberGetValue = cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
+                logger.debug_log('warning: running code on another loop is an experimental feature')
+            CFDateGetAbsoluteTime = pa.cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
+            CFNumberGetValue = pa.cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
             kCFNumberFloat64Type = c_long(6)
             kCFNumberLongLongType = c_long(11)
-            CFDictionaryApplyFunction = cfn_at(cf(b'CFDictionaryApplyFunction').value, None, c_void_p, c_void_p, c_void_p)
-            CFArrayGetCount = cfn_at(cf(b'CFArrayGetCount').value, c_long, c_void_p)
-            CFArrayGetValueAtIndex = cfn_at(cf(b'CFArrayGetValueAtIndex').value, c_void_p, c_void_p, c_long)
+            CFDictionaryApplyFunction = pa.cfn_at(cf(b'CFDictionaryApplyFunction').value, None, c_void_p, c_void_p, c_void_p)
+            CFArrayGetCount = pa.cfn_at(cf(b'CFArrayGetCount').value, c_long, c_void_p)
+            CFArrayGetValueAtIndex = pa.cfn_at(cf(b'CFArrayGetValueAtIndex').value, c_void_p, c_void_p, c_long)
 
             type_to_largest: dict[bytes, tuple[c_long, Union[type[c_int64], type[c_uint64], type[c_double]]]] = {
                 b'c': (kCFNumberLongLongType, c_int64),
@@ -268,11 +260,11 @@ def main():
             ) -> CFEL_CoroResult[Union[T, U]]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
                 res = CFEL_CoroResult[Union[T, U]](default)
-                debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
+                logger.debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
                 def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
                     nonlocal res
-                    debug_log(f'coro step: {v=}; {exc=}')
+                    logger.debug_log(f'coro step: {v=}; {exc=}')
                     fut: CFEL_Future
                     try:
                         if exc is not None:
@@ -280,39 +272,39 @@ def main():
                         else:
                             fut = coro.send(v)
                     except StopIteration as si:
-                        debug_log(f'stopping with return value: {si.value=}')
+                        logger.debug_log(f'stopping with return value: {si.value=}')
                         finish(si)
                         res.ret = si.value
                         return
                     except BaseException as e:
-                        debug_log(f'will throw exc raised from coro: {e=}')
+                        logger.debug_log(f'will throw exc raised from coro: {e=}')
                         finish(e)
                         res.rexc = e
                         return
                     else:
-                        debug_log(f'attaching done cb to: {fut=}')
+                        logger.debug_log(f'attaching done cb to: {fut=}')
 
                     def _on_fut_done(f: CFEL_Future):
-                        debug_log(f'fut done: {f=}')
+                        logger.debug_log(f'fut done: {f=}')
                         try:
                             fut_res = f.result()
                         except BaseException as fut_err:
-                            debug_log(f'fut exc: {fut_err=}, scheduling exc callback')
+                            logger.debug_log(f'fut exc: {fut_err=}, scheduling exc callback')
 
                             def _exc_cb(fut_err=fut_err):
-                                debug_log(f'fut exc cb: calling _coro_step with {fut_err=}')
+                                logger.debug_log(f'fut exc cb: calling _coro_step with {fut_err=}')
                                 _coro_step(exc=fut_err)
                             scheduled = _exc_cb
                         else:
-                            debug_log(f'fut res: {fut_res=}, scheduling done callback')
+                            logger.debug_log(f'fut res: {fut_res=}, scheduling done callback')
 
                             def _normal_cb():
-                                debug_log(f'fut cb, calling _coro_step with {fut_res=}')
+                                logger.debug_log(f'fut cb, calling _coro_step with {fut_res=}')
                                 _coro_step(fut_res)
                             scheduled = _normal_cb
                         schedule_on(loop, scheduled, var_keepalive=var_keepalive)
                     fut.add_done_callback(_on_fut_done)
-                    debug_log(f'added done callback {_on_fut_done=}')
+                    logger.debug_log(f'added done callback {_on_fut_done=}')
 
                 schedule_on(loop, _coro_step, var_keepalive=var_keepalive)
                 return res
@@ -321,7 +313,7 @@ def main():
                 var_keepalive = set()
                 res = _runcoro_on_loop_base(coro, var_keepalive=var_keepalive, loop=currloop, default=default, finish=lambda exc: CFRunLoopStop(currloop))
                 CFRunLoopRun()
-                debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
+                logger.debug_log(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
                 if res.rexc is not None:
                     raise res.rexc from None
                 return res.ret
@@ -343,7 +335,7 @@ def main():
                     while not finished:
                         cv.wait()
 
-                debug_log(f'runcoro_on_loop done: {res.rexc=}; {res.ret=}')
+                logger.debug_log(f'runcoro_on_loop done: {res.rexc=}; {res.ret=}')
                 if res.rexc is not None:
                     raise res.rexc from None
                 return res.ret
@@ -351,7 +343,7 @@ def main():
             Py_NaviDg = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_NavigationDelegate', 0)
             if not Py_NaviDg:
                 Py_NaviDg = pa.safe_objc_getClass(b'PyForeignClass_NavigationDelegate')
-                debug_log('Failed to allocate class PyForeignClass_NavigationDelegate')
+                logger.debug_log('Failed to allocate class PyForeignClass_NavigationDelegate')
                 if not pa.class_conformsToProtocol(Py_NaviDg, WKNavigationDelegate):
                     raise RuntimeError(
                         'class PyForeignClass_NavigationDelegate already exists '
@@ -362,10 +354,10 @@ def main():
                         Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
                         PFC_NaviDelegate.webView0_didFinishNavigation1,
                         PFC_NaviDelegate.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-                    debug_log('Added the implementation for PyForeignClass_NavigationDelegate')
+                    logger.debug_log('Added the implementation for PyForeignClass_NavigationDelegate')
                 else:
                     pa.method_setImplementation(imeth, PFC_NaviDelegate.webView0_didFinishNavigation1)
-                    debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
+                    logger.debug_log('Updated the implementation of PyForeignClass_NavigationDelegate')
             else:
                 if not pa.class_addMethod(
                         Py_NaviDg, PFC_NaviDelegate.SEL_WEBVIEW_DIDFINISHNAVIGATION,
@@ -379,7 +371,7 @@ def main():
                 pa.objc_registerClassPair(Py_NaviDg)
                 assert pa.class_conformsToProtocol(Py_NaviDg, WKNavigationDelegate), (
                     'class does not conform to protocol after addProtocol')
-                debug_log('Registered PyForeignClass_NavigationDelegate')
+                logger.debug_log('Registered PyForeignClass_NavigationDelegate')
 
             jsresult_id = c_void_p()
             jsresult_err = c_void_p()
@@ -419,14 +411,14 @@ def main():
                         CGRect(), p_cfg,
                         argtypes=(CGRect, c_void_p))
                     pa.release_on_exit(p_webview)
-                    debug_log('webview init')
+                    logger.debug_log('webview init')
 
                 p_navidg = pa.safe_new_object(Py_NaviDg)
                 pa.release_on_exit(p_navidg)
                 pa.send_message(
                     p_webview, b'setNavigationDelegate:',
                     p_navidg, argtypes=(c_void_p, ))
-                debug_log('webview set navidg')
+                logger.debug_log('webview set navidg')
 
                 fut_navidone: CFEL_Future[None] = CFEL_Future()
                 async with AsyncExitStack() as exsk:
@@ -446,18 +438,18 @@ def main():
                     rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
                         p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
                         restype=c_void_p, argtypes=(c_void_p, c_void_p))))
-                    debug_log(f'Navigation started: {rp_navi}')
+                    logger.debug_log(f'Navigation started: {rp_navi}')
 
                     def cb_navi_done():
-                        debug_log('navigation done, resolving future')
+                        logger.debug_log('navigation done, resolving future')
                         fut_navidone.set_result(None)
 
                     navidg_cbdct[rp_navi.value] = cb_navi_done
 
-                    debug_log(f'loading: local HTML@{HOST.decode()}')
+                    logger.debug_log(f'loading: local HTML@{HOST.decode()}')
 
                     await fut_navidone
-                debug_log('navigation done')
+                logger.debug_log('navigation done')
 
                 fut_jsdone: CFEL_Future[tuple[c_void_p, c_void_p]] = CFEL_Future()
                 async with AsyncExitStack() as exsk:
@@ -479,7 +471,7 @@ def main():
                         pa.release_on_exit(jsresult_id)
                         jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
                         pa.release_on_exit(jsresult_err)
-                        debug_log(f'JS done, resolving future; {id_result=}, {err=}')
+                        logger.debug_log(f'JS done, resolving future; {id_result=}, {err=}')
                         fut_jsdone.set_result((jsresult_id, jsresult_err))
 
                     chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
@@ -503,26 +495,26 @@ def main():
                     b'description', restype=c_void_p)), default='<no description provided>')
                 raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
 
-            debug_log('JS execution completed')
+            logger.debug_log('JS execution completed')
 
             def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, *, visited: dict[int, Any], nil=None, null=None):
                 if not jsobj.value:
-                    debug_log(f'nil@{jsobj.value}')
+                    logger.debug_log(f'nil@{jsobj.value}')
                     return nil
                 elif visitedobj := visited.get(jsobj.value):
-                    debug_log(f'visited@{jsobj.value}')
+                    logger.debug_log(f'visited@{jsobj.value}')
                     return visitedobj
                 elif pa.instanceof(jsobj, NSNull):
-                    debug_log(f'null@{jsobj.value}')
+                    logger.debug_log(f'null@{jsobj.value}')
                     visited[jsobj.value] = null
                     return null
                 elif pa.instanceof(jsobj, NSString):
-                    debug_log(f'str@{jsobj.value}')
+                    logger.debug_log(f'str@{jsobj.value}')
                     s_res = str_from_nsstring(pa, jsobj)
                     visited[jsobj.value] = s_res
                     return s_res
                 elif pa.instanceof(jsobj, NSNumber):
-                    debug_log(f'num s @{jsobj.value}')
+                    logger.debug_log(f'num s @{jsobj.value}')
                     kcf_numtyp, restyp = type_to_largest[py_typecast(bytes, pa.send_message(
                         jsobj, b'objCType', restype=c_char_p))]
                     n_res = restyp()
@@ -532,7 +524,7 @@ def main():
                         raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
                     n_resv = n_res.value
                     visited[jsobj.value] = n_resv
-                    debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
+                    logger.debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
                     return n_resv
                 elif pa.instanceof(jsobj, NSDate):
                     dte1970 = py_typecast(float, CFDateGetAbsoluteTime(jsobj)) + 978307200.0
@@ -547,10 +539,10 @@ def main():
                     @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                     def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                         nonlocal d
-                        debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
+                        logger.debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
                         k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, nil=nil, null=null)
                         v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
-                        debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
+                        logger.debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                         d[k_] = v_
 
                     CFDictionaryApplyFunction(jsobj, visitor, jsobj)
@@ -561,14 +553,14 @@ def main():
                     visited[jsobj.value] = arr
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
-                        debug_log(f'visit s arr@{jsobj.value}; {v=}')
+                        logger.debug_log(f'visit s arr@{jsobj.value}; {v=}')
                         v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
-                        debug_log(f'visit e arr@{jsobj.value}; {v_=}')
+                        logger.debug_log(f'visit e arr@{jsobj.value}; {v_=}')
                         arr.append(v_)
                     return arr
                 else:
                     tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
-                    debug_log(f'unk@{jsobj.value=}; {tn=}')
+                    logger.debug_log(f'unk@{jsobj.value=}; {tn=}')
                     unk_res = _UnknownStructure(tn)
                     visited[jsobj.value] = unk_res
                     return unk_res
@@ -576,7 +568,7 @@ def main():
             print(f'JS Returned {pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)!r}')
     except Exception:
         import traceback
-        write_err(traceback.format_exc())
+        logger.write_err(traceback.format_exc())
         return 1
     return 0
 

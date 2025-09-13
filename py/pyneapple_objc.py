@@ -30,7 +30,7 @@ from ctypes.util import find_library
 from functools import wraps
 from typing import Callable, Generator, Optional, Protocol, TypeVar, Union, overload, cast as py_typecast
 
-from .logging import dummy_debug_log as debug_log
+from .logging import Logger
 
 
 T = TypeVar('T')
@@ -42,9 +42,9 @@ def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):
     return c_fn
 
 
-def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type) -> Callable:
+def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type, logger: Logger) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
-    debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
+    logger.debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
@@ -98,15 +98,15 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
     fn_dlerror = setup_signature(ldl.dlerror, c_char_p)
 
     @contextmanager
-    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY) -> Generator[DLSYM_FUNC, None, None]:
-        debug_log(f'will dlopen {path.decode()}')
+    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY, *, logger: Logger) -> Generator[DLSYM_FUNC, None, None]:
+        logger.debug_log(f'will dlopen {path.decode()}')
         h_lib = DLError.handle(
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
         try:
-            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: debug_log(f'dlsym@{x}', ret=x))(x)))
+            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: logger.debug_log(f'dlsym@{x}', ret=x))(x)))
         finally:
-            debug_log(f'will dlclose {path.decode()}')
+            logger.debug_log(f'will dlclose {path.decode()}')
             DLError.handle(
                 not fn_dlclose(h_lib),
                 b'dlclose', path.decode(), fn_dlerror())
@@ -162,7 +162,7 @@ NULLABLE_VOIDP = Union[NotNull_VoidP, c_void_p]
 
 class PyNeApple:
     __slots__ = (
-        '_stack', 'dlsym_of_lib', '_fwks', '_init',
+        '_stack', 'dlsym_of_lib', '_fwks', '_init', 'logger',
         '_objc', '_system',
         'p_NSConcreteMallocBlock',
         'class_addProtocol', 'class_addMethod', 'class_addIvar',
@@ -181,10 +181,14 @@ class PyNeApple:
             return find_library(fwk_name)
         return f'/System/Library/Frameworks/{fwk_name}.framework/{fwk_name}'
 
-    def __init__(self):
+    def __init__(self, logger: Logger):
         if platform.uname()[0] != 'Darwin':
             print('Warning: kernel is not Darwin, PyNeApple might not function correctly')
         self._init = False
+        self.logger = logger
+
+    def cfn_at(self, addr: int, restype: Optional[type] = None, *argtypes: type) -> Callable:
+        return cfn_at(addr, restype, *argtypes, logger=self.logger)
 
     def __enter__(self):
         if self._init:
@@ -195,36 +199,36 @@ class PyNeApple:
             self._fwks: dict[str, DLSYM_FUNC] = {}
             self._init = True
 
-            self._objc = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_NOW))
-            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libSystem.B.dylib', os.RTLD_LAZY))
+            self._objc = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_NOW, logger=self.logger))
+            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libSystem.B.dylib', os.RTLD_LAZY, logger=self.logger))
             self.p_NSConcreteMallocBlock = self._system(b'_NSConcreteMallocBlock').value
 
-            self.class_addProtocol = cfn_at(self._objc(b'class_addProtocol').value, c_byte, c_void_p, c_void_p)
-            self.class_addMethod = cfn_at(self._objc(b'class_addMethod').value, c_byte, c_void_p, c_void_p, c_void_p, c_char_p)
-            self.class_addIvar = cfn_at(self._objc(b'class_addIvar').value, c_byte, c_void_p, c_char_p, c_size_t, c_uint8, c_char_p)
-            self.class_conformsToProtocol = cfn_at(self._objc(b'class_conformsToProtocol').value, c_byte, c_void_p, c_void_p)
-            self.class_getInstanceMethod = cfn_at(self._objc(b'class_getInstanceMethod').value, c_void_p, c_void_p, c_void_p)
-            self.class_getName = cfn_at(self._objc(b'class_getName').value, c_char_p, c_void_p)
+            self.class_addProtocol = self.cfn_at(self._objc(b'class_addProtocol').value, c_byte, c_void_p, c_void_p)
+            self.class_addMethod = self.cfn_at(self._objc(b'class_addMethod').value, c_byte, c_void_p, c_void_p, c_void_p, c_char_p)
+            self.class_addIvar = self.cfn_at(self._objc(b'class_addIvar').value, c_byte, c_void_p, c_char_p, c_size_t, c_uint8, c_char_p)
+            self.class_conformsToProtocol = self.cfn_at(self._objc(b'class_conformsToProtocol').value, c_byte, c_void_p, c_void_p)
+            self.class_getInstanceMethod = self.cfn_at(self._objc(b'class_getInstanceMethod').value, c_void_p, c_void_p, c_void_p)
+            self.class_getName = self.cfn_at(self._objc(b'class_getName').value, c_char_p, c_void_p)
 
-            self.objc_getProtocol = cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
-            self.objc_allocateClassPair = cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
-            self.objc_registerClassPair = cfn_at(self._objc(b'objc_registerClassPair').value, None, c_void_p)
-            self.objc_disposeClassPair = cfn_at(self._objc(b'objc_disposeClassPair').value, None, c_void_p)
-            self.objc_getClass = cfn_at(self._objc(b'objc_getClass').value, c_void_p, c_char_p)
+            self.objc_getProtocol = self.cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
+            self.objc_allocateClassPair = self.cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
+            self.objc_registerClassPair = self.cfn_at(self._objc(b'objc_registerClassPair').value, None, c_void_p)
+            self.objc_disposeClassPair = self.cfn_at(self._objc(b'objc_disposeClassPair').value, None, c_void_p)
+            self.objc_getClass = self.cfn_at(self._objc(b'objc_getClass').value, c_void_p, c_char_p)
             self.pobjc_msgSend = self._objc(b'objc_msgSend').value
             self.pobjc_msgSendSuper = self._objc(b'objc_msgSendSuper').value
 
-            self.object_getClass = cfn_at(self._objc(b'object_getClass').value, c_void_p, c_void_p)
-            self.object_getInstanceVariable = cfn_at(
+            self.object_getClass = self.cfn_at(self._objc(b'object_getClass').value, c_void_p, c_void_p)
+            self.object_getInstanceVariable = self.cfn_at(
                 self._objc(b'object_getInstanceVariable').value, c_void_p,
                 c_void_p, c_char_p, POINTER(c_void_p))
-            self.object_setInstanceVariable = cfn_at(
+            self.object_setInstanceVariable = self.cfn_at(
                 self._objc(b'object_setInstanceVariable').value, c_void_p,
                 c_void_p, c_char_p, c_void_p)
 
-            self.method_setImplementation = cfn_at(self._objc(b'method_setImplementation').value, c_void_p, c_void_p, c_void_p)
+            self.method_setImplementation = self.cfn_at(self._objc(b'method_setImplementation').value, c_void_p, c_void_p, c_void_p)
 
-            self.sel_registerName = cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
+            self.sel_registerName = self.cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
             return self
         except Exception as e:
             if hasattr(self, '_stack'):
@@ -243,7 +247,7 @@ class PyNeApple:
         return self._system
 
     def open_dylib(self, path: bytes, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
-        return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode))
+        return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode, logger=self.logger))
 
     def load_framework_from_path(self, fwk_name: str, fwk_path: Optional[str] = None, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
         if not fwk_path:
@@ -300,11 +304,11 @@ class PyNeApple:
         if restype and issubclass(restype, Structure):
             raise NotImplementedError
         sel = c_void_p(self.sel_registerName(sel_name))
-        debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
+        self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
             receiver = objc_super(receiver=obj, super_class=c_void_p(self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)))
-            cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
-        return cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
+            self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
+        return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
         obj = c_void_p(self.send_message(py_typecast(c_void_p, cls), b'alloc', restype=c_void_p))
@@ -323,7 +327,7 @@ class PyNeApple:
         Cls = c_void_p(self.objc_getClass(name))
         if not Cls.value:
             raise RuntimeError(f'Failed to get class {name.decode()}')
-        debug_log(f'getClass {name.decode()} = {Cls.value}')
+        self.logger.debug_log(f'getClass {name.decode()} = {Cls.value}')
         return py_typecast(NotNull_VoidP, Cls.value)
 
     def make_block(self, cb: Callable, restype: Optional[type] = None, *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':

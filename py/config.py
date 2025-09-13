@@ -2,13 +2,14 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 return await (async ()=>{  // IIAFE
-const wrapResult = x=>{
-    Object.defineProperty(x, 'computed', {
+const wrapResult = ()=>{
+    let x = {};
+    return Object.defineProperty(x, 'computed', {
         get() { return this._value * 2; },
         set(v) { this._value = v / 2; },
         enumerable: true
-    });  // will appear as 60.0
-    x._value = 30;  // will be a float
+    }),  // will appear as 60.0
+    x._value = 30,  // will be a float
     return x._self_ = x,  // this will be another object, whose _self_ points to itself
     x.dt = new Date,  // dt.datetime in utc
     x.u8arr = new Uint8Array([3, 46, 7]),
@@ -35,6 +36,10 @@ const wrapResult = x=>{
     x.__proto__ = {in: 32},  // discarded
     x.booleanv = [true, false],  // coerced to [1, 0]
     x.arrBint = [123456789012345678901234567890n, undefined],  // [<null object>, <null object>]
+    x.arrWithBlank = new Array(5),
+    x.arrWithBlank[0] = 'first',
+    x.arrWithBlank[4] = 'last',
+    x.args = [arguments],
     x;
 };
 try {
