@@ -1,3 +1,4 @@
+import datetime as dt
 import os
 import sys
 
@@ -185,6 +186,7 @@ def main():
             pa.load_framework_from_path('WebKit')
             debug_log('Loaded libs')
             NSArray = pa.safe_objc_getClass(b'NSArray')
+            NSDate = pa.safe_objc_getClass(b'NSDate')
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
             NSNumber = pa.safe_objc_getClass(b'NSNumber')
@@ -205,6 +207,7 @@ def main():
             mainloop = c_void_p(CFRunLoopGetMain())
             if currloop.value != mainloop.value:
                 debug_log('warning: running code on another loop is an experimental feature')
+            CFDateGetAbsoluteTime = cfn_at(cf(b'CFNumberGetValue').value, c_double, c_void_p)
             CFNumberGetValue = cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
             kCFNumberFloat64Type = c_long(6)
             kCFNumberLongLongType = c_long(11)
@@ -512,6 +515,11 @@ def main():
                     visited[jsobj.value] = n_res
                     debug_log(f'num e {n_res.value.__class__.__name__}@{jsobj.value}')
                     return n_res.value
+                elif pa.instanceof(jsobj, NSDate):
+                    dte = py_typecast(float, CFDateGetAbsoluteTime(jsobj))
+                    py_dte = dt.datetime.fromtimestamp(dte + 978307200.0, dt.timezone.utc)
+                    visited[jsobj.value] = py_dte
+                    return py_dte
                 elif pa.instanceof(jsobj, NSDictionary):
                     d = {}
                     visited[jsobj.value] = d
