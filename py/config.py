@@ -1,6 +1,49 @@
 HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
+let x = {};
+return Object.defineProperty(x, 'computed', {
+    get() { return this._value * 2; },
+    set(v) { this._value = v / 2; },
+    enumerable: true
+}),  // will appear as 60.0
+// x.fn = () => {},  // functions are unsupported
+x._value = 30,  // will be a float
+x._self_ = x,  // this will be another object, whose _self_ points to itself
+x.dt = new Date,  // dt.datetime in utc
+x.u8arr = new Uint8Array([3, 46, 7]),
+x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
+x.carr[0][1] = x.carr,
+x.map = new Map(x.carr),  // same as _self_
+x.mapNoCirc = new Map([[3,7],[4,2],[8,0]]),
+x.nan = NaN,  // math.nan
+x.inf = Infinity,  // math.inf
+x.ninf = -Infinity,  // -math.inf
+x.nzr = -0,  // -0.0
+x._bstr = 'a\u0000\n\tbあx',  // unicode is supported, and the string does not get truncated at '\0'
+x.bint = 123456789012345678901234567890n,  // same as undefined
+//x.sym = Symbol('I'),  // unsupported
+//x.si = Symbol.iterator,  // unsupported
+x.ab = new ArrayBuffer(8),  // {}
+x.set = new Set([3, 5, 2]),  // {}
+x.re = /\s*\d+\s*/gi,  // {}
+x['ああ'] = null,  // <null object>
+x['あ'] = undefined,  // discarded in dictionaries/undefined if at top level/undefined in arrays
+//x.wm = new WeakMap,  // unsupported
+//x.ws = new WeakSet,  // unsupported
+//x.td = new TextDecoder,  // unsupported
+x.__proto__ = {in: 32},  // discarded
+x.booleanv = [true, false],  // coerced to [1, 0]
+x.arrBint = [123456789012345678901234567890n, undefined],  // [<null object>, <null object>]
+x.arrWithBlank = new Array(5),
+x.arrWithBlank[0] = 'first',
+x.arrWithBlank[4] = 'last',
+//x.args = [arguments],  // unsupported
+//x.clsm = Map,  // TODO: test
+x.instWMeth = {__proto__: {foo: ()=>{}}},
+x.prom = Promise.resolve(42),
+x;
+/*
 return await (async ()=>{  // IIAFE
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
@@ -226,4 +269,5 @@ const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 return {result: 'success', debugInfo: [document.URL], data: pot};
 } catch(e) {return {result: 'error', debugInfo: [document.URL], error: e};}
 })();
+*/
 '''.encode()
