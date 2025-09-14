@@ -43,7 +43,7 @@ x.arrWithBlank[4] = 'last',
 x.instWMeth = {__proto__: {foo: ()=>{}}},
 x.prom = Promise.resolve(42),
 x;
-/*
+
 return await (async ()=>{  // IIAFE
 try {
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
@@ -269,5 +269,4 @@ const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 return {result: 'success', debugInfo: [document.URL], data: pot};
 } catch(e) {return {result: 'error', debugInfo: [document.URL], error: e};}
 })();
-*/
 '''.encode()
