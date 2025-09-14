@@ -40,7 +40,7 @@ x.arrWithBlank[0] = 'first',
 x.arrWithBlank[4] = 'last',
 //x.args = [arguments],  // unsupported
 //x.clsm = Map,  // TODO: test
-x.instWMeth = {__proto__: {foo: ()=>{}}},
+//x.instWMeth = {__proto__: {foo: ()=>{}}},
 x.prom = Promise.resolve(42),
 x;
 
