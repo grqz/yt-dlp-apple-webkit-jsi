@@ -11,6 +11,7 @@ return Object.defineProperty(x, 'computed', {
     set(v) { this._value = v / 2; },
     enumerable: true
 }),  // will appear as 60.0
+// x.fn = () => {},  // functions are unsupported
 x._value = 30,  // will be a float
 x._self_ = x,  // this will be another object, whose _self_ points to itself
 x.dt = new Date,  // dt.datetime in utc
@@ -31,7 +32,7 @@ x.ab = new ArrayBuffer(8),  // {}
 x.set = new Set([3, 5, 2]),  // {}
 x.re = /\s*\d+\s*/gi,  // {}
 x['ああ'] = null,  // <null object>
-x['あ'] = undefined,  // discarded in dictionaries/nil if at top level/undefined in arrays
+x['あ'] = undefined,  // discarded in dictionaries/undefined if at top level/undefined in arrays
 //x.wm = new WeakMap,  // unsupported
 //x.ws = new WeakSet,  // unsupported
 //x.td = new TextDecoder,  // unsupported
@@ -45,7 +46,7 @@ x.arrWithBlank[4] = 'last',
 x;
 ```
 
-The return value you will get from python(pprinted):
+The return value you will get from python(pprinted, undefined=None, null=_NullTag):
 ```log
 {'_bstr': 'a\x00\n\tbあx',
  '_self_': {'_bstr': 'a\x00\n\tbあx',

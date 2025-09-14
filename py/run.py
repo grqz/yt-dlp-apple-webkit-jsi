@@ -52,6 +52,7 @@ from .logging import Logger
 
 T = TypeVar('T')
 U = TypeVar('U')
+V = TypeVar('V')
 
 
 class CFEL_Future(Awaitable[T]):
@@ -159,6 +160,19 @@ class _NullTag:
     ...
 
 
+_JSResultType = Union[
+    T,  # type[None], undefined
+    U,  # type[None], null
+    str,
+    int,
+    float,
+    dt.datetime,
+    dict['_JSResultType', '_JSResultType'],
+    list['_JSResultType'],
+    V,  # type[_UnkownStructure]
+]
+
+
 def main():
     logger = Logger()
     logger.debug_log(f'PID: {os.getpid()}')
@@ -233,14 +247,13 @@ def main():
                 b'L': (kCFNumberLongLongType, c_uint64),
                 b'q': (kCFNumberLongLongType, c_int64),
                 b'Q': (kCFNumberLongLongType, c_uint64),
-
                 b'f': (kCFNumberFloat64Type, c_double),
                 b'd': (kCFNumberFloat64Type, c_double),
             }
 
             kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
-            def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode: c_void_p = kCFRunLoopDefaultMode):
+            def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode=kCFRunLoopDefaultMode):
                 block: ObjCBlock
 
                 def _pycb_real():
@@ -498,10 +511,18 @@ def main():
 
             logger.debug_log('JS execution completed')
 
-            def pyobj_from_nsobj_jsresult(pa: PyNeApple, jsobj: c_void_p, *, visited: dict[int, Any], nil=None, null=None):
+            def pyobj_from_nsobj_jsresult(
+                pa: PyNeApple,
+                jsobj: c_void_p,
+                *,
+                visited: dict[int, _JSResultType[T, U, V]],
+                undefined: T = None,
+                null: U = None,
+                on_unknown_st: Callable[[str], V] = _UnknownStructure,
+            ) -> _JSResultType[T, U, V]:
                 if not jsobj.value:
-                    logger.debug_log(f'nil@{jsobj.value}')
-                    return nil
+                    logger.debug_log(f'undefined@{jsobj.value}')
+                    return undefined
                 elif visitedobj := visited.get(jsobj.value):
                     logger.debug_log(f'visited@{jsobj.value}')
                     return visitedobj
@@ -511,7 +532,7 @@ def main():
                     return null
                 elif pa.instanceof(jsobj, NSString):
                     logger.debug_log(f'str@{jsobj.value}')
-                    s_res = str_from_nsstring(pa, jsobj)
+                    s_res = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsobj))
                     visited[jsobj.value] = s_res
                     return s_res
                 elif pa.instanceof(jsobj, NSNumber):
@@ -541,8 +562,8 @@ def main():
                     def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                         nonlocal d
                         logger.debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
-                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, nil=nil, null=null)
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
+                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
                         logger.debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                         d[k_] = v_
 
@@ -555,14 +576,14 @@ def main():
                     for i in range(larr):
                         v = CFArrayGetValueAtIndex(jsobj, i)
                         logger.debug_log(f'visit s arr@{jsobj.value}; {v=}')
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, nil=nil, null=null)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
                         logger.debug_log(f'visit e arr@{jsobj.value}; {v_=}')
                         arr.append(v_)
                     return arr
                 else:
                     tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
                     logger.debug_log(f'unk@{jsobj.value=}; {tn=}')
-                    unk_res = _UnknownStructure(tn)
+                    unk_res = on_unknown_st(tn)
                     visited[jsobj.value] = unk_res
                     return unk_res
 
