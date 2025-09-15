@@ -1,6 +1,6 @@
-# Relations between Javascript objects and Python objects
+# Mappings between Javascript and Python objects (through the WebKit API)
 
-## Javascript return value
+## Javascript return values
 
 Example code (RuntimeError will be thrown if you return an unsupported object):
 
@@ -43,6 +43,12 @@ x.arrWithBlank = new Array(5),
 x.arrWithBlank[0] = 'first',
 x.arrWithBlank[4] = 'last',
 //x.args = [arguments],  // unsupported
+//x.clsm = Map,  // unsupported
+x.instWMeth = {y: 6, __proto__: {x: 3, foo() {return this.y}}},
+x.realfloat = 0.1 + 0.2,  // obviously not 0.3
+//x.prom = Promise.resolve(42),  // unsupported
+//x.canvas = document.createElement('canvas'), // unsupported
+//x.xhr = new XMLHttpRequest,  // unsupported
 x;
 ```
 
@@ -50,7 +56,7 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
 ```log
 {'_bstr': 'a\x00\n\tbあx',
  '_self_': {'_bstr': 'a\x00\n\tbあx',
-            '_self_': <Recursion on dict with id=4318527680>,
+            '_self_': <Recursion on dict with id=4351871744>,
             '_value': 30.0,
             'ab': {},
             'arrBint': [<class '__main__._NullTag'>,
@@ -62,7 +68,7 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
                              'last'],
             'booleanv': [1, 0],
             'carr': [[7.0,
-                      [<Recursion on list with id=4316887808>,
+                      [<Recursion on list with id=4351262592>,
                        [3.0, 7.0],
                        [4.0, 2.0],
                        [8.0, 0.0]]],
@@ -70,14 +76,16 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
                      [4.0, 2.0],
                      [8.0, 0.0]],
             'computed': 60.0,
-            'dt': datetime.datetime(2025, 9, 13, 7, 3, 46, 321000, tzinfo=datetime.timezone.utc),
+            'dt': datetime.datetime(2025, 9, 15, 0, 12, 2, 494000, tzinfo=datetime.timezone.utc),
             'inf': inf,
+            'instWMeth': {'y': 6.0},
             'map': {},
             'mapNoCirc': {},
             'nan': nan,
             'ninf': -inf,
             'nzr': -0.0,
             're': {},
+            'realfloat': 0.30000000000000004,
             'set': {},
             'u8arr': {'0': 3.0, '1': 46.0, '2': 7.0},
             'ああ': <class '__main__._NullTag'>},
@@ -90,19 +98,21 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
                   <class '__main__._NullTag'>,
                   'last'],
  'booleanv': [1, 0],
- 'carr': [[7.0, <Recursion on list with id=4314184704>],
+ 'carr': [[7.0, <Recursion on list with id=4348490752>],
           [3.0, 7.0],
           [4.0, 2.0],
           [8.0, 0.0]],
  'computed': 60.0,
- 'dt': datetime.datetime(2025, 9, 13, 7, 3, 46, 321000, tzinfo=datetime.timezone.utc),
+ 'dt': datetime.datetime(2025, 9, 15, 0, 12, 2, 494000, tzinfo=datetime.timezone.utc),
  'inf': inf,
+ 'instWMeth': {'y': 6.0},
  'map': {},
  'mapNoCirc': {},
  'nan': nan,
  'ninf': -inf,
  'nzr': -0.0,
  're': {},
+ 'realfloat': 0.30000000000000004,
  'set': {},
  'u8arr': {'0': 3.0, '1': 46.0, '2': 7.0},
  'ああ': <class '__main__._NullTag'>}
