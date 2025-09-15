@@ -55,11 +55,11 @@ U = TypeVar('U')
 V = TypeVar('V')
 
 
-class CFEL_Future(Awaitable[T]):
+class CFRL_Future(Awaitable[T]):
     __slots__ = '_cbs', '_done', '_result'
 
     def __init__(self):
-        self._cbs: list[Callable[['CFEL_Future[T]'], None]] = []
+        self._cbs: list[Callable[['CFRL_Future[T]'], None]] = []
         self._done = False
         self._result: Optional[T] = None
 
@@ -68,7 +68,7 @@ class CFEL_Future(Awaitable[T]):
             raise RuntimeError('result method called upon a future that is not yet resolved')
         return py_typecast(T, self._result)
 
-    def add_done_callback(self, cb: Callable[['CFEL_Future[T]'], None]) -> None:
+    def add_done_callback(self, cb: Callable[['CFRL_Future[T]'], None]) -> None:
         if not self._done:
             self._cbs.append(cb)
         else:
@@ -94,7 +94,7 @@ class CFEL_Future(Awaitable[T]):
 
 
 @dataclass
-class CFEL_CoroResult(Generic[T]):
+class CFRL_CoroResult(Generic[T]):
     ret: T
     rexc: Optional[BaseException] = None
 
@@ -227,7 +227,7 @@ def main():
             currloop = c_void_p(pa.cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
             mainloop = c_void_p(CFRunLoopGetMain())
             if currloop.value != mainloop.value:
-                logger.debug_log('warning: running code on another loop is an experimental feature')
+                logger.write_err('warning: running code on another loop is an experimental feature')
             CFDateGetAbsoluteTime = pa.cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
             CFNumberGetValue = pa.cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
             kCFNumberFloat64Type = c_long(6)
@@ -271,34 +271,35 @@ def main():
                 loop: c_void_p,
                 default: U = None,
                 finish: Callable[[BaseException], None]
-            ) -> CFEL_CoroResult[Union[T, U]]:
+            ) -> CFRL_CoroResult[Union[T, U]]:
                 # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
-                res = CFEL_CoroResult[Union[T, U]](default)
+                res = CFRL_CoroResult[Union[T, U]](default)
                 logger.debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
                 def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
                     nonlocal res
                     logger.debug_log(f'coro step: {v=}; {exc=}')
-                    fut: CFEL_Future
+                    fut: CFRL_Future
                     try:
                         if exc is not None:
                             fut = coro.throw(exc)
                         else:
                             fut = coro.send(v)
+                        # TODO: support awaitables that aren't futures
                     except StopIteration as si:
                         logger.debug_log(f'stopping with return value: {si.value=}')
-                        finish(si)
                         res.ret = si.value
+                        finish(si)
                         return
                     except BaseException as e:
                         logger.debug_log(f'will throw exc raised from coro: {e=}')
-                        finish(e)
                         res.rexc = e
+                        finish(e)
                         return
                     else:
                         logger.debug_log(f'attaching done cb to: {fut=}')
 
-                    def _on_fut_done(f: CFEL_Future):
+                    def _on_fut_done(f: CFRL_Future):
                         logger.debug_log(f'fut done: {f=}')
                         try:
                             fut_res = f.result()
@@ -434,7 +435,7 @@ def main():
                     p_navidg, argtypes=(c_void_p, ))
                 logger.debug_log('webview set navidg')
 
-                fut_navidone: CFEL_Future[None] = CFEL_Future()
+                fut_navidone: CFRL_Future[None] = CFRL_Future()
                 async with AsyncExitStack() as exsk:
                     ps_html = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', HTML,
@@ -465,7 +466,7 @@ def main():
                     await fut_navidone
                 logger.debug_log('navigation done')
 
-                fut_jsdone: CFEL_Future[tuple[c_void_p, c_void_p]] = CFEL_Future()
+                fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
                 async with AsyncExitStack() as exsk:
                     ps_script = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', SCRIPT,

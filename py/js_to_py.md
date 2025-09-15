@@ -2,7 +2,7 @@
 
 ## Javascript return values
 
-Example code (RuntimeError will be thrown if you return an unsupported object):
+Example code (RuntimeError will be raised if you return an unsupported object):
 
 ```js
 let x = {};
