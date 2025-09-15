@@ -42,8 +42,8 @@ x.arrWithBlank[4] = 'last',
 //x.clsm = Map,  // unsupported
 x.instWMeth = {y: 6, __proto__: {x: 3, foo() {return this.y}}},
 //x.prom = Promise.resolve(42),  // unsupported
-//x.canvas = document.createElement('canvas'), // unsupported?
-x.xhr = new XMLHttpRequest,
+x.canvas = document.createElement('canvas'), // unsupported?
+//x.xhr = new XMLHttpRequest,  // unsupported
 x;
 
 return await (async ()=>{  // IIAFE
