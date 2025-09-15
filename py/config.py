@@ -39,9 +39,11 @@ x.arrWithBlank = new Array(5),
 x.arrWithBlank[0] = 'first',
 x.arrWithBlank[4] = 'last',
 //x.args = [arguments],  // unsupported
-x.clsm = Map,  // TODO: test
+//x.clsm = Map,  // unsupported
 x.instWMeth = {y: 6, __proto__: {x: 3, foo() {return this.y}}},
-//x.prom = Promise.resolve(42),
+//x.prom = Promise.resolve(42),  // unsupported
+x.canvas = document.createElement('canvas'),
+x.xhr = new XMLHttpRequest,
 x;
 
 return await (async ()=>{  // IIAFE
