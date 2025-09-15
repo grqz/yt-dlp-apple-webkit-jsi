@@ -39,8 +39,8 @@ x.arrWithBlank = new Array(5),
 x.arrWithBlank[0] = 'first',
 x.arrWithBlank[4] = 'last',
 //x.args = [arguments],  // unsupported
-//x.clsm = Map,  // TODO: test
-x.instWMeth = {__proto__: {foo: ()=>{}}},
+x.clsm = Map,  // TODO: test
+x.instWMeth = {y: 6, __proto__: {x: 3, foo() {return this.y}}},
 //x.prom = Promise.resolve(42),
 x;
 
