@@ -223,7 +223,7 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`visitorData(generated with Innertube): ${visitorData}`);
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
-return {result: 'success', debugInfo: [document.URL], data: pot, towk: typeof window.webkit};
+return {result: 'success', debugInfo: [document.URL], data: pot};
 } catch(e) {return {result: 'error', debugInfo: [document.URL], error: e};}
 })();
 '''.encode()
