@@ -472,9 +472,9 @@ def main():
                         p_wvhandler, p_handler_name,
                         argtypes=(c_void_p, c_void_p))
 
-                    # pa.send_message(
-                    #     p_cfg, b'setUserContentController', p_usrcontctlr,
-                    #     argtypes=(c_void_p, ))
+                    pa.send_message(
+                        p_cfg, b'setUserContentController:', p_usrcontctlr,
+                        argtypes=(c_void_p, ))
 
                     p_webview = pa.safe_new_object(
                         WKWebView, b'initWithFrame:configuration:',
@@ -482,11 +482,6 @@ def main():
                         argtypes=(CGRect, c_void_p))
                     pa.release_on_exit(p_webview)
                     logger.debug_log('webview init')
-
-                    p_real_cfg = c_void_p(pa.send_message(p_webview, b'configuration', restype=c_void_p))
-                    pa.send_message(
-                        p_real_cfg, b'setUserContentController', p_usrcontctlr,
-                        argtypes=(c_void_p, ))
 
                 pa.send_message(
                     p_webview, b'setNavigationDelegate:',
