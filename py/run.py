@@ -241,6 +241,82 @@ def main():
 
             kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
+            def pyobj_from_nsobj_jsresult(
+                pa: PyNeApple,
+                jsobj: c_void_p,
+                *,
+                visited: dict[int, _JSResultType[T, U, V]],
+                undefined: T = None,
+                null: U = None,
+                on_unknown_st: Callable[[str], V] = _UnknownStructure,
+            ) -> _JSResultType[T, U, V]:
+                if not jsobj.value:
+                    logger.debug_log(f'undefined@{jsobj.value}')
+                    return undefined
+                elif visitedobj := visited.get(jsobj.value):
+                    logger.debug_log(f'visited@{jsobj.value}')
+                    return visitedobj
+                elif pa.instanceof(jsobj, NSNull):
+                    logger.debug_log(f'null@{jsobj.value}')
+                    visited[jsobj.value] = null
+                    return null
+                elif pa.instanceof(jsobj, NSString):
+                    logger.debug_log(f'str@{jsobj.value}')
+                    s_res = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsobj))
+                    visited[jsobj.value] = s_res
+                    return s_res
+                elif pa.instanceof(jsobj, NSNumber):
+                    logger.debug_log(f'num s @{jsobj.value}')
+                    kcf_numtyp, restyp = type_to_largest[py_typecast(bytes, pa.send_message(
+                        jsobj, b'objCType', restype=c_char_p))]
+                    n_res = restyp()
+                    if not CFNumberGetValue(jsobj, kcf_numtyp, byref(n_res)):
+                        sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
+                            pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+                        raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
+                    n_resv = n_res.value
+                    visited[jsobj.value] = n_resv
+                    logger.debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
+                    return n_resv
+                elif pa.instanceof(jsobj, NSDate):
+                    dte1970 = py_typecast(float, CFDateGetAbsoluteTime(jsobj)) + 978307200.0
+                    # dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
+                    py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
+                    visited[jsobj.value] = py_dte
+                    return py_dte
+                elif pa.instanceof(jsobj, NSDictionary):
+                    d = {}
+                    visited[jsobj.value] = d
+
+                    @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
+                    def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
+                        nonlocal d
+                        logger.debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
+                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
+                        logger.debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
+                        d[k_] = v_
+
+                    CFDictionaryApplyFunction(jsobj, visitor, jsobj)
+                    return d
+                elif pa.instanceof(jsobj, NSArray):
+                    larr = CFArrayGetCount(jsobj)
+                    arr = []
+                    visited[jsobj.value] = arr
+                    for i in range(larr):
+                        v = CFArrayGetValueAtIndex(jsobj, i)
+                        logger.debug_log(f'visit s arr@{jsobj.value}; {v=}')
+                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
+                        logger.debug_log(f'visit e arr@{jsobj.value}; {v_=}')
+                        arr.append(v_)
+                    return arr
+                else:
+                    tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
+                    logger.debug_log(f'unk@{jsobj.value=}; {tn=}')
+                    unk_res = on_unknown_st(tn)
+                    visited[jsobj.value] = unk_res
+                    return unk_res
+
             def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode=kCFRunLoopDefaultMode):
                 block: ObjCBlock
 
@@ -360,7 +436,7 @@ def main():
                 @staticmethod
                 def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
-                    # TODO
+                    print(pyobj_from_nsobj_jsresult(pa, c_void_p(rp_sm), visited={}, null=_NullTag))
 
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
@@ -564,82 +640,6 @@ def main():
                 raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
 
             logger.debug_log('JS execution completed')
-
-            def pyobj_from_nsobj_jsresult(
-                pa: PyNeApple,
-                jsobj: c_void_p,
-                *,
-                visited: dict[int, _JSResultType[T, U, V]],
-                undefined: T = None,
-                null: U = None,
-                on_unknown_st: Callable[[str], V] = _UnknownStructure,
-            ) -> _JSResultType[T, U, V]:
-                if not jsobj.value:
-                    logger.debug_log(f'undefined@{jsobj.value}')
-                    return undefined
-                elif visitedobj := visited.get(jsobj.value):
-                    logger.debug_log(f'visited@{jsobj.value}')
-                    return visitedobj
-                elif pa.instanceof(jsobj, NSNull):
-                    logger.debug_log(f'null@{jsobj.value}')
-                    visited[jsobj.value] = null
-                    return null
-                elif pa.instanceof(jsobj, NSString):
-                    logger.debug_log(f'str@{jsobj.value}')
-                    s_res = str_from_nsstring(pa, py_typecast(NotNull_VoidP, jsobj))
-                    visited[jsobj.value] = s_res
-                    return s_res
-                elif pa.instanceof(jsobj, NSNumber):
-                    logger.debug_log(f'num s @{jsobj.value}')
-                    kcf_numtyp, restyp = type_to_largest[py_typecast(bytes, pa.send_message(
-                        jsobj, b'objCType', restype=c_char_p))]
-                    n_res = restyp()
-                    if not CFNumberGetValue(jsobj, kcf_numtyp, byref(n_res)):
-                        sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
-                            pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
-                        raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
-                    n_resv = n_res.value
-                    visited[jsobj.value] = n_resv
-                    logger.debug_log(f'num e {n_resv.__class__.__name__}@{jsobj.value}')
-                    return n_resv
-                elif pa.instanceof(jsobj, NSDate):
-                    dte1970 = py_typecast(float, CFDateGetAbsoluteTime(jsobj)) + 978307200.0
-                    # dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
-                    py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
-                    visited[jsobj.value] = py_dte
-                    return py_dte
-                elif pa.instanceof(jsobj, NSDictionary):
-                    d = {}
-                    visited[jsobj.value] = d
-
-                    @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
-                    def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
-                        nonlocal d
-                        logger.debug_log(f'visit s dict@{userarg=}; {k=}; {v=}')
-                        k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                        logger.debug_log(f'visit e dict@{userarg=}; {k_=}; {v_=}')
-                        d[k_] = v_
-
-                    CFDictionaryApplyFunction(jsobj, visitor, jsobj)
-                    return d
-                elif pa.instanceof(jsobj, NSArray):
-                    larr = CFArrayGetCount(jsobj)
-                    arr = []
-                    visited[jsobj.value] = arr
-                    for i in range(larr):
-                        v = CFArrayGetValueAtIndex(jsobj, i)
-                        logger.debug_log(f'visit s arr@{jsobj.value}; {v=}')
-                        v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                        logger.debug_log(f'visit e arr@{jsobj.value}; {v_=}')
-                        arr.append(v_)
-                    return arr
-                else:
-                    tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
-                    logger.debug_log(f'unk@{jsobj.value=}; {tn=}')
-                    unk_res = on_unknown_st(tn)
-                    visited[jsobj.value] = unk_res
-                    return unk_res
 
             result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
             print(f'{pformat(result_pyobj)}')
