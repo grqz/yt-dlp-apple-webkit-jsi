@@ -242,10 +242,10 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
-return 0;
+return false;
 } catch(e) {
     console.error({result: 'error', debugInfo: [document.URL], error: e});
-    return 1;
+    return true;
 }
 })();
 '''.encode()
