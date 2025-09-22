@@ -1,8 +1,26 @@
 HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
+(()=>{
+function __postmsg(x) {
+    window.webkit.messageHandlers.pywk.postMessage(x);
+}
+Object.entries({
+    trace: 'TRACE',
+    debug: 'DIAG',
+    log: 'INFO',
+    info: 'INFO',
+    warn: 'WARN',
+    error: 'ERR',
+}).forEach(([fn, logType])=>{
+    console[fn] = ()=>{
+        __postmsg({logType, argsArr: Array.from(arguments)});
+    };
+});
+})();
 return await (async ()=>{  // IIAFE
 try {
+console.log('started', 'generating pot');
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
@@ -223,10 +241,10 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`visitorData(generated with Innertube): ${visitorData}`);
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
-window.webkit.messageHandlers.pywk.postMessage({result: 'success', debugInfo: [document.URL], data: pot});
+console.info({result: 'success', debugInfo: [document.URL], data: pot});
 return 0;
 } catch(e) {
-    window.webkit.messageHandlers.pywk.postMessage({result: 'error', debugInfo: [document.URL], error: e});
+    console.error({result: 'error', debugInfo: [document.URL], error: e});
     return 1;
 }
 })();
