@@ -2,8 +2,12 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 (()=>{
+let __webkit = window.webkit;
 function __postmsg(x) {
+    window.webkit = __webkit;
     window.webkit.messageHandlers.pywk.postMessage(x);
+    __webkit = window.webkit;
+    delete window.webkit;
 }
 Object.entries({
     trace: 'TRACE',
@@ -17,10 +21,11 @@ Object.entries({
         __postmsg({logType, argsArr: Array.from(arguments)});
     };
 });
+delete window.webkit;
 })();
 return await (async ()=>{  // IIAFE
 try {
-console.log('started', 'generating pot');
+console.log('started', 'generating pot', typeof window.webkit);
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
