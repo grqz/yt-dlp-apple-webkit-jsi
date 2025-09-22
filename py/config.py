@@ -14,7 +14,7 @@ Object.entries({
     error: 'ERR',
 }).forEach(([fn, logType])=>{
     console[fn] = ()=>{
-        __postmsg({logType, argsArr: Array.from(arguments)});
+        __postmsg({logType, argsArr: JSON.parse(JSON.stringify(Array.from(arguments)))});
     };
 });
 })();
