@@ -7,8 +7,8 @@ function __postmsg(x) {
     window.webkit = __webkit;
     window.webkit.messageHandlers.pywk.postMessage(x);
     __webkit = window.webkit;
-    delete window.webkit;
     window.webkit = undefined;
+    delete window.webkit;
 }
 Object.entries({
     trace: 0,  // TRACE
@@ -23,12 +23,12 @@ Object.entries({
         __postmsg({logType, argsArr: Array.from(arguments)});
     };
 });
-delete window.webkit;
 window.webkit = undefined;
+delete window.webkit;
 })();
 return await (async ()=>{  // IIAFE
 try {
-console.log('started', 'generating pot', typeof window.webkit);
+console.log('started', 'generating pot', typeof window.webkit, 'webkit' in window);
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
