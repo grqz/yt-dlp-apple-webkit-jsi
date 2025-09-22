@@ -436,7 +436,8 @@ def main():
                 @staticmethod
                 def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
-                    print(pyobj_from_nsobj_jsresult(pa, c_void_p(rp_sm), visited={}, null=_NullTag))
+                    rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
+                    print(pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag))
 
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
