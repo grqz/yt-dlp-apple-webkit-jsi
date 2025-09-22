@@ -200,7 +200,9 @@ def main():
             NSURL = pa.safe_objc_getClass(b'NSURL')
             WKContentWorld = pa.safe_objc_getClass(b'WKContentWorld')
             WKWebView = pa.safe_objc_getClass(b'WKWebView')
-            WKWebViewConfiguration = c_void_p(pa.objc_getClass(b'WKWebViewConfiguration'))
+            WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
+            WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
+
             WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
             WKScriptMessageHandler = pa.objc_getProtocol(b'WKScriptMessageHandler')
 
@@ -426,6 +428,9 @@ def main():
             jsresult_err = c_void_p()
 
             async def real_main():
+                p_wvhandler = pa.safe_new_object(Py_WVHandler)
+                pa.release_on_exit(p_wvhandler)
+
                 async with AsyncExitStack() as exsk:
                     p_cfg = pa.safe_new_object(WKWebViewConfiguration)
                     exsk.callback(pa.send_message, p_cfg, b'release')
@@ -455,6 +460,23 @@ def main():
                         kCFBooleanTrue, p_setkey1,
                         argtypes=(c_void_p, c_void_p))
 
+                    p_usrcontctlr = pa.safe_new_object(WKUserContentController)
+                    exsk.callback(pa.send_message, p_usrcontctlr, b'release')
+
+                    
+                    p_handler_name = pa.safe_new_object(
+                        NSString, b'initWithUTF8String:', b'pywk',
+                        argtypes=(c_char_p, ))
+                    exsk.callback(pa.send_message, p_handler_name, b'release')
+                    pa.send_message(
+                        p_usrcontctlr, b'addScriptMessageHandler:name:',
+                        p_wvhandler, p_handler_name,
+                        argtypes=(c_void_p, c_void_p))
+
+                    pa.send_message(
+                        p_cfg, b'setUserContentController', p_usrcontctlr,
+                        argtypes=(c_void_p, ))
+
                     p_webview = pa.safe_new_object(
                         WKWebView, b'initWithFrame:configuration:',
                         CGRect(), p_cfg,
@@ -462,11 +484,9 @@ def main():
                     pa.release_on_exit(p_webview)
                     logger.debug_log('webview init')
 
-                p_navidg = pa.safe_new_object(Py_WVHandler)
-                pa.release_on_exit(p_navidg)
                 pa.send_message(
                     p_webview, b'setNavigationDelegate:',
-                    p_navidg, argtypes=(c_void_p, ))
+                    p_wvhandler, argtypes=(c_void_p, ))
                 logger.debug_log('webview set navidg')
 
                 fut_navidone: CFRL_Future[None] = CFRL_Future()
@@ -632,4 +652,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main()
