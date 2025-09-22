@@ -463,7 +463,6 @@ def main():
                     p_usrcontctlr = pa.safe_new_object(WKUserContentController)
                     exsk.callback(pa.send_message, p_usrcontctlr, b'release')
 
-                    
                     p_handler_name = pa.safe_new_object(
                         NSString, b'initWithUTF8String:', b'pywk',
                         argtypes=(c_char_p, ))
@@ -652,4 +651,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main()
+    sys.exit(main())
