@@ -549,9 +549,9 @@ def main():
                         p_wvhandler, p_handler_name,
                         argtypes=(c_void_p, c_void_p))
 
-                    # pa.send_message(
-                    #     p_cfg, b'setUserContentController:', p_usrcontctlr,
-                    #     argtypes=(c_void_p, ))
+                    pa.send_message(
+                        p_cfg, b'setUserContentController:', p_usrcontctlr,
+                        argtypes=(c_void_p, ))
 
                     p_webview = pa.safe_new_object(
                         WKWebView, b'initWithFrame:configuration:',

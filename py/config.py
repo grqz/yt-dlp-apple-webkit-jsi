@@ -5,7 +5,7 @@ SCRIPT = r'''
 let __webkit = window.webkit;
 function __postmsg(x) {
     window.webkit = __webkit;
-    // window.webkit.messageHandlers.pywk.postMessage(x);
+    window.webkit.messageHandlers.pywk.postMessage(x);
     __webkit = window.webkit;
     window.webkit = undefined;
 }
@@ -248,7 +248,7 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
-return [typeof window.webkit, 'webkit' in window];
+return false;
 } catch(e) {
     console.error({result: 'error', debugInfo: [document.URL], error: e});
     return true;
