@@ -5,10 +5,9 @@ SCRIPT = r'''
 let __webkit = window.webkit;
 function __postmsg(x) {
     window.webkit = __webkit;
-    window.webkit.messageHandlers.pywk.postMessage(x);
+    // window.webkit.messageHandlers.pywk.postMessage(x);
     __webkit = window.webkit;
     window.webkit = undefined;
-    delete window.webkit;
 }
 Object.entries({
     trace: 0,  // TRACE
@@ -24,11 +23,10 @@ Object.entries({
     };
 });
 window.webkit = undefined;
-delete window.webkit;
 })();
 return await (async ()=>{  // IIAFE
 try {
-console.log('started', 'generating pot', typeof window.webkit, 'webkit' in window);
+console.log('started', 'generating pot');
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
@@ -250,7 +248,7 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
-return false;
+return [typeof window.webkit, 'webkit' in window];
 } catch(e) {
     console.error({result: 'error', debugInfo: [document.URL], error: e});
     return true;

@@ -544,10 +544,10 @@ def main():
                         NSString, b'initWithUTF8String:', b'pywk',
                         argtypes=(c_char_p, ))
                     exsk.callback(pa.send_message, p_handler_name, b'release')
-                    pa.send_message(
-                        p_usrcontctlr, b'addScriptMessageHandler:name:',
-                        p_wvhandler, p_handler_name,
-                        argtypes=(c_void_p, c_void_p))
+                    # pa.send_message(
+                    #     p_usrcontctlr, b'addScriptMessageHandler:name:',
+                    #     p_wvhandler, p_handler_name,
+                    #     argtypes=(c_void_p, c_void_p))
 
                     pa.send_message(
                         p_cfg, b'setUserContentController:', p_usrcontctlr,
