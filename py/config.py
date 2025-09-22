@@ -8,6 +8,7 @@ function __postmsg(x) {
     window.webkit.messageHandlers.pywk.postMessage(x);
     __webkit = window.webkit;
     delete window.webkit;
+    window.webkit = undefined;
 }
 Object.entries({
     trace: 0,  // TRACE
@@ -23,6 +24,7 @@ Object.entries({
     };
 });
 delete window.webkit;
+window.webkit = undefined;
 })();
 return await (async ()=>{  // IIAFE
 try {
