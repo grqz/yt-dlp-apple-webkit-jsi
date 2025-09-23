@@ -1,4 +1,5 @@
 import datetime as dt
+import enum
 import os
 import sys
 
@@ -172,6 +173,12 @@ _JSResultType = Union[
     list['_JSResultType'],
     V,  # type[_UnkownStructure]
 ]
+
+
+class WKJS_Task(enum.Enum):
+    NAVIGATE_TO = 0
+    EXECUTE_JS = 1
+    SHUTDOWN = 2
 
 
 def main():
@@ -502,7 +509,7 @@ def main():
                 pa.objc_registerClassPair(Py_WVHandler)
                 logger.debug_log('Registered PyForeignClass_WebViewHandler')
 
-            def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:
+            def run() -> Generator[Any, Optional[tuple[WKJS_Task, tuple]], None]:
                 with ExitStack() as exsk_out:
                     p_wvhandler: NotNull_VoidP
                     p_webview: NotNull_VoidP
@@ -648,15 +655,15 @@ def main():
                         task = yield last_res
                         assert task
                         fn_id, args = task
-                        last_res = runcoro_on_loop(fn_tup[fn_id](*args))
+                        last_res = runcoro_on_loop(fn_tup[fn_id.value](*args))
                     return  # last_res will be None anyways
 
             gen_run = run()
             assert gen_run.send(None)  == 0
-            gen_run.send((0, (HOST, HTML)))
-            jsresult_id, jsresult_err = py_typecast(tuple[NotNull_VoidP, NotNull_VoidP], gen_run.send((1, (SCRIPT, ))))
+            gen_run.send((WKJS_Task.NAVIGATE_TO, (HOST, HTML)))
+            jsresult_id, jsresult_err = py_typecast(tuple[NotNull_VoidP, NotNull_VoidP], gen_run.send((WKJS_Task.EXECUTE_JS, (SCRIPT, ))))
             try:
-                gen_run.send((2, ()))
+                gen_run.send((WKJS_Task.SHUTDOWN, ()))
             except StopIteration:
                 ...
 
