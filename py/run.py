@@ -272,7 +272,7 @@ def main():
                     n_res = restyp()
                     if not CFNumberGetValue(jsobj, kcf_numtyp, byref(n_res)):
                         sval = str_from_nsstring(pa, py_typecast(NotNull_VoidP, c_void_p(
-                            pa.send_message(jsresult_id, b'stringValue', restype=c_void_p))))
+                            pa.send_message(jsobj, b'stringValue', restype=c_void_p))))
                         raise RuntimeError(f'CFNumberGetValue failed on CFNumberRef@{jsobj.value}, stringValue: {sval}')
                     n_resv = n_res.value
                     visited[jsobj.value] = n_resv
@@ -501,135 +501,137 @@ def main():
                 pa.objc_registerClassPair(Py_WVHandler)
                 logger.debug_log('Registered PyForeignClass_WebViewHandler')
 
-            jsresult_id = c_void_p()
-            jsresult_err = c_void_p()
+            def run():
+                async def real_main():
+                    p_wvhandler = pa.safe_new_object(Py_WVHandler)
+                    pa.release_on_exit(p_wvhandler)
 
-            async def real_main():
-                p_wvhandler = pa.safe_new_object(Py_WVHandler)
-                pa.release_on_exit(p_wvhandler)
+                    async with AsyncExitStack() as exsk:
+                        p_cfg = pa.safe_new_object(WKWebViewConfiguration)
+                        exsk.callback(pa.send_message, p_cfg, b'release')
 
-                async with AsyncExitStack() as exsk:
-                    p_cfg = pa.safe_new_object(WKWebViewConfiguration)
-                    exsk.callback(pa.send_message, p_cfg, b'release')
+                        rp_pref = c_void_p(pa.send_message(p_cfg, b'preferences', restype=c_void_p))
+                        if not rp_pref.value:
+                            raise RuntimeError('Failed to get preferences from WKWebViewConfiguration')
+                        pa.send_message(
+                            rp_pref, b'setJavaScriptCanOpenWindowsAutomatically:',
+                            c_byte(1), argtypes=(c_byte,))
+                        p_setkey0 = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', b'allowFileAccessFromFileURLs',
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, p_setkey0, b'release')
+                        pa.send_message(
+                            rp_pref, b'setValue:forKey:',
+                            kCFBooleanTrue, p_setkey0,
+                            argtypes=(c_void_p, c_void_p))
+                        rp_pref = None
 
-                    rp_pref = c_void_p(pa.send_message(p_cfg, b'preferences', restype=c_void_p))
-                    if not rp_pref.value:
-                        raise RuntimeError('Failed to get preferences from WKWebViewConfiguration')
-                    pa.send_message(
-                        rp_pref, b'setJavaScriptCanOpenWindowsAutomatically:',
-                        c_byte(1), argtypes=(c_byte,))
-                    p_setkey0 = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', b'allowFileAccessFromFileURLs',
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, p_setkey0, b'release')
-                    pa.send_message(
-                        rp_pref, b'setValue:forKey:',
-                        kCFBooleanTrue, p_setkey0,
-                        argtypes=(c_void_p, c_void_p))
-                    rp_pref = None
+                        p_setkey1 = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', b'allowUniversalAccessFromFileURLs',
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, p_setkey1, b'release')
+                        pa.send_message(
+                            p_cfg, b'setValue:forKey:',
+                            kCFBooleanTrue, p_setkey1,
+                            argtypes=(c_void_p, c_void_p))
 
-                    p_setkey1 = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', b'allowUniversalAccessFromFileURLs',
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, p_setkey1, b'release')
-                    pa.send_message(
-                        p_cfg, b'setValue:forKey:',
-                        kCFBooleanTrue, p_setkey1,
-                        argtypes=(c_void_p, c_void_p))
+                        p_usrcontctlr = pa.safe_new_object(WKUserContentController)
+                        exsk.callback(pa.send_message, p_usrcontctlr, b'release')
 
-                    p_usrcontctlr = pa.safe_new_object(WKUserContentController)
-                    exsk.callback(pa.send_message, p_usrcontctlr, b'release')
+                        p_handler_name = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', b'pywk',
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, p_handler_name, b'release')
+                        pa.send_message(
+                            p_usrcontctlr, b'addScriptMessageHandler:name:',
+                            p_wvhandler, p_handler_name,
+                            argtypes=(c_void_p, c_void_p))
 
-                    p_handler_name = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', b'pywk',
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, p_handler_name, b'release')
-                    pa.send_message(
-                        p_usrcontctlr, b'addScriptMessageHandler:name:',
-                        p_wvhandler, p_handler_name,
-                        argtypes=(c_void_p, c_void_p))
+                        pa.send_message(
+                            p_cfg, b'setUserContentController:', p_usrcontctlr,
+                            argtypes=(c_void_p, ))
 
-                    pa.send_message(
-                        p_cfg, b'setUserContentController:', p_usrcontctlr,
-                        argtypes=(c_void_p, ))
-
-                    p_webview = pa.safe_new_object(
-                        WKWebView, b'initWithFrame:configuration:',
-                        CGRect(), p_cfg,
-                        argtypes=(CGRect, c_void_p))
-                    pa.release_on_exit(p_webview)
-                    logger.debug_log('webview init')
-
-                pa.send_message(
-                    p_webview, b'setNavigationDelegate:',
-                    p_wvhandler, argtypes=(c_void_p, ))
-                logger.debug_log('webview set navidg')
-
-                fut_navidone: CFRL_Future[None] = CFRL_Future()
-                async with AsyncExitStack() as exsk:
-                    ps_html = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', HTML,
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, ps_html, b'release')
-                    ps_base_url = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', HOST,
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, ps_base_url, b'release')
-                    purl_base = pa.safe_new_object(
-                        NSURL, b'initWithString:', ps_base_url,
-                        argtypes=(c_void_p, ))
-                    exsk.callback(pa.send_message, purl_base, b'release')
-
-                    rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
-                        p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
-                        restype=c_void_p, argtypes=(c_void_p, c_void_p))))
-                    logger.debug_log(f'Navigation started: {rp_navi}')
-
-                    def cb_navi_done():
-                        logger.debug_log('navigation done, resolving future')
-                        fut_navidone.set_result(None)
-
-                    navidg_cbdct[rp_navi.value] = cb_navi_done
-
-                    logger.debug_log(f'loading: local HTML@{HOST.decode()}')
-
-                    await fut_navidone
-                logger.debug_log('navigation done')
-
-                fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
-                async with AsyncExitStack() as exsk:
-                    ps_script = pa.safe_new_object(
-                        NSString, b'initWithUTF8String:', SCRIPT,
-                        argtypes=(c_char_p, ))
-                    exsk.callback(pa.send_message, ps_script, b'release')
-
-                    pd_jsargs = pa.safe_new_object(NSDictionary)
-                    exsk.callback(pa.send_message, pd_jsargs, b'release')
-
-                    rp_pageworld = c_void_p(pa.send_message(
-                        WKContentWorld, b'pageWorld',
-                        restype=c_void_p))
-
-                    def completion_handler(self: CRet.Py_PVoid, id_result: CRet.Py_PVoid, err: CRet.Py_PVoid):
-                        nonlocal jsresult_id, jsresult_err
-                        jsresult_id = c_void_p(pa.send_message(c_void_p(id_result or 0), b'copy', restype=c_void_p))
-                        pa.release_on_exit(jsresult_id)
-                        jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
-                        pa.release_on_exit(jsresult_err)
-                        logger.debug_log(f'JS done, resolving future; {id_result=}, {err=}')
-                        fut_jsdone.set_result((jsresult_id, jsresult_err))
-
-                    chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
+                        p_webview = pa.safe_new_object(
+                            WKWebView, b'initWithFrame:configuration:',
+                            CGRect(), p_cfg,
+                            argtypes=(CGRect, c_void_p))
+                        pa.release_on_exit(p_webview)
+                        logger.debug_log('webview init')
 
                     pa.send_message(
-                        # Requires iOS 15.0+, maybe test its availability first?
-                        p_webview, b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
-                        ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
-                        argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
+                        p_webview, b'setNavigationDelegate:',
+                        p_wvhandler, argtypes=(c_void_p, ))
+                    logger.debug_log('webview set navidg')
 
-                    await fut_jsdone
+                    fut_navidone: CFRL_Future[None] = CFRL_Future()
+                    async with AsyncExitStack() as exsk:
+                        ps_html = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', HTML,
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, ps_html, b'release')
+                        ps_base_url = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', HOST,
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, ps_base_url, b'release')
+                        purl_base = pa.safe_new_object(
+                            NSURL, b'initWithString:', ps_base_url,
+                            argtypes=(c_void_p, ))
+                        exsk.callback(pa.send_message, purl_base, b'release')
 
-            runcoro_on_loop(real_main(), loop=mainloop)
+                        rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
+                            p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
+                            restype=c_void_p, argtypes=(c_void_p, c_void_p))))
+                        logger.debug_log(f'Navigation started: {rp_navi}')
+
+                        def cb_navi_done():
+                            logger.debug_log('navigation done, resolving future')
+                            fut_navidone.set_result(None)
+
+                        navidg_cbdct[rp_navi.value] = cb_navi_done
+
+                        logger.debug_log(f'loading: local HTML@{HOST.decode()}')
+
+                        await fut_navidone
+                    logger.debug_log('navigation done')
+
+                    fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
+                    jsresult_id = c_void_p()
+                    jsresult_err = c_void_p()
+                    async with AsyncExitStack() as exsk:
+                        ps_script = pa.safe_new_object(
+                            NSString, b'initWithUTF8String:', SCRIPT,
+                            argtypes=(c_char_p, ))
+                        exsk.callback(pa.send_message, ps_script, b'release')
+
+                        pd_jsargs = pa.safe_new_object(NSDictionary)
+                        exsk.callback(pa.send_message, pd_jsargs, b'release')
+
+                        rp_pageworld = c_void_p(pa.send_message(
+                            WKContentWorld, b'pageWorld',
+                            restype=c_void_p))
+
+                        def completion_handler(self: CRet.Py_PVoid, id_result: CRet.Py_PVoid, err: CRet.Py_PVoid):
+                            nonlocal jsresult_id, jsresult_err
+                            jsresult_id = c_void_p(pa.send_message(c_void_p(id_result or 0), b'copy', restype=c_void_p))
+                            pa.release_on_exit(jsresult_id)
+                            jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
+                            pa.release_on_exit(jsresult_err)
+                            logger.debug_log(f'JS done, resolving future; {id_result=}, {err=}')
+                            fut_jsdone.set_result((jsresult_id, jsresult_err))
+
+                        chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
+
+                        pa.send_message(
+                            # Requires iOS 15.0+, maybe test its availability first?
+                            p_webview, b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
+                            ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
+                            argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
+
+                        await fut_jsdone
+                        return jsresult_id, jsresult_err
+                return py_typecast(tuple[c_void_p, c_void_p], runcoro_on_loop(real_main(), loop=mainloop))
+
+            jsresult_id, jsresult_err = run()
 
             if jsresult_err:
                 code = pa.send_message(jsresult_err, b'code', restype=c_long)
