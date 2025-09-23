@@ -502,7 +502,7 @@ def main():
                 pa.objc_registerClassPair(Py_WVHandler)
                 logger.debug_log('Registered PyForeignClass_WebViewHandler')
 
-            def run():
+            def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:
                 with ExitStack() as exsk_out:
                     p_wvhandler: NotNull_VoidP
                     p_webview: NotNull_VoidP
@@ -645,16 +645,18 @@ def main():
                     fn_tup = navigate_to, execute_js, shutdown
                     last_res = runcoro_on_loop(init_webview())
                     while active:
-                        fn_id, *args = yield last_res
+                        task = yield last_res
+                        assert task
+                        fn_id, args = task
                         last_res = runcoro_on_loop(fn_tup[fn_id](*args))
-                    return last_res
+                    return  # last_res will be None anyways
 
             gen_run = run()
             assert gen_run.send(None)  == 0
-            gen_run.send((0, HOST, HTML))
-            jsresult_id, jsresult_err = py_typecast(tuple[NotNull_VoidP, NotNull_VoidP], gen_run.send((1, SCRIPT)))
+            gen_run.send((0, (HOST, HTML)))
+            jsresult_id, jsresult_err = py_typecast(tuple[NotNull_VoidP, NotNull_VoidP], gen_run.send((1, (SCRIPT, ))))
             try:
-                gen_run.send(2)
+                gen_run.send((2, ()))
             except StopIteration:
                 ...
 
