@@ -191,7 +191,7 @@ def main():
             os.remove(PATH2CORE)
         logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
-    navidg_cbdct: 'PFC_WVHandler.CBDICT_TYPE' = {}
+    # navidg_cbdct: 'PFC_WVHandler.CBDICT_TYPE' = {}
     try:
         with PyNeApple(logger=logger) as pa:
             pa.load_framework_from_path('Foundation')
@@ -427,8 +427,29 @@ def main():
                     raise res.rexc from None
                 return res.ret
 
+            metadict: 'PFC_WVHandler.METADICT_TYPE' = {}
             class PFC_WVHandler:
                 CBDICT_TYPE = dict[int, Callable[[], None]]
+                METADICT_TYPE = dict[int, CBDICT_TYPE]
+
+                SIGNATURE_INIT = b'@@:'
+                SEL_INIT = pa.sel_registerName(b'init')
+                @staticmethod
+                def init0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> CRet.Py_PVoid:
+                    this = pa.send_message(c_void_p(this), b'init', restype=c_void_p, is_super=True)
+                    if not this:
+                        return this
+                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init]')
+                    metadict[this] = {}
+                    return this
+
+                SIGNATURE_DEALLOC = b'v@:'
+                SEL_DEALLOC = pa.sel_registerName(b'dealloc')
+
+                @staticmethod
+                def dealloc0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> None:
+                    metadict.pop(this or 0, None)
+                    pa.send_message(c_void_p(this), b'dealloc', is_super=True)
 
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
                 SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
@@ -436,7 +457,8 @@ def main():
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
-                    if cb := navidg_cbdct.get(rp_navi or 0):
+                    # if cb := navidg_cbdct.get(rp_navi or 0):
+                    if cb := metadict.get(this or 0, {}).get(rp_navi or 0):
                         cb()
 
                 SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE = b'v@:@@'
@@ -447,6 +469,9 @@ def main():
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
                     print(pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag))
 
+            PFC_WVHandler.init0 = CFUNCTYPE(c_void_p, c_void_p, c_void_p)(PFC_WVHandler.init0)
+            PFC_WVHandler.dealloc0 = CFUNCTYPE(None, c_void_p, c_void_p)(PFC_WVHandler)
+
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
                 c_void_p, c_void_p, c_void_p, c_void_p)(PFC_WVHandler.webView0_didFinishNavigation1)
@@ -455,10 +480,23 @@ def main():
                 None,
                 c_void_p, c_void_p, c_void_p, c_void_p)(PFC_WVHandler.userContentController0_didReceiveScriptMessage1)
 
-            Py_WVHandler = pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0)
+            Py_WVHandler = c_void_p(pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0))
+            meth_list: PyNeApple.METH_LIST_TYPE = (
+                (PFC_WVHandler.SEL_INIT, PFC_WVHandler.init0, PFC_WVHandler.SIGNATURE_INIT),
+                (PFC_WVHandler.SEL_DEALLOC, PFC_WVHandler.dealloc0, PFC_WVHandler.SIGNATURE_DEALLOC),
+                (
+                    PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION,
+                    PFC_WVHandler.webView0_didFinishNavigation1,
+                    PFC_WVHandler.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION
+                ), (
+                    PFC_WVHandler.SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE,
+                    PFC_WVHandler.userContentController0_didReceiveScriptMessage1,
+                    PFC_WVHandler.SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE
+                ),
+            )
             if not Py_WVHandler:
                 Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
-                logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler')
+                logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
                 if not pa.class_conformsToProtocol(Py_WVHandler, WKNavigationDelegate):
                     raise RuntimeError(
                         'class PyForeignClass_WebViewHandler already exists '
@@ -467,47 +505,24 @@ def main():
                     raise RuntimeError(
                         'class PyForeignClass_WebViewHandler already exists '
                         'but does not conform to the WKScriptMessageHandler protocol')
-                if imeth := pa.class_getInstanceMethod(Py_WVHandler, PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION):
-                    pa.method_setImplementation(imeth, PFC_WVHandler.webView0_didFinishNavigation1)
-                    logger.debug_log('Updated the implementation of PyForeignClass_WebViewHandler (on navigation finish)')
-                else:
-                    pa.class_addMethod(
-                        Py_WVHandler, PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                        PFC_WVHandler.webView0_didFinishNavigation1,
-                        PFC_WVHandler.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION)
-                    logger.debug_log('Added the implementation for PyForeignClass_WebViewHandler (on navigation finish)')
 
-                if imeth := pa.class_getInstanceMethod(Py_WVHandler, PFC_WVHandler.SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE):
-                    pa.method_setImplementation(imeth, PFC_WVHandler.userContentController0_didReceiveScriptMessage1)
-                    logger.debug_log('Updated the implementation of PyForeignClass_WebViewHandler (on script message)')
-                else:
-                    pa.class_addMethod(
-                        Py_WVHandler, PFC_WVHandler.SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE,
-                        PFC_WVHandler.userContentController0_didReceiveScriptMessage1,
-                        PFC_WVHandler.SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE)
-                    logger.debug_log('Added the implementation for PyForeignClass_WebViewHandler (on script message)')
+                pa.safe_upd_or_add_meth(Py_WVHandler, meth_list)
             else:
-                if not pa.class_addMethod(
-                        Py_WVHandler, PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                        PFC_WVHandler.webView0_didFinishNavigation1,
-                        PFC_WVHandler.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION):
+                Py_WVHandler = py_typecast(NotNull_VoidP, Py_WVHandler)
+                try:
+                    pa.safe_add_meth(Py_WVHandler, meth_list)
+                    if not pa.class_addProtocol(Py_WVHandler, WKNavigationDelegate):
+                        pa.objc_disposeClassPair(Py_WVHandler)
+                        raise RuntimeError('class_addProtocol failed for WKNavigationDelegate')
+                    if not pa.class_addProtocol(Py_WVHandler, WKScriptMessageHandler):
+                        pa.objc_disposeClassPair(Py_WVHandler)
+                        raise RuntimeError('class_addProtocol failed for WKScriptMessageHandler')
+                except RuntimeError:
                     pa.objc_disposeClassPair(Py_WVHandler)
-                    raise RuntimeError('class_addMethod failed (on navigation finished)')
-                if not pa.class_addMethod(
-                        Py_WVHandler, PFC_WVHandler.SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE,
-                        PFC_WVHandler.userContentController0_didReceiveScriptMessage1,
-                        PFC_WVHandler.SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE):
-                    pa.objc_disposeClassPair(Py_WVHandler)
-                    raise RuntimeError('class_addMethod failed (on script message)')
-
-                if not pa.class_addProtocol(Py_WVHandler, WKNavigationDelegate):
-                    pa.objc_disposeClassPair(Py_WVHandler)
-                    raise RuntimeError('class_addProtocol failed for WKNavigationDelegate')
-                if not pa.class_addProtocol(Py_WVHandler, WKScriptMessageHandler):
-                    pa.objc_disposeClassPair(Py_WVHandler)
-                    raise RuntimeError('class_addProtocol failed for WKScriptMessageHandler')
-                pa.objc_registerClassPair(Py_WVHandler)
-                logger.debug_log('Registered PyForeignClass_WebViewHandler')
+                    raise
+                else:
+                    pa.objc_registerClassPair(Py_WVHandler)
+                    logger.debug_log('Registered PyForeignClass_WebViewHandler')
 
             def run() -> Generator[Any, Optional[tuple[WKJS_Task, tuple]], None]:
                 with ExitStack() as exsk_out:
@@ -603,7 +618,8 @@ def main():
                                 logger.debug_log('navigation done, resolving future')
                                 fut_navidone.set_result(None)
 
-                            navidg_cbdct[rp_navi.value] = cb_navi_done
+                            # navidg_cbdct[rp_navi.value] = cb_navi_done
+                            metadict[p_wvhandler.value][rp_navi.value] = cb_navi_done
 
                             logger.debug_log(f'loading: local HTML@{HOST.decode()}')
 

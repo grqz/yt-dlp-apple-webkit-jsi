@@ -28,7 +28,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from functools import wraps
-from typing import Callable, Generator, Optional, Protocol, TypeVar, Union, overload, cast as py_typecast
+from typing import Any, Callable, Generator, Iterable, Optional, Protocol, TypeVar, Union, overload, cast as py_typecast
 
 from .logging import Logger
 
@@ -167,12 +167,14 @@ class PyNeApple:
         'p_NSConcreteMallocBlock',
         'class_addProtocol', 'class_addMethod', 'class_addIvar',
         'class_conformsToProtocol', 'class_getInstanceMethod', 'class_getName',
+        'class_getInstanceVariable',
         'objc_getProtocol',
         'objc_allocateClassPair', 'objc_registerClassPair', 'objc_disposeClassPair',
         'objc_getClass', 'pobjc_msgSend', 'pobjc_msgSendSuper',
         'object_getClass', 'object_getInstanceVariable', 'object_setInstanceVariable',
+        'object_getIvar', 'object_setIvar',
         'method_setImplementation',
-        'sel_registerName',
+        'sel_registerName', 'sel_getName',
     )
 
     @staticmethod
@@ -209,6 +211,7 @@ class PyNeApple:
             self.class_conformsToProtocol = self.cfn_at(self._objc(b'class_conformsToProtocol').value, c_byte, c_void_p, c_void_p)
             self.class_getInstanceMethod = self.cfn_at(self._objc(b'class_getInstanceMethod').value, c_void_p, c_void_p, c_void_p)
             self.class_getName = self.cfn_at(self._objc(b'class_getName').value, c_char_p, c_void_p)
+            self.class_getInstanceVariable = self.cfn_at(self._objc(b'class_getInstanceVariable').value, c_void_p, c_void_p, c_char_p)
 
             self.objc_getProtocol = self.cfn_at(self._objc(b'objc_getProtocol').value, c_void_p, c_char_p)
             self.objc_allocateClassPair = self.cfn_at(self._objc(b'objc_allocateClassPair').value, c_void_p, c_void_p, c_char_p, c_size_t)
@@ -225,10 +228,13 @@ class PyNeApple:
             self.object_setInstanceVariable = self.cfn_at(
                 self._objc(b'object_setInstanceVariable').value, c_void_p,
                 c_void_p, c_char_p, c_void_p)
+            self.object_getIvar = self.cfn_at(self._objc(b'object_getIvar').value, c_void_p, c_void_p, c_char_p)
+            self.object_setIvar = self.cfn_at(self._objc(b'object_setIvar').value, c_void_p, c_void_p, c_char_p)
 
             self.method_setImplementation = self.cfn_at(self._objc(b'method_setImplementation').value, c_void_p, c_void_p, c_void_p)
 
             self.sel_registerName = self.cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
+            self.sel_getName = self.cfn_at(self._objc(b'sel_getName').value, c_char_p, c_void_p)
             return self
         except Exception as e:
             if hasattr(self, '_stack'):
@@ -332,6 +338,29 @@ class PyNeApple:
 
     def make_block(self, cb: Callable, restype: Optional[type] = None, *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
+
+    METH_LIST_TYPE = Iterable[tuple[
+        CRet.Py_PVoid,  # method objc selector
+        Any,  # method C impl
+        CRet.Py_CharSeq,  # method objc signature
+    ]]
+
+    def safe_add_meth(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
+        for msel, mcimp, msig in meth_list:
+            if not self.class_addMethod(cls, msel, mcimp, msig):
+                mname = self.sel_getName(msel) or b''
+                raise RuntimeError(f'class_addMethod failed for method {mname}')
+
+    def safe_upd_or_add_meth(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
+        for msel, mcimp, msig in meth_list:
+            if imeth := self.class_getInstanceMethod(cls, msel):
+                if not self.method_setImplementation(imeth, mcimp):
+                    mname = self.sel_getName(msel) or b''
+                    raise RuntimeError(f'Failed to update the implementation for {mname}')
+            else:
+                if not self.class_addMethod(cls, msel, mcimp, msig):
+                    mname = self.sel_getName(msel) or b''
+                    raise RuntimeError(f'Failed to add implementation for {mname}')
 
     def instanceof(self, obj: NULLABLE_VOIDP, cls: NULLABLE_VOIDP) -> bool:
         return bool(self.send_message(
