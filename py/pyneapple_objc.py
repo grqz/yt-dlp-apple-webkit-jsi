@@ -312,7 +312,11 @@ class PyNeApple:
         sel = c_void_p(self.sel_registerName(sel_name))
         self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
-            receiver = objc_super(receiver=obj, super_class=c_void_p(self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)))
+            # TODO: is [[obj class] superclass] nil?
+            superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
+            if not superklass:
+                raise ValueError(f'unexpected nil superclass of object at {obj.value}')
+            receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 

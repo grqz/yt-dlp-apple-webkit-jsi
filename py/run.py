@@ -470,7 +470,7 @@ def main():
                     print(pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag))
 
             PFC_WVHandler.init0 = CFUNCTYPE(c_void_p, c_void_p, c_void_p)(PFC_WVHandler.init0)
-            PFC_WVHandler.dealloc0 = CFUNCTYPE(None, c_void_p, c_void_p)(PFC_WVHandler)
+            PFC_WVHandler.dealloc0 = CFUNCTYPE(None, c_void_p, c_void_p)(PFC_WVHandler.dealloc0)
 
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
