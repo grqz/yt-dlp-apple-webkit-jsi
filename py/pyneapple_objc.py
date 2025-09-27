@@ -118,7 +118,7 @@ class objc_super(Structure):
         ('receiver', c_void_p),
         ('super_class', c_void_p),
     )
-    __slots__ = ()
+    # __slots__ = ()
 
 
 class CRet:
