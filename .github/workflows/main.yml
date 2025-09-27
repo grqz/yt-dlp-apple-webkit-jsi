@@ -42,6 +42,7 @@ jobs:
         path: st.txt
         compression-level: 9
   c:
+    if: 0
     strategy:
       matrix:
         os:
