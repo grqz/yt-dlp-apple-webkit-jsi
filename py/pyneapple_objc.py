@@ -118,7 +118,7 @@ class objc_super(Structure):
         ('receiver', c_void_p),
         ('super_class', c_void_p),
     )
-    # __slots__ = ()
+    __slots__ = ()
 
 
 class CRet:
@@ -318,8 +318,10 @@ class PyNeApple:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             from ctypes import addressof
+            if not receiver.receiver:
+                raise ValueError('\U0001F92F')
             p = POINTER(c_uint64).from_address(addressof(receiver))[1]
-            print(f'superklass: {p=}')
+            self.logger.debug_log(f'superklass: {p=}')
             if not p:
                 raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
             self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
