@@ -322,7 +322,7 @@ class PyNeApple:
                 raise ValueError('\U0001F92F')
             p = POINTER(c_uint64).from_address(addressof(receiver))[1]
             p = c_void_p.from_address(addressof(receiver) + sizeof(c_void_p)).value
-            self.logger.debug_log(f'superklass: {p=}')
+            self.logger.debug_log(f'superklass: {p=}; sizeof(void *)={sizeof(c_void_p)}')
             if not p:
                 raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
             self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
