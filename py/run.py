@@ -571,6 +571,9 @@ def main():
                                 NSString, b'initWithUTF8String:', b'pywk',
                                 argtypes=(c_char_p, ))
                             exsk.callback(pa.send_message, p_handler_name, b'release')
+
+                            # SIGSEGV
+                            # https://github.com/grqz/actpg/actions/runs/18057091497/job/51388333992
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandler:name:',
                                 p_wvhandler, p_handler_name,
