@@ -317,6 +317,11 @@ class PyNeApple:
             if not superklass:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
+            from ctypes import addressof
+            p = POINTER(c_uint64).from_address(addressof(receiver))[1]
+            print(f'superklass: {p=}')
+            if not p:
+                raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
             self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
