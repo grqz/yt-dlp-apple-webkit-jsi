@@ -318,13 +318,13 @@ class PyNeApple:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             from ctypes import addressof
-            if not receiver.receiver:
+            if not receiver.super_class:
                 raise ValueError('\U0001F92F')
-            self.logger.debug_log(f'real receiver: {receiver.receiver}')
-            p = POINTER(c_uint64).from_address(addressof(receiver))[1]
-            p = c_void_p.from_address(addressof(receiver) + sizeof(c_void_p)).value
-            self.logger.debug_log(f'superklass: {p=}; sizeof(void *)={sizeof(c_void_p)}')
-            if not p:
+            p_superklass = addressof(receiver) + sizeof(c_void_p)
+            superklass1 = POINTER(c_uint64).from_address(p_superklass)
+            superklass2 = POINTER(c_void_p).from_address(p_superklass).contents.value
+            self.logger.debug_log(f'set {superklass=}; {receiver.super_class=}; superklass: {superklass1=}; {superklass2=}; sizeof(void *)={sizeof(c_void_p)}; &superklass {p_superklass}')
+            if not superklass1:
                 raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
             self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
