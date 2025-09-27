@@ -321,7 +321,7 @@ class PyNeApple:
             if not receiver.super_class:
                 raise ValueError('\U0001F92F')
             p_superklass = addressof(receiver) + sizeof(c_void_p)
-            superklass1 = POINTER(c_uint64).from_address(p_superklass)
+            superklass1 = POINTER(c_uint64).from_address(p_superklass).contents
             superklass2 = POINTER(c_void_p).from_address(p_superklass).contents.value
             self.logger.debug_log(f'set {superklass=}; {receiver.super_class=}; superklass: {superklass1=}; {superklass2=}; sizeof(void *)={sizeof(c_void_p)}; &superklass {p_superklass}')
             if not superklass1:
