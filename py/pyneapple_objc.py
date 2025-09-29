@@ -313,14 +313,16 @@ class PyNeApple:
         sel = c_void_p(self.sel_registerName(sel_name))
         self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
-            # superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
-            superklass = self.cfn_at(self._objc(b'class_getSuperclass').value, c_void_p, c_void_p)(self.object_getClass(obj))
+            superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
             if not superklass:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             self.logger.debug_log(
                 f'supercall {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &receiver={addressof(receiver)}')
-            self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
+            self.cfn_at(
+                self.cfn_at(self._objc(b'objc_msg_lookup_super').value, c_uint64, POINTER(objc_super), c_void_p)(byref(receiver), sel),
+                restype, c_void_p, c_void_p, *argtypes)(byref(receiver), sel, *args)
+            # self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
