@@ -323,10 +323,12 @@ class PyNeApple:
             p_superklass = addressof(receiver) + 8
             superklass1 = POINTER(c_uint64).from_address(p_superklass)[0]
             superklass2 = POINTER(c_void_p).from_address(p_superklass).contents.value
-            self.logger.debug_log(f'set {superklass=}; {receiver.super_class=}; superklass: {superklass1=}; {superklass2=}; sizeof(void *)={sizeof(c_void_p)}; &superklass {p_superklass}')
+            self.logger.debug_log(
+                f'set {superklass=}; {receiver.super_class=}; superklass: {superklass1=}; {superklass2=};'
+                f'sizeof(void *)={sizeof(c_void_p)}; &superklass {p_superklass}; wrapped receiver: {receiver}')
             if not superklass1:
                 raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
-            self.cfn_at(self.pobjc_msgSendSuper, restype, objc_super, c_void_p, *argtypes)(receiver, sel, *args)
+            self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
