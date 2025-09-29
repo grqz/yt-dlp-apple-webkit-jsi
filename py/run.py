@@ -526,7 +526,7 @@ def main():
                 else:
                     pa.objc_registerClassPair(Py_WVHandler)
                     logger.debug_log('Registered PyForeignClass_WebViewHandler')
-            logger.debug_log(f'PyForeignClass_WebViewHandler@{Py_WVHandler}')
+            logger.debug_log(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
 
             def run() -> Generator[Any, Optional[tuple[WKJS_Task, tuple]], None]:
                 with ExitStack() as exsk_out:
