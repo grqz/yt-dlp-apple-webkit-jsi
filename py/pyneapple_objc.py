@@ -318,7 +318,7 @@ class PyNeApple:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             self.logger.debug_log(
-                f'set {superklass=}; {receiver.super_class=}; {receiver.receiver=}; &super={addressof(receiver)}')
+                f'supercall {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &super={addressof(receiver)}')
             self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
