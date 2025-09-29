@@ -30,6 +30,10 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
+    - name: dump asm
+      run: |
+        clang -S -masm=intel --std=c99 -Wall -Wextra -pedantic -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-unused-parameter -fblocks -fno-objc-arc super.m
+        cat super.s
     - name: real run
       run: |
         ulimit -c unlimited
