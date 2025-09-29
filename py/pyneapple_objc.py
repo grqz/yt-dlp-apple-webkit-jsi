@@ -9,6 +9,7 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    addressof,
     byref,
     c_bool,
     c_byte,
@@ -312,22 +313,12 @@ class PyNeApple:
         sel = c_void_p(self.sel_registerName(sel_name))
         self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
-            # TODO: is [[obj class] superclass] nil?
             superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
             if not superklass:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
-            from ctypes import addressof
-            if not receiver.super_class:
-                raise ValueError('\U0001F92F')
-            p_superklass = addressof(receiver) + 8
-            superklass1 = POINTER(c_uint64).from_address(p_superklass)[0]
-            superklass2 = POINTER(c_void_p).from_address(p_superklass).contents.value
             self.logger.debug_log(
-                f'set {superklass=}; {receiver.super_class=}; superklass: {superklass1=}; {superklass2=};'
-                f'sizeof(void *)={sizeof(c_void_p)}; &superklass {p_superklass}; wrapped receiver: {receiver}')
-            if not superklass1:
-                raise ValueError(f'unexpected nil actual superclass of msgSendSuper receiver objc_super object')
+                f'set {superklass=}; {receiver.super_class=}; {receiver.receiver=}; &super={addressof(receiver)}')
             self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 

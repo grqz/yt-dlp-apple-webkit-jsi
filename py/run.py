@@ -438,8 +438,9 @@ def main():
                 def init0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> CRet.Py_PVoid:
                     this = pa.send_message(c_void_p(this), b'init', restype=c_void_p, is_super=True)
                     if not this:
+                        logger.debug_log(f'[(PyForeignClass_WebViewHandler)nil init] FAILURE')
                         return this
-                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init]')
+                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init] SUCCESS')
                     metadict[this] = {}
                     return this
 
@@ -448,6 +449,7 @@ def main():
 
                 @staticmethod
                 def dealloc0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> None:
+                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} dealloc] {metadict.get(this or 0)=}')
                     metadict.pop(this or 0, None)
                     pa.send_message(c_void_p(this), b'dealloc', is_super=True)
 
@@ -572,7 +574,11 @@ def main():
                                 argtypes=(c_char_p, ))
                             exsk.callback(pa.send_message, p_handler_name, b'release')
 
-                            # SIGSEGV
+                            # SIGSEGV in __CFGenericTypeID_inline
+                            # - at <https://github.com/opensource-apple/CF/blob/3cc41a76b1491f50813e28a4ec09954ffa359e6f/CFRuntime.c#L470>
+                            # (uint32_t *)&(((CFRuntimeBase *)cf)->_cfinfo)
+                            # mov rdi, qword ptr [rbx + 0x8]
+                            # Segmentation Fault while dereferencing the above pointer (p_wvhandler + 8)
                             # https://github.com/grqz/actpg/actions/runs/18057091497/job/51388333992
                             # https://github.com/grqz/actpg/actions/runs/18058532807/job/51391644213
                             pa.send_message(
