@@ -1,5 +1,5 @@
 // to be compiled with -S -masm=intel
-#include <cstdio>
+#include <stdio.h>
 #import <Foundation/Foundation.h>
 
 @interface Klass : NSObject
