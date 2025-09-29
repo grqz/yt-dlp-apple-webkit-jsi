@@ -509,11 +509,11 @@ def main():
                         'class PyForeignClass_WebViewHandler already exists '
                         'but does not conform to the WKScriptMessageHandler protocol')
 
-                pa.safe_upd_or_add_meth(Py_WVHandler, meth_list)
+                pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
             else:
                 Py_WVHandler = py_typecast(NotNull_VoidP, Py_WVHandler)
                 try:
-                    pa.safe_add_meth(Py_WVHandler, meth_list)
+                    pa.safe_add_meths(Py_WVHandler, meth_list)
                     if not pa.class_addProtocol(Py_WVHandler, WKNavigationDelegate):
                         pa.objc_disposeClassPair(Py_WVHandler)
                         raise RuntimeError('class_addProtocol failed for WKNavigationDelegate')
@@ -534,7 +534,7 @@ def main():
                     p_webview: NotNull_VoidP
                     active = True
                     async def init_webview():
-                        # use a proper instance variable
+                        # TODO: use a proper instance variable or a python dict
                         nonlocal p_wvhandler, p_webview
                         p_wvhandler = pa.safe_new_object(Py_WVHandler)
                         exsk_out.callback(pa.send_message, p_wvhandler, b'release')

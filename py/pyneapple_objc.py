@@ -313,23 +313,24 @@ class PyNeApple:
         sel = c_void_p(self.sel_registerName(sel_name))
         self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
-            superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
+            # superklass = self.send_message(self.object_getClass(obj), b'superclass', restype=c_void_p)
+            superklass = self.cfn_at(self._objc(b'class_getSuperclass').value, c_void_p, c_void_p)(self.object_getClass(obj))
             if not superklass:
                 raise ValueError(f'unexpected nil superclass of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(superklass))
             self.logger.debug_log(
-                f'supercall {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &super={addressof(receiver)}')
+                f'supercall {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &receiver={addressof(receiver)}')
             self.cfn_at(self.pobjc_msgSendSuper, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
-        obj = c_void_p(self.send_message(py_typecast(c_void_p, cls), b'alloc', restype=c_void_p))
+        obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
         if not obj.value:
             raise RuntimeError(f'Failed to alloc object of class {cls.value}')
-        obj = c_void_p(self.send_message(obj, init_name, restype=c_void_p, *args, argtypes=argtypes))
+        obj = c_void_p(self.send_message(obj, init_name, *args, restype=c_void_p, argtypes=argtypes))
         if not obj.value:
             self.send_message(obj, b'release')
-            raise RuntimeError(f'Failed to {init_name.decode()} object of class {cls.value}')
+            raise RuntimeError(f'Failed to init object of class {cls.value} with method {init_name.decode()}')
         return py_typecast(NotNull_VoidP, obj)
 
     def release_on_exit(self, obj: NULLABLE_VOIDP):
@@ -351,13 +352,13 @@ class PyNeApple:
         CRet.Py_CharSeq,  # method objc signature
     ]]
 
-    def safe_add_meth(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
+    def safe_add_meths(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
         for msel, mcimp, msig in meth_list:
             if not self.class_addMethod(cls, msel, mcimp, msig):
                 mname = self.sel_getName(msel) or b''
                 raise RuntimeError(f'class_addMethod failed for method {mname}')
 
-    def safe_upd_or_add_meth(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
+    def safe_upd_or_add_meths(self, cls: NotNull_VoidP, meth_list: METH_LIST_TYPE):
         for msel, mcimp, msig in meth_list:
             if imeth := self.class_getInstanceMethod(cls, msel):
                 if not self.method_setImplementation(imeth, mcimp):
