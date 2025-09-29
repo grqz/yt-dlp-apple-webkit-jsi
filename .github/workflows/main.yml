@@ -20,7 +20,7 @@ jobs:
           - 'macos-13'  # x86_64
           # - 'macos-14'  # arm64
           # - 'macos-15'  # arm64
-          - 'macos-15-intel'  # x86_64
+          # - 'macos-15-intel'  # x86_64
           # - 'macos-26'  # arm64 beta
       # fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -42,7 +42,7 @@ jobs:
         -o 'thread backtrace all'
         -o 'register read'
         -o 'disassemble --pc --count 50'
-        -o 'di -n CFRetain'
+        -o 'di -n objc_msgSendSuper2'
         | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
