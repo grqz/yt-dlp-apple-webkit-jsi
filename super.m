@@ -18,7 +18,7 @@
 }
 @end
 
-int main() {
-    [[Klass init] release];
+int main(void) {
+    [[[Klass alloc] init] release];
 }
 
