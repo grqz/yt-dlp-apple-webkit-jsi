@@ -322,7 +322,7 @@ class PyNeApple:
                 f'supercall {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &receiver={addressof(receiver)}')
             self.cfn_at(
                 self._objc(b'objc_msgSendSuper').value, restype,
-                POINTER(objc_super), c_void_p, *argtypes)(
+                POINTER(objc_super), c_char_p, *argtypes)(
                     byref(receiver), sel_name, *args)
             # self.cfn_at(self._objc(b'objc_msgSendSuper2').value, restype, POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
