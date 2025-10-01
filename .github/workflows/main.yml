@@ -49,7 +49,7 @@ jobs:
         -o 'di -n objc_msgSendSuper2'
         -o 'di -n objc_msgSendSuper'
         -o 'di -n objc_msgSend'
-        -o 'di -n sel_registerName'
+        -o 'di -n __sel_registerName'
         | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
