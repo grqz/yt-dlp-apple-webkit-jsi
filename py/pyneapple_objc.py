@@ -331,7 +331,7 @@ class PyNeApple:
 
     def safe_alloc_init(self, cls: NULLABLE_VOIDP) -> NotNull_VoidP:
         if obj := self.objc_alloc_init(cls):
-            return obj
+            return py_typecast(NotNull_VoidP, c_void_p(obj))
         raise ValueError(f'Failed to alloc init object of class at {cls.value}')
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes, *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
