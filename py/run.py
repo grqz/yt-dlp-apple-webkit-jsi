@@ -436,14 +436,18 @@ def main():
                 SEL_INIT = pa.sel_registerName(b'init')
                 @staticmethod
                 def init0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> CRet.Py_PVoid:
-                    logger.debug_log(f'Calling [super@{this} init]')
-                    this = pa.send_message(c_void_p(this), b'init', restype=c_void_p, is_super=True)
-                    if not this:
-                        logger.debug_log(f'[(PyForeignClass_WebViewHandler)nil init] FAILURE')
+                    try:
+                        logger.debug_log(f'Calling [super@{this} init]')
+                        this = pa.send_message(c_void_p(this), b'init', restype=c_void_p, is_super=True)
+                        if not this:
+                            logger.debug_log(f'[(PyForeignClass_WebViewHandler)nil init] FAILURE')
+                            return this
+                        logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init] SUCCESS')
+                        metadict[this] = {}
                         return this
-                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init] SUCCESS')
-                    metadict[this] = {}
-                    return this
+                    except BaseException as e:
+                        logger.write_err(f'Exception in [PyForeignClass_WebViewHandler init]: {e!r}')
+                        return
 
                 SIGNATURE_DEALLOC = b'v@:'
                 SEL_DEALLOC = pa.sel_registerName(b'dealloc')
