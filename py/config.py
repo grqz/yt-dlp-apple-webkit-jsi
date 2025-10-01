@@ -1,7 +1,7 @@
 HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
 HOST = rb'''https://www.youtube.com/robots.txt'''
-SCRIPT_PHOLDER = r'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
-SCRIPT_WRAPPER = r'''
+SCRIPT_PHOLDER = rb'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
+SCRIPT_TEMPL = rb'''
 (()=>{
 let __webkit = window.webkit;
 function __postmsg(x) {
