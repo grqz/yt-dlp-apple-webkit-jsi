@@ -569,7 +569,8 @@ def main():
 
                     async def free_webview(wv: int) -> None:
                         if wv:
-                            pa.send_message(c_void_p(wv), b'release')
+                            # pa.send_message(c_void_p(wv), b'release')
+                            pa.release_obj(c_void_p(wv))
 
                     async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
                         fut_navidone: CFRL_Future[None] = CFRL_Future()

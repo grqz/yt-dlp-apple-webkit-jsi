@@ -335,6 +335,11 @@ class PyNeApple:
             raise RuntimeError(f'Failed to init object of class {cls.value} with method {init_name.decode()}')
         return py_typecast(NotNull_VoidP, obj)
 
+    def release_obj(self, obj: NULLABLE_VOIDP) -> None:
+        self.logger.debug_log(f'Releasing object at {obj.value}')
+        # self.send_message(obj, b'release')
+        self.cfn_at(self._objc(b'objc_release').value, None, c_void_p)(obj)
+
     def release_on_exit(self, obj: NULLABLE_VOIDP):
         self._stack.callback(lambda: self.send_message(obj, b'release'))
 
