@@ -336,7 +336,6 @@ class PyNeApple:
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes, *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
         obj = c_void_p(self.objc_alloc(cls))
-        # obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
         if not obj.value:
             raise RuntimeError(f'Failed to alloc object of class {cls.value}')
         obj = c_void_p(self.send_message(obj, init_name, *args, restype=c_void_p, argtypes=argtypes))

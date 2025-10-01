@@ -652,6 +652,7 @@ def main():
 
             gen_run = run()
             assert gen_run.send(None)  == 0
+            # yield gen_run
             wv = gen_run.send((WKJS_Task.NEW_WEBVIEW, ()))
             try:
                 gen_run.send((WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML)))
@@ -679,11 +680,11 @@ def main():
 
                 result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
                 print(f'{pformat(result_pyobj)}')
+            return 0
     except Exception:
         import traceback
         logger.write_err(traceback.format_exc())
         return 1
-    return 0
 
 
 if __name__ == '__main__':
