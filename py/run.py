@@ -504,13 +504,13 @@ def main():
 
             def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:
                 with ExitStack() as exsk_out:
-                    p_wvhandler = pa.safe_new_object(Py_WVHandler)
-                    exsk_out.callback(pa.send_message, p_wvhandler, b'release')
+                    p_wvhandler = pa.safe_alloc_init(Py_WVHandler)
+                    exsk_out.callback(pa.release_obj, p_wvhandler)
                     active = True
                     async def new_webview() -> int:
                         async with AsyncExitStack() as exsk:
-                            p_cfg = pa.safe_new_object(WKWebViewConfiguration)
-                            exsk.callback(pa.send_message, p_cfg, b'release')
+                            p_cfg = pa.safe_alloc_init(WKWebViewConfiguration)
+                            exsk.callback(pa.release_obj, p_cfg)
 
                             rp_pref = c_void_p(pa.send_message(p_cfg, b'preferences', restype=c_void_p))
                             if not rp_pref.value:
@@ -521,7 +521,7 @@ def main():
                             p_setkey0 = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', b'allowFileAccessFromFileURLs',
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, p_setkey0, b'release')
+                            exsk.callback(pa.release_obj, p_setkey0)
                             pa.send_message(
                                 rp_pref, b'setValue:forKey:',
                                 kCFBooleanTrue, p_setkey0,
@@ -531,19 +531,19 @@ def main():
                             p_setkey1 = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', b'allowUniversalAccessFromFileURLs',
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, p_setkey1, b'release')
+                            exsk.callback(pa.release_obj, p_setkey1)
                             pa.send_message(
                                 p_cfg, b'setValue:forKey:',
                                 kCFBooleanTrue, p_setkey1,
                                 argtypes=(c_void_p, c_void_p))
 
-                            p_usrcontctlr = pa.safe_new_object(WKUserContentController)
-                            exsk.callback(pa.send_message, p_usrcontctlr, b'release')
+                            p_usrcontctlr = pa.safe_alloc_init(WKUserContentController)
+                            exsk.callback(pa.release_obj, p_usrcontctlr)
 
                             p_handler_name = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', b'pywk',
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, p_handler_name, b'release')
+                            exsk.callback(pa.release_obj, p_handler_name)
 
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandler:name:',
@@ -569,7 +569,6 @@ def main():
 
                     async def free_webview(wv: int) -> None:
                         if wv:
-                            # pa.send_message(c_void_p(wv), b'release')
                             pa.release_obj(c_void_p(wv))
 
                     async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
@@ -578,15 +577,15 @@ def main():
                             ps_html = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', html,
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, ps_html, b'release')
+                            exsk.callback(pa.release_obj, ps_html)
                             ps_base_url = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', host,
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, ps_base_url, b'release')
+                            exsk.callback(pa.release_obj, ps_base_url)
                             purl_base = pa.safe_new_object(
                                 NSURL, b'initWithString:', ps_base_url,
                                 argtypes=(c_void_p, ))
-                            exsk.callback(pa.send_message, purl_base, b'release')
+                            exsk.callback(pa.release_obj, purl_base)
 
                             rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
                                 c_void_p(webview), b'loadHTMLString:baseURL:', ps_html, purl_base,
@@ -612,10 +611,10 @@ def main():
                             ps_script = pa.safe_new_object(
                                 NSString, b'initWithUTF8String:', script,
                                 argtypes=(c_char_p, ))
-                            exsk.callback(pa.send_message, ps_script, b'release')
+                            exsk.callback(pa.release_obj, ps_script)
 
-                            pd_jsargs = pa.safe_new_object(NSDictionary)
-                            exsk.callback(pa.send_message, pd_jsargs, b'release')
+                            pd_jsargs = pa.safe_alloc_init(NSDictionary)
+                            exsk.callback(pa.release_obj, pd_jsargs)
 
                             rp_pageworld = c_void_p(pa.send_message(
                                 WKContentWorld, b'pageWorld',
@@ -665,8 +664,8 @@ def main():
                     ...
 
             with ExitStack() as exsk:
-                exsk.callback(pa.send_message, jsresult_id, b'release')
-                exsk.callback(pa.send_message, jsresult_err, b'release')
+                exsk.callback(pa.release_obj, jsresult_id)
+                exsk.callback(pa.release_obj, jsresult_err)
                 if jsresult_err:
                     code = pa.send_message(jsresult_err, b'code', restype=c_long)
                     s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(

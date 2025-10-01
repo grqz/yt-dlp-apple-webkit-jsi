@@ -171,7 +171,8 @@ class PyNeApple:
         'class_getInstanceVariable',
         'objc_getProtocol',
         'objc_allocateClassPair', 'objc_registerClassPair', 'objc_disposeClassPair',
-        'objc_getClass', 'pobjc_msgSend', 'pobjc_msgSendSuper',
+        'objc_getClass', 'objc_alloc', 'objc_alloc_init', 'objc_release',
+        'pobjc_msgSend', 'pobjc_msgSendSuper',
         'object_getClass', 'object_getInstanceVariable', 'object_setInstanceVariable',
         'object_getIvar', 'object_setIvar',
         'method_setImplementation',
@@ -219,6 +220,9 @@ class PyNeApple:
             self.objc_registerClassPair = self.cfn_at(self._objc(b'objc_registerClassPair').value, None, c_void_p)
             self.objc_disposeClassPair = self.cfn_at(self._objc(b'objc_disposeClassPair').value, None, c_void_p)
             self.objc_getClass = self.cfn_at(self._objc(b'objc_getClass').value, c_void_p, c_char_p)
+            self.objc_alloc = self.cfn_at(self._objc(b'objc_alloc').value, c_void_p, c_void_p)
+            self.objc_alloc_init = self.cfn_at(self._objc(b'objc_alloc_init').value, c_void_p, c_void_p)
+            self.objc_release = self.cfn_at(self._objc(b'objc_release').value, None, c_void_p)
             self.pobjc_msgSend = self._objc(b'objc_msgSend').value
             self.pobjc_msgSendSuper = self._objc(b'objc_msgSendSuper').value
 
@@ -325,23 +329,28 @@ class PyNeApple:
             assert False, 'Guess why I\'m here'
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
-    def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
-        obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
+    def safe_alloc_init(self, cls: NULLABLE_VOIDP) -> NotNull_VoidP:
+        if obj := self.objc_alloc_init(cls):
+            return obj
+        raise ValueError(f'Failed to alloc init object of class at {cls.value}')
+
+    def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes, *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
+        obj = c_void_p(self.objc_alloc(cls))
+        # obj = c_void_p(self.send_message(cls, b'alloc', restype=c_void_p))
         if not obj.value:
             raise RuntimeError(f'Failed to alloc object of class {cls.value}')
         obj = c_void_p(self.send_message(obj, init_name, *args, restype=c_void_p, argtypes=argtypes))
         if not obj.value:
-            self.send_message(obj, b'release')
+            self.release_obj(obj)
             raise RuntimeError(f'Failed to init object of class {cls.value} with method {init_name.decode()}')
         return py_typecast(NotNull_VoidP, obj)
 
     def release_obj(self, obj: NULLABLE_VOIDP) -> None:
         self.logger.debug_log(f'Releasing object at {obj.value}')
-        # self.send_message(obj, b'release')
-        self.cfn_at(self._objc(b'objc_release').value, None, c_void_p)(obj)
+        self.objc_release(obj)
 
     def release_on_exit(self, obj: NULLABLE_VOIDP):
-        self._stack.callback(lambda: self.send_message(obj, b'release'))
+        self._stack.callback(self.release_obj, obj)
 
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
         Cls = c_void_p(self.objc_getClass(name))
