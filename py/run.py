@@ -697,7 +697,7 @@ def real_main():
     wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
     try:
         sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-        sendmsg(WKJS_Task.ON_SCRIPTMSG, (logger.debug_log, ))
+        sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log, ))
         result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
         print(f'{pformat(result_pyobj)}')
     finally:
