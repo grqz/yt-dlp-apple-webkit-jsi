@@ -184,6 +184,10 @@ class WKJS_Task:
     FREE_WEBVIEW = 4
 
 
+class WKJS_UncaughtException(RuntimeError):
+    ...
+
+
 def main():
     logger = Logger(debug=True)
     logger.debug_log(f'PID: {os.getpid()}')
@@ -359,7 +363,7 @@ def main():
                             fut = coro.throw(exc)
                         else:
                             fut = coro.send(v)
-                        # TODO: support awaitables that aren't futures
+                        # TODO: support awaitables that aren't futures, e.g. coro
                     except StopIteration as si:
                         logger.debug_log(f'stopping with return value: {si.value=}')
                         res.ret = si.value
@@ -603,7 +607,7 @@ def main():
                             await fut_navidone
                         logger.debug_log('navigation done')
 
-                    async def execute_js(webview: int, script: bytes) -> tuple[c_void_p, c_void_p]:
+                    async def execute_js(webview: int, script: bytes) -> _JSResultType[None, type[_NullTag], _UnknownStructure]:
                         fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
                         jsresult_id = c_void_p()
                         jsresult_err = c_void_p()
@@ -636,7 +640,22 @@ def main():
                                 argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
                             await fut_jsdone
-                            return jsresult_id, jsresult_err
+                            exsk.callback(pa.release_obj, jsresult_id)
+                            exsk.callback(pa.release_obj, jsresult_err)
+                            if jsresult_err:
+                                code = pa.send_message(jsresult_err, b'code', restype=c_long)
+                                s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
+                                    jsresult_err, b'domain', restype=c_void_p)), default='<unknown>')
+                                s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
+                                    c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
+                                    b'description', restype=c_void_p)), default='<no description provided>')
+                                raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
+
+                            logger.debug_log('JS execution completed')
+
+                            result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
+                            return result_pyobj
+
                     async def shutdown():
                         nonlocal active
                         active = False
@@ -656,7 +675,7 @@ def main():
             wv = gen_run.send((WKJS_Task.NEW_WEBVIEW, ()))
             try:
                 gen_run.send((WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML)))
-                jsresult_id, jsresult_err = py_typecast(tuple[c_void_p, c_void_p], gen_run.send((WKJS_Task.EXECUTE_JS, (wv, SCRIPT))))
+                result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], gen_run.send((WKJS_Task.EXECUTE_JS, (wv, SCRIPT))))
             finally:
                 gen_run.send((WKJS_Task.FREE_WEBVIEW, (wv, )))
                 try:
@@ -664,22 +683,7 @@ def main():
                 except StopIteration:
                     ...
 
-            with ExitStack() as exsk:
-                exsk.callback(pa.release_obj, jsresult_id)
-                exsk.callback(pa.release_obj, jsresult_err)
-                if jsresult_err:
-                    code = pa.send_message(jsresult_err, b'code', restype=c_long)
-                    s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
-                        jsresult_err, b'domain', restype=c_void_p)), default='<unknown>')
-                    s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
-                        c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
-                        b'description', restype=c_void_p)), default='<no description provided>')
-                    raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
-
-                logger.debug_log('JS execution completed')
-
-                result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
-                print(f'{pformat(result_pyobj)}')
+            print(f'{pformat(result_pyobj)}')
             return 0
     except Exception:
         import traceback
