@@ -316,10 +316,6 @@ class PyNeApple:
             klass = self.object_getClass(obj)
             if not klass:
                 raise ValueError(f'unexpected nil class of object at {obj.value}')
-            # superklass = self.send_message(klass, b'superclass', restype=c_void_p)
-            # if not superklass:
-            #     raise ValueError(f'unexpected nil superclass of class at {klass}')
-            # setcls = self.cfn_at(self._objc(b'object_setClass').value, c_void_p, c_void_p, c_void_p)
             receiver = objc_super(receiver=obj, super_class=c_void_p(klass))
             self.logger.debug_log(
                 f'supercall2 {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &receiver={addressof(receiver)}')
