@@ -191,7 +191,6 @@ def main():
             os.remove(PATH2CORE)
         logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
-    # navidg_cbdct: 'PFC_WVHandler.CBDICT_TYPE' = {}
     try:
         with PyNeApple(logger=logger) as pa:
             pa.load_framework_from_path('Foundation')
@@ -427,36 +426,9 @@ def main():
                     raise res.rexc from None
                 return res.ret
 
-            metadict: 'PFC_WVHandler.METADICT_TYPE' = {}
+            navi_cbdct: 'PFC_WVHandler.CBDICT_TYPE' = {}
             class PFC_WVHandler:
                 CBDICT_TYPE = dict[int, Callable[[], None]]
-                METADICT_TYPE = dict[int, CBDICT_TYPE]
-
-                SIGNATURE_INIT = b'@@:'
-                SEL_INIT = pa.sel_registerName(b'init')
-                @staticmethod
-                def init0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> CRet.Py_PVoid:
-                    try:
-                        logger.debug_log(f'Calling [super@{this} init]')
-                        this = pa.send_message(c_void_p(this), b'init', restype=c_void_p, is_super=True)
-                        if not this:
-                            logger.debug_log(f'[(PyForeignClass_WebViewHandler)nil init] FAILURE')
-                            return this
-                        logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} init] SUCCESS')
-                        metadict[this] = {}
-                        return this
-                    except BaseException as e:
-                        logger.write_err(f'Exception in [PyForeignClass_WebViewHandler init]: {e!r}')
-                        return
-
-                SIGNATURE_DEALLOC = b'v@:'
-                SEL_DEALLOC = pa.sel_registerName(b'dealloc')
-
-                @staticmethod
-                def dealloc0(this: CRet.Py_PVoid, sel: CRet.Py_PVoid) -> None:
-                    logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} dealloc] {metadict.get(this or 0)=}')
-                    metadict.pop(this or 0, None)
-                    pa.send_message(c_void_p(this), b'dealloc', is_super=True)
 
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
                 SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
@@ -464,8 +436,7 @@ def main():
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
-                    # if cb := navidg_cbdct.get(rp_navi or 0):
-                    if cb := metadict.get(this or 0, {}).get(rp_navi or 0):
+                    if cb := navi_cbdct.get(rp_navi or 0):
                         cb()
 
                 SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE = b'v@:@@'
@@ -476,8 +447,6 @@ def main():
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
                     print(pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag))
 
-            PFC_WVHandler.init0 = CFUNCTYPE(c_void_p, c_void_p, c_void_p)(PFC_WVHandler.init0)
-            PFC_WVHandler.dealloc0 = CFUNCTYPE(None, c_void_p, c_void_p)(PFC_WVHandler.dealloc0)
 
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
@@ -489,8 +458,6 @@ def main():
 
             Py_WVHandler = c_void_p(pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0))
             meth_list: PyNeApple.METH_LIST_TYPE = (
-                (PFC_WVHandler.SEL_INIT, PFC_WVHandler.init0, PFC_WVHandler.SIGNATURE_INIT),
-                (PFC_WVHandler.SEL_DEALLOC, PFC_WVHandler.dealloc0, PFC_WVHandler.SIGNATURE_DEALLOC),
                 (
                     PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION,
                     PFC_WVHandler.webView0_didFinishNavigation1,
@@ -534,12 +501,12 @@ def main():
 
             def run() -> Generator[Any, Optional[tuple[WKJS_Task, tuple]], None]:
                 with ExitStack() as exsk_out:
-                    p_wvhandler: NotNull_VoidP
+                    # p_wvhandler: NotNull_VoidP
                     p_webview: NotNull_VoidP
                     active = True
                     async def init_webview():
                         # TODO: use a proper instance variable or a python dict
-                        nonlocal p_wvhandler, p_webview
+                        nonlocal p_webview
                         p_wvhandler = pa.safe_new_object(Py_WVHandler)
                         exsk_out.callback(pa.send_message, p_wvhandler, b'release')
 
@@ -580,13 +547,6 @@ def main():
                                 argtypes=(c_char_p, ))
                             exsk.callback(pa.send_message, p_handler_name, b'release')
 
-                            # SIGSEGV in __CFGenericTypeID_inline
-                            # - at <https://github.com/opensource-apple/CF/blob/3cc41a76b1491f50813e28a4ec09954ffa359e6f/CFRuntime.c#L470>
-                            # (uint32_t *)&(((CFRuntimeBase *)cf)->_cfinfo)
-                            # mov rdi, qword ptr [rbx + 0x8]
-                            # Segmentation Fault while dereferencing the above pointer (p_wvhandler + 8)
-                            # https://github.com/grqz/actpg/actions/runs/18057091497/job/51388333992
-                            # https://github.com/grqz/actpg/actions/runs/18058532807/job/51391644213
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandler:name:',
                                 p_wvhandler, p_handler_name,
@@ -634,8 +594,7 @@ def main():
                                 logger.debug_log('navigation done, resolving future')
                                 fut_navidone.set_result(None)
 
-                            # navidg_cbdct[rp_navi.value] = cb_navi_done
-                            metadict[p_wvhandler.value][rp_navi.value] = cb_navi_done
+                            navi_cbdct[rp_navi.value] = cb_navi_done
 
                             logger.debug_log(f'loading: local HTML@{HOST.decode()}')
 

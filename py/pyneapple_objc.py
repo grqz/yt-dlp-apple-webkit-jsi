@@ -322,6 +322,7 @@ class PyNeApple:
             return self.cfn_at(
                 self._objc(b'objc_msgSendSuper2').value, restype,
                 POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
+            assert False, 'Guess why I\'m here'
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_new_object(self, cls: NULLABLE_VOIDP, init_name: bytes = b'init', *args, argtypes: tuple[type, ...] = ()) -> NotNull_VoidP:
