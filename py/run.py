@@ -38,6 +38,7 @@ from typing import (
     TypeVar,
     Union,
     cast as py_typecast,
+    final,
     overload
 )
 
@@ -175,10 +176,12 @@ _JSResultType = Union[
 ]
 
 
-class WKJS_Task(enum.Enum):
+class WKJS_Task:
     NAVIGATE_TO = 0
     EXECUTE_JS = 1
     SHUTDOWN = 2
+    NEW_WEBVIEW = 3
+    FREE_WEBVIEW = 4
 
 
 def main():
@@ -499,17 +502,12 @@ def main():
                     logger.debug_log('Registered PyForeignClass_WebViewHandler')
             logger.debug_log(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
 
-            def run() -> Generator[Any, Optional[tuple[WKJS_Task, tuple]], None]:
+            def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:
                 with ExitStack() as exsk_out:
-                    # p_wvhandler: NotNull_VoidP
-                    p_webview: NotNull_VoidP
+                    p_wvhandler = pa.safe_new_object(Py_WVHandler)
+                    exsk_out.callback(pa.send_message, p_wvhandler, b'release')
                     active = True
-                    async def init_webview():
-                        # TODO: use a proper instance variable or a python dict
-                        nonlocal p_webview
-                        p_wvhandler = pa.safe_new_object(Py_WVHandler)
-                        exsk_out.callback(pa.send_message, p_wvhandler, b'release')
-
+                    async def new_webview() -> int:
                         async with AsyncExitStack() as exsk:
                             p_cfg = pa.safe_new_object(WKWebViewConfiguration)
                             exsk.callback(pa.send_message, p_cfg, b'release')
@@ -560,16 +558,20 @@ def main():
                                 WKWebView, b'initWithFrame:configuration:',
                                 CGRect(), p_cfg,
                                 argtypes=(CGRect, c_void_p))
-                            exsk_out.callback(pa.send_message, p_webview, b'release')
                             logger.debug_log('webview init')
 
                         pa.send_message(
                             p_webview, b'setNavigationDelegate:',
                             p_wvhandler, argtypes=(c_void_p, ))
                         logger.debug_log('webview set navidg')
-                        return 0
+                        # maybe use a ctx mgr?
+                        return p_webview.value
 
-                    async def navigate_to(host, html):
+                    async def free_webview(wv: int) -> None:
+                        if wv:
+                            pa.send_message(c_void_p(wv), b'release')
+
+                    async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
                         fut_navidone: CFRL_Future[None] = CFRL_Future()
                         async with AsyncExitStack() as exsk:
                             ps_html = pa.safe_new_object(
@@ -586,7 +588,7 @@ def main():
                             exsk.callback(pa.send_message, purl_base, b'release')
 
                             rp_navi = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(
-                                p_webview, b'loadHTMLString:baseURL:', ps_html, purl_base,
+                                c_void_p(webview), b'loadHTMLString:baseURL:', ps_html, purl_base,
                                 restype=c_void_p, argtypes=(c_void_p, c_void_p))))
                             logger.debug_log(f'Navigation started: {rp_navi}')
 
@@ -601,7 +603,7 @@ def main():
                             await fut_navidone
                         logger.debug_log('navigation done')
 
-                    async def execute_js(script):
+                    async def execute_js(webview: int, script: bytes) -> tuple[c_void_p, c_void_p]:
                         fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
                         jsresult_id = c_void_p()
                         jsresult_err = c_void_p()
@@ -629,7 +631,7 @@ def main():
 
                             pa.send_message(
                                 # Requires iOS 15.0+, maybe test its availability first?
-                                p_webview, b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
+                                c_void_p(webview), b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
                                 ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                                 argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
@@ -639,24 +641,27 @@ def main():
                         nonlocal active
                         active = False
 
-                    runcoro_on_loop(init_webview())
-                    fn_tup = navigate_to, execute_js, shutdown
-                    last_res = runcoro_on_loop(init_webview())
+                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview
+                    last_res = 0
                     while active:
                         task = yield last_res
                         assert task
                         fn_id, args = task
-                        last_res = runcoro_on_loop(fn_tup[fn_id.value](*args))
+                        last_res = runcoro_on_loop(fn_tup[fn_id](*args))
                     return  # last_res will be None anyways
 
             gen_run = run()
             assert gen_run.send(None)  == 0
-            gen_run.send((WKJS_Task.NAVIGATE_TO, (HOST, HTML)))
-            jsresult_id, jsresult_err = py_typecast(tuple[NotNull_VoidP, NotNull_VoidP], gen_run.send((WKJS_Task.EXECUTE_JS, (SCRIPT, ))))
+            wv = gen_run.send((WKJS_Task.NEW_WEBVIEW, ()))
             try:
-                gen_run.send((WKJS_Task.SHUTDOWN, ()))
-            except StopIteration:
-                ...
+                gen_run.send((WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML)))
+                jsresult_id, jsresult_err = py_typecast(tuple[c_void_p, c_void_p], gen_run.send((WKJS_Task.EXECUTE_JS, (wv, SCRIPT))))
+            finally:
+                gen_run.send((WKJS_Task.FREE_WEBVIEW, (wv, )))
+                try:
+                    gen_run.send((WKJS_Task.SHUTDOWN, ()))
+                except StopIteration:
+                    ...
 
             with ExitStack() as exsk:
                 exsk.callback(pa.send_message, jsresult_id, b'release')
