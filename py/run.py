@@ -1,5 +1,4 @@
 import datetime as dt
-import enum
 import os
 import sys
 
@@ -38,7 +37,6 @@ from typing import (
     TypeVar,
     Union,
     cast as py_typecast,
-    final,
     overload
 )
 
@@ -174,6 +172,7 @@ _JSResultType = Union[
     list['_JSResultType'],
     V,  # type[_UnkownStructure]
 ]
+DefaultJSResult = _JSResultType[None, type[_NullTag], _UnknownStructure]
 
 
 class WKJS_Task:
@@ -182,22 +181,14 @@ class WKJS_Task:
     SHUTDOWN = 2
     NEW_WEBVIEW = 3
     FREE_WEBVIEW = 4
+    ON_SCRIPTMSG = 5
 
 
 class WKJS_UncaughtException(RuntimeError):
     ...
 
 
-def main():
-    logger = Logger(debug=True)
-    logger.debug_log(f'PID: {os.getpid()}')
-    if os.getenv('CI'):
-        PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
-        if os.path.lexists(PATH2CORE):
-            logger.debug_log(f'removing exisiting file at {PATH2CORE}')
-            os.remove(PATH2CORE)
-        logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
-        os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
+def main(logger: Logger):
     try:
         with PyNeApple(logger=logger) as pa:
             pa.load_framework_from_path('Foundation')
@@ -433,10 +424,9 @@ def main():
                     raise res.rexc from None
                 return res.ret
 
-            navi_cbdct: 'PFC_WVHandler.CBDICT_TYPE' = {}
+            navi_cbdct: dict[int, Callable[[], None]] = {}
+            usrcontctlr_cbdct: dict[int, Callable[[DefaultJSResult], None]] = {}
             class PFC_WVHandler:
-                CBDICT_TYPE = dict[int, Callable[[], None]]
-
                 SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
                 SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
 
@@ -452,8 +442,9 @@ def main():
                 def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
-                    print(pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag))
-
+                    pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
+                    if cb := usrcontctlr_cbdct.get(rp_usrcontctlr or 0):
+                        cb(pyobj)
 
             PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
                 None,
@@ -575,6 +566,17 @@ def main():
                         if wv:
                             pa.release_obj(c_void_p(wv))
 
+                    # TODO: w/ reply?
+                    async def on_script_message(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
+                        rp_usrcontctlr = pa.send_message(
+                            c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
+                            b'userContentController', restype=c_void_p)
+                        if not rp_usrcontctlr:
+                            raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
+                        ret = usrcontctlr_cbdct.get(rp_usrcontctlr or 0)
+                        usrcontctlr_cbdct[rp_usrcontctlr or 0] = cb_new
+                        return ret
+
                     async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
                         fut_navidone: CFRL_Future[None] = CFRL_Future()
                         async with AsyncExitStack() as exsk:
@@ -649,7 +651,8 @@ def main():
                                 s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
                                     c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
                                     b'description', restype=c_void_p)), default='<no description provided>')
-                                raise RuntimeError(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
+                                # TODO: don't hardcode a string
+                                raise WKJS_UncaughtException(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
 
                             logger.debug_log('JS execution completed')
 
@@ -660,7 +663,7 @@ def main():
                         nonlocal active
                         active = False
 
-                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview
+                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_message
                     last_res = 0
                     while active:
                         task = yield last_res
@@ -671,19 +674,7 @@ def main():
 
             gen_run = run()
             assert gen_run.send(None)  == 0
-            # yield gen_run
-            wv = gen_run.send((WKJS_Task.NEW_WEBVIEW, ()))
-            try:
-                gen_run.send((WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML)))
-                result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], gen_run.send((WKJS_Task.EXECUTE_JS, (wv, SCRIPT))))
-            finally:
-                gen_run.send((WKJS_Task.FREE_WEBVIEW, (wv, )))
-                try:
-                    gen_run.send((WKJS_Task.SHUTDOWN, ()))
-                except StopIteration:
-                    ...
-
-            print(f'{pformat(result_pyobj)}')
+            yield lambda *args: gen_run.send(args)
             return 0
     except Exception:
         import traceback
@@ -691,5 +682,35 @@ def main():
         return 1
 
 
+def real_main():
+    logger = Logger(debug=True)
+    logger.debug_log(f'PID: {os.getpid()}')
+    if os.getenv('CI'):
+        PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
+        if os.path.lexists(PATH2CORE):
+            logger.debug_log(f'removing exisiting file at {PATH2CORE}')
+            os.remove(PATH2CORE)
+        logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
+        os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
+    gen = main(logger=logger)
+    sendmsg = gen.send(None)
+    wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
+    try:
+        sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
+        sendmsg(WKJS_Task.ON_SCRIPTMSG, (logger.debug_log, ))
+        result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
+        print(f'{pformat(result_pyobj)}')
+    finally:
+        sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
+        try:
+            sendmsg(WKJS_Task.SHUTDOWN, ())
+        except StopIteration:
+            ...
+        try:
+            gen.send(None)
+        except StopIteration as e:
+            return e.value
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(real_main())
