@@ -33,6 +33,7 @@ from typing import (
     Coroutine,
     Generator,
     Generic,
+    Literal,
     Optional,
     TypeVar,
     Union,
@@ -202,7 +203,7 @@ class WKJS_UncaughtException(Exception):
             f'user info: {self.user_info or WKJS_UncaughtException.UINFO_DEFAULT}')
 
 
-def get_gen(logger: Logger):
+def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Literal[0, 1]]:
     try:
         with PyNeApple(logger=logger) as pa:
             pa.load_framework_from_path('Foundation')
@@ -665,10 +666,10 @@ def get_gen(logger: Logger):
                             if jsresult_err:
                                 code = pa.send_message(jsresult_err, b'code', restype=c_long)
                                 s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
-                                    jsresult_err, b'domain', restype=c_void_p)), default='<unknown>')
+                                    jsresult_err, b'domain', restype=c_void_p)), default=WKJS_UncaughtException.DOMAIN_DEFAULT)
                                 s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
                                     c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
-                                    b'description', restype=c_void_p)), default='<no description provided>')
+                                    b'description', restype=c_void_p)), default=WKJS_UncaughtException.UINFO_DEFAULT)
                                 raise WKJS_UncaughtException(err_at=jsresult_err.value or 0, code=code, domain=s_domain, user_info=s_uinfo)
 
                             logger.debug_log('JS execution completed')
@@ -716,7 +717,9 @@ def real_main():
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
             sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
             result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
-            print(f'{pformat(result_pyobj)}')
+            logger.debug_log(f'{pformat(result_pyobj)}')
+        except WKJS_UncaughtException as e:
+            logger.debug_log(f'Uncaught exception from js: {e}')
         finally:
             sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
             try:
