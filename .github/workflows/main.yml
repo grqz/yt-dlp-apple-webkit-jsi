@@ -47,6 +47,8 @@ jobs:
         -o 'register read'
         -o 'disassemble --pc --count 50'
         -o 'di -n objc_msgSendSuper2'
+        -o 'di -n objc_msgSendSuper'
+        -o 'di -n objc_msgSend'
         | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
