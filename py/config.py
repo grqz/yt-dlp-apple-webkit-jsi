@@ -1,6 +1,7 @@
 HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
 HOST = rb'''https://www.youtube.com/robots.txt'''
-SCRIPT = r'''
+SCRIPT_PHOLDER = r'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
+SCRIPT_WRAPPER = r'''
 (()=>{
 let __webkit = window.webkit;
 function __postmsg(x) {
@@ -26,6 +27,13 @@ window.webkit = undefined;
 })();
 return await (async ()=>{  // IIAFE
 try {
+/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/
+} catch(e) {
+    console.error({result: 'error', debugInfo: [document.URL], error: e});
+}
+})();
+'''
+SCRIPT = r'''
 console.log('started', 'generating pot');
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
@@ -203,7 +211,6 @@ const [integrityToken, estimatedTtlSecs, mintRefreshThreshold, websafeFallbackTo
 
 const integrityTokenData = {
     integrityToken,
-    estimatedTtlSecs,
     mintRefreshThreshold,
     websafeFallbackToken
 };
@@ -248,10 +255,4 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
-return false;
-} catch(e) {
-    console.error({result: 'error', debugInfo: [document.URL], error: e});
-    return true;
-}
-})();
 '''.encode()

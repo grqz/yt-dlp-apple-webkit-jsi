@@ -47,7 +47,7 @@ from .pyneapple_objc import (
     ObjCBlock,
     PyNeApple,
 )
-from .config import HOST, HTML, SCRIPT
+from .config import HOST, HTML, SCRIPT, SCRIPT_PHOLDER, SCRIPT_TEMPL
 from .logging import Logger
 
 
@@ -184,11 +184,25 @@ class WKJS_Task:
     ON_SCRIPTMSG = 5
 
 
-class WKJS_UncaughtException(RuntimeError):
-    ...
+class WKJS_UncaughtException(Exception):
+    DOMAIN_DEFAULT = '<unknown>'
+    UINFO_DEFAULT = '<no description provided>'
+
+    __slots__ = 'err_at', 'code', 'domain', 'user_info'
+    def __init__(self, *, err_at: int, code: int, domain: Optional[str], user_info: Optional[str]):
+        self.err_at = err_at
+        self.code = code
+        self.domain = domain
+        self.user_info = user_info
+
+    def __str__(self):
+        return (
+            f'JS Uncaught Exception: Error at {self.err_at}, code: {self.code}, '
+            f'domain: {self.domain or WKJS_UncaughtException.DOMAIN_DEFAULT}, '
+            f'user info: {self.user_info or WKJS_UncaughtException.UINFO_DEFAULT}')
 
 
-def main(logger: Logger):
+def get_gen(logger: Logger):
     try:
         with PyNeApple(logger=logger) as pa:
             pa.load_framework_from_path('Foundation')
@@ -567,6 +581,9 @@ def main(logger: Logger):
                             pa.release_obj(c_void_p(wv))
 
                     # TODO: w/ reply?
+                    # - https://developer.apple.com/documentation/webkit/wkscriptmessagehandlerwithreply?language=objc
+                    # - https://developer.apple.com/documentation/webkit/wkusercontentcontroller/addscriptmessagehandler(_:contentworld:name:)?language=objc
+                    # note: use [WKContentWorld pageWorld]
                     async def on_script_message(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
                         rp_usrcontctlr = pa.send_message(
                             c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
@@ -613,9 +630,10 @@ def main(logger: Logger):
                         fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
                         jsresult_id = c_void_p()
                         jsresult_err = c_void_p()
+                        real_script = SCRIPT_TEMPL.replace(SCRIPT_PHOLDER, script)
                         async with AsyncExitStack() as exsk:
                             ps_script = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', script,
+                                NSString, b'initWithUTF8String:', real_script,
                                 argtypes=(c_char_p, ))
                             exsk.callback(pa.release_obj, ps_script)
 
@@ -651,8 +669,7 @@ def main(logger: Logger):
                                 s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
                                     c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
                                     b'description', restype=c_void_p)), default='<no description provided>')
-                                # TODO: don't hardcode a string
-                                raise WKJS_UncaughtException(f'JS failed: NSError@{jsresult_err.value}, {code=}, domain={s_domain}, user info={s_uinfo}')
+                                raise WKJS_UncaughtException(err_at=jsresult_err.value or 0, code=code, domain=s_domain, user_info=s_uinfo)
 
                             logger.debug_log('JS execution completed')
 
@@ -670,7 +687,6 @@ def main(logger: Logger):
                         assert task
                         fn_id, args = task
                         last_res = runcoro_on_loop(fn_tup[fn_id](*args))
-                    return  # last_res will be None anyways
 
             gen_run = run()
             assert gen_run.send(None)  == 0
@@ -692,24 +708,23 @@ def real_main():
             os.remove(PATH2CORE)
         logger.debug_log(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
-    gen = main(logger=logger)
-    sendmsg = gen.send(None)
-    wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
+    gen = get_gen(logger=logger)
     try:
-        sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-        sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log, ))
-        result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
-        print(f'{pformat(result_pyobj)}')
-    finally:
-        sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
+        sendmsg = gen.send(None)
+        wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
         try:
-            sendmsg(WKJS_Task.SHUTDOWN, ())
-        except StopIteration:
-            ...
-        try:
-            gen.send(None)
-        except StopIteration as e:
-            return e.value
+            sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
+            sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
+            result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
+            print(f'{pformat(result_pyobj)}')
+        finally:
+            sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
+            try:
+                sendmsg(WKJS_Task.SHUTDOWN, ())
+            except StopIteration:
+                ...
+    except StopIteration as e:
+        return e.value
 
 
 if __name__ == '__main__':
