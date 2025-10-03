@@ -411,10 +411,10 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 *,
                 var_keepalive: set,
                 loop: c_void_p,
+                finish: Callable[[BaseException], None],
                 default: U = None,
-                finish: Callable[[BaseException], None]
             ) -> CFRL_CoroResult[Union[T, U]]:
-                # Default is returned when the coroutine wrongly calls CFRunLoopStop(currloop) or its equivalent
+                # Default is returned when the coroutine wrongly calls CFRunLoopStop(loop) or its equivalent
                 res = CFRL_CoroResult[Union[T, U]](default)
                 logger.debug_log(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
@@ -438,8 +438,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         res.rexc = e
                         finish(e)
                         return
-                    else:
-                        logger.debug_log(f'attaching done cb to: {fut=}')
 
                     def _on_fut_done(f: CFRL_Future):
                         logger.debug_log(f'fut done: {f=}')
@@ -461,7 +459,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             scheduled = _normal_cb
                         schedule_on(loop, scheduled, var_keepalive=var_keepalive)
                     fut.add_done_callback(_on_fut_done)
-                    logger.debug_log(f'added done callback {_on_fut_done=}')
+                    logger.debug_log(f'added done callback {_on_fut_done=} to fut {fut=}')
 
                 schedule_on(loop, _coro_step, var_keepalive=var_keepalive)
                 return res
@@ -482,7 +480,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 cv = Condition()
                 var_keepalive = set()
 
-                def finish(e: Union[BaseException, StopIteration]):
+                def finish(e: BaseException):
                     nonlocal finished
                     with cv:
                         finished = True
@@ -785,7 +783,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                                 argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                            if not await fut_jsdone:
+                            if (await fut_jsdone) is False:
                                 raise py_typecast(Exception, result_exc)
 
                             logger.debug_log('JS execution completed')

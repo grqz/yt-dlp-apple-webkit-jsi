@@ -20,7 +20,7 @@ def main():
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
     gen = get_gen(logger=logger)
     try:
-        sendmsg = gen.send(None)
+        sendmsg = next(gen)
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
@@ -43,8 +43,12 @@ def main():
                 sendmsg(WKJS_Task.SHUTDOWN, ())
             except StopIteration:
                 ...
+            finally:
+                next(gen)
     except StopIteration as e:
         return e.value
+    else:
+        print('unreachable')
 
 
 if __name__ == '__main__':
