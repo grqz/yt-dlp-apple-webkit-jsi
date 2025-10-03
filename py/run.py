@@ -18,6 +18,7 @@ from ctypes import (
     c_int64,
     c_int8,
     c_long,
+    c_longlong,
     c_uint64,
     c_ulong,
     c_ulonglong,
@@ -179,6 +180,13 @@ _JSResultType = Union[
 ]
 DefaultJSResult = _JSResultType[None, type[_NullTag], _UnknownStructure]
 
+PyResultType = Union[
+    None,
+    int,
+    float,
+    str,
+    dt.datetime
+]
 
 class WKJS_Task:
     NAVIGATE_TO = 0
@@ -220,6 +228,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
             NSString = pa.safe_objc_getClass(b'NSString')
             NSNull = pa.safe_objc_getClass(b'NSNull')
+            inst_NSNull = py_typecast(NotNull_VoidP, c_void_p(pa.send_message(NSNull, b'null', restype=c_void_p)))
+            if inst_NSNull.value is None:
+                raise RuntimeError('[NSNull null] really is NULL')
             NSNumber = pa.safe_objc_getClass(b'NSNumber')
             NSObject = pa.safe_objc_getClass(b'NSObject')
             NSURL = pa.safe_objc_getClass(b'NSURL')
@@ -306,7 +317,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     return n_resv
                 elif pa.instanceof(jsobj, NSDate):
                     dte1970 = py_typecast(float, CFDateGetAbsoluteTime(jsobj)) + 978307200.0
-                    # dte1970 = pa.send_message(jsobj, b'timeIntervalSince1970', restype=c_double)
                     py_dte = dt.datetime.fromtimestamp(dte1970, dt.timezone.utc)
                     visited[jsobj.value] = py_dte
                     return py_dte
@@ -342,6 +352,46 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     unk_res = on_unknown_st(tn)
                     visited[jsobj.value] = unk_res
                     return unk_res
+
+            def ns_jsobj_from_pyres(
+                pyres: PyResultType,
+                *,
+                pending_free: list[NotNull_VoidP],
+            ) -> NotNull_VoidP:
+                if pyres is None:
+                    return inst_NSNull
+                elif isinstance(pyres, str):
+                    str_utf16 = pyres.encode('utf-16')
+                    p_str = pa.safe_new_object(
+                        NSString, b'initWithCharacters:length:', str_utf16, len(str_utf16),
+                        argtypes=(c_char_p, c_ulong))
+                    pending_free.append(p_str)
+                    return p_str
+                elif isinstance(pyres, int):
+                    if pyres >= 0:  # use ULL
+                        if pyres > 18446744073709551615:
+                            raise OverflowError('Number does not fit in NSNumber (greater than ULLONG_MAX)')
+                        ull = pa.safe_new_object(NSNumber, b'initWithUnsignedLongLong:', pyres, argtypes=(c_ulonglong, ))
+                        pending_free.append(ull)
+                        return ull
+                    else:  # use LL
+                        if pyres < -9223372036854775807:
+                            raise OverflowError('Number does not fit in NSNumber (less than LLONG_MIN)')
+                        ll = pa.safe_new_object(NSNumber, b'initWithLongLong:', pyres, argtypes=(c_longlong, ))
+                        pending_free.append(ll)
+                        return ll
+                elif isinstance(pyres, float):
+                    fpnum = pa.safe_new_object(NSNumber, b'initWithDouble:', pyres, argtypes=(c_double, ))
+                    pending_free.append(fpnum)
+                    return fpnum
+                elif isinstance(pyres, dt.datetime):
+                    nsdt = pa.safe_new_object(
+                        NSDate, b'initWithTimeIntervalSince1970:', pyres.timestamp(),
+                        argtypes=(c_double, ))
+                    pending_free.append(nsdt)
+                    return nsdt
+                else:
+                    raise RuntimeError(f'Type {type(pyres)} is not (yet) supported')
 
             def schedule_on(loop: c_void_p, pycb: Callable[[], None], *, var_keepalive: set, mode=kCFRunLoopDefaultMode):
                 block: ObjCBlock
@@ -453,7 +503,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             ] = {}
             class PFC_WVHandler:
                 COMM_CBTYPE = Callable[
-                    [DefaultJSResult, Callable[[str, Optional[str]], None]],
+                    [DefaultJSResult, Callable[[PyResultType, Optional[str]], None]],
                     None,
                 ]
 
@@ -481,32 +531,33 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} '
                         f'didReceiveScriptMessage: {rp_sm} replyHandler: &({replyhandler!r})]')
                     res_or_exc = replyhandler.as_pycb(None, c_void_p, c_void_p)
-                    def return_result(result: str, err: Optional[str]) -> None:
-                        import time
-                        time.sleep(10)
-                        if err is not None:
-                            err_utf16 = err.encode('utf-16')
-                            p_errstr = pa.safe_new_object(
-                                NSString, b'initWithCharacters:length:', err_utf16, len(err_utf16),
-                                argtypes=(c_char_p, c_ulong))
-                            res_or_exc(None, p_errstr)
-                            pa.release_obj(p_errstr)
-                        else:
-                            # result_utf16 = result.encode('utf-16')
-                            # p_resstr = pa.safe_new_object(
-                            #     NSString, b'initWithCharacters:length:', result_utf16, len(result_utf16),
-                            #     argtypes=(c_char_p, c_ulong))
-                            # res_or_exc(p_resstr, None)
-                            # pa.release_obj(p_resstr)
-                            presult_num = pa.safe_new_object(
-                                NSNumber, b'initWithUnsignedLongLong:', 129841722159, argtypes=(c_ulonglong, ))
-                            res_or_exc(presult_num, None)
-                            pa.release_obj(presult_num)
+                    def return_result(result: PyResultType, err: Optional[str]) -> None:
+                        try:
+                            if err is not None:
+                                err_utf16 = err.encode('utf-16')
+                                p_errstr = pa.safe_new_object(
+                                    NSString, b'initWithCharacters:length:', err_utf16, len(err_utf16),
+                                    argtypes=(c_char_p, c_ulong))
+                                res_or_exc(None, p_errstr)
+                                pa.release_obj(p_errstr)
+                            else:
+                                pending_free = []
+                                nsobj = ns_jsobj_from_pyres(result, pending_free=pending_free)
+                                assert nsobj
+                                res_or_exc(nsobj, None)
+                                list(map(pa.release_obj, pending_free))
+                        except Exception as e:
+                            logger.debug_log(f'Error sending script message, did the conversion fail? {e!r}')
+                            return_result(None, repr(e))
 
-                    rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
-                    pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
-                    if cb := usrcontctlr_commcbdct.get(rp_usrcontctlr or 0):
-                        cb(pyobj, return_result)
+                    # TODO(?): expose some CFRL utils to the callback?
+                    try:
+                        rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
+                        pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
+                        usrcontctlr_commcbdct[rp_usrcontctlr or 0](pyobj, return_result)
+                    except BaseException as e:
+                        logger.debug_log(f'Error handling script message: {e!r}')
+                        return_result(None, repr(e))
 
             Py_WVHandler = c_void_p(pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0))
             meth_list: PyNeApple.METH_LIST_TYPE = (
@@ -540,6 +591,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 WKScriptMessageHandlerWithReply,
             )
             logger.debug_log(f'{(WKNavigationDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply)=}')
+            # TODO
             # map(pa.safe_get_proto, (
             #     b'WKNavigationDelegate',
             #     b'WKScriptMessageHandler',
@@ -789,7 +841,14 @@ def real_main():
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
             sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
-            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, lambda res, cb: cb(str(logger.debug_log(res, end=' is received in com channel\n')), None)))
+            def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
+                logger.debug_log(f'received in comm channel: {res}')
+                if isinstance(res, PyResultType):
+                    cb(res, None)
+                else:
+                    cb(None, f'Received unknown type {type(res)}')
+
+            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
             result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:
