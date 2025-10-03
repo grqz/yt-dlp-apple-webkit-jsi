@@ -491,12 +491,13 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             res_or_exc(None, p_errstr)
                             pa.release_obj(p_errstr)
                         else:
-                            result_utf16 = result.encode('utf-16')
-                            p_resstr = pa.safe_new_object(
-                                NSString, b'initWithCharacters:length:', result_utf16, len(result_utf16),
-                                argtypes=(c_char_p, c_ulong))
-                            res_or_exc(p_resstr, None)
-                            pa.release_obj(p_resstr)
+                            res_or_exc(pa.send_message(NSNull, b'null', restype=c_void_p), None)
+                            # result_utf16 = result.encode('utf-16')
+                            # p_resstr = pa.safe_new_object(
+                            #     NSString, b'initWithCharacters:length:', result_utf16, len(result_utf16),
+                            #     argtypes=(c_char_p, c_ulong))
+                            # res_or_exc(p_resstr, None)
+                            # pa.release_obj(p_resstr)
 
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
                     pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
