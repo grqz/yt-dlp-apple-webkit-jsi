@@ -362,9 +362,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 if pyres is None:
                     return inst_NSNull
                 elif isinstance(pyres, str):
-                    str_utf16 = pyres.encode('utf-16')
+                    str_utf16 = pyres.encode('utf-16-le')
                     p_str = pa.safe_new_object(
-                        NSString, b'initWithCharacters:length:', str_utf16, len(str_utf16),
+                        NSString, b'initWithCharacters:length:', str_utf16, len(pyres),
                         argtypes=(c_char_p, c_ulong))
                     pending_free.append(p_str)
                     return p_str
@@ -535,9 +535,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     def return_result(result: PyResultType, err: Optional[str]) -> None:
                         try:
                             if err is not None:
-                                err_utf16 = err.encode('utf-16')
+                                err_utf16 = err.encode('utf-16-le')
                                 p_errstr = pa.safe_new_object(
-                                    NSString, b'initWithCharacters:length:', err_utf16, len(err_utf16),
+                                    NSString, b'initWithCharacters:length:', err_utf16, len(err),
                                     argtypes=(c_char_p, c_ulong))
                                 res_or_exc(None, p_errstr)
                                 pa.release_obj(p_errstr)
