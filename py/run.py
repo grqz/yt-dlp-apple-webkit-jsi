@@ -477,7 +477,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 ):
                     replyhandler = cast(rp_replyhandler or 0, POINTER(ObjCBlock)).contents
                     logger.debug_log(
-                        f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr}'
+                        f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} '
                         f'didReceiveScriptMessage: {rp_sm} replyHandler: &({replyhandler!r})]')
                     res_or_exc = replyhandler.as_pycb(None, c_void_p, c_void_p)
                     def return_result(result: str, err: Optional[str]) -> None:
@@ -782,7 +782,7 @@ def real_main():
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
             sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
-            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, lambda res, cb: cb(str(res), None)))
+            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, lambda res, cb: cb(str(logger.debug_log(res, end=' is received in com channel\n')), None)))
             result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:
