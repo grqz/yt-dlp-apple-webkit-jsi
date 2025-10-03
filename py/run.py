@@ -826,7 +826,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
 
 
 def real_main():
-    logger = Logger(debug=True)
+    logger = Logger(debug=False)
     logger.debug_log(f'PID: {os.getpid()}')
     if os.getenv('CI'):
         PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')

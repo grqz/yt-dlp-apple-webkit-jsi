@@ -34,7 +34,7 @@ return x=>__postmsg(x, 'wkjs_com');
 SCRIPT = r'''
 try {
 const val = await Promise.all([3, true, new Date, false].map(communicate));
-console.log('started', 'generating pot');
+console.log('started generating pot, communicate result: ', val);
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
