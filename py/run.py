@@ -481,6 +481,8 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         f'didReceiveScriptMessage: {rp_sm} replyHandler: &({replyhandler!r})]')
                     res_or_exc = replyhandler.as_pycb(None, c_void_p, c_void_p)
                     def return_result(result: str, err: Optional[str]) -> None:
+                        import time
+                        time.sleep(10)
                         if err is not None:
                             err_utf16 = err.encode('utf-16')
                             p_errstr = pa.safe_new_object(
@@ -488,7 +490,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 argtypes=(c_char_p, c_ulong))
                             res_or_exc(None, p_errstr)
                             pa.release_obj(p_errstr)
-                            return
                         else:
                             result_utf16 = result.encode('utf-16')
                             p_resstr = pa.safe_new_object(
@@ -605,13 +606,14 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 p_wvhandler, p_handler_name,
                                 argtypes=(c_void_p, c_void_p))
 
-                            p_comhandler_name = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', b'wkjs_com',
-                                argtypes=(c_char_p, ))
-                            exsk.callback(pa.release_obj, p_handler_name)
                             rp_pageworld = c_void_p(pa.send_message(
                                 WKContentWorld, b'pageWorld',
                                 restype=c_void_p))
+
+                            p_comhandler_name = pa.safe_new_object(
+                                NSString, b'initWithUTF8String:', b'wkjs_com',
+                                argtypes=(c_char_p, ))
+                            exsk.callback(pa.release_obj, p_comhandler_name)
 
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandlerWithReply:contentWorld:name:',
