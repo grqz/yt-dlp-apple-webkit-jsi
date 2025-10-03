@@ -227,6 +227,10 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
             WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
 
+            WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
+            WKScriptMessageHandler = pa.objc_getProtocol(b'WKScriptMessageHandler')
+            WKScriptMessageHandlerWithReply = pa.objc_getProtocol(b'WKScriptMessageHandlerWithReply')
+
             CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)
             CFRunLoopGetMain = pa.cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
@@ -524,11 +528,16 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     b'v@:@@@?',
                 ),
             )
-            proto_list: PyNeApple.PROTO_LIST_TYPE = map(pa.safe_get_proto, (
-                b'WKNavigationDelegate',
-                b'WKScriptMessageHandler',
-                b'WKScriptMessageHandlerWithReply',
-            ))
+            proto_list: PyNeApple.PROTO_LIST_TYPE = (
+                WKNavigationDelegate,
+                WKScriptMessageHandler,
+                WKScriptMessageHandlerWithReply,
+            )
+            # map(pa.safe_get_proto, (
+            #     b'WKNavigationDelegate',
+            #     b'WKScriptMessageHandler',
+            #     b'WKScriptMessageHandlerWithReply',
+            # ))
             if not Py_WVHandler:
                 Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
                 logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
