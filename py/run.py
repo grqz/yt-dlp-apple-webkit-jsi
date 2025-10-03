@@ -47,8 +47,6 @@ def main():
                 next(gen)
     except StopIteration as e:
         return e.value
-    else:
-        print('unreachable')
 
 
 if __name__ == '__main__':

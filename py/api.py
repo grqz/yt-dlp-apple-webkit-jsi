@@ -119,22 +119,6 @@ class CGRect(Structure):
     __slots__ = ()
 
 
-class MacTypes:
-    SInt8 = c_int8
-    Py_SInt8 = int
-    SInt16 = c_int16
-    Py_SInt16 = int
-    SInt32 = c_int32
-    Py_SInt32 = int
-    SInt64 = c_int64
-    Py_SInt64 = int
-
-    Float32 = c_float
-    Py_Float32 = float
-    Float64 = c_double
-    Py_Float64 = float
-
-
 NSUTF8StringEncoding = 4
 
 
@@ -150,7 +134,7 @@ def str_from_nsstring(pa: PyNeApple, nsstr: Union[c_void_p, NotNull_VoidP], *, d
     length = pa.send_message(nsstr, b'lengthOfBytesUsingEncoding:', NSUTF8StringEncoding, restype=c_ulong, argtypes=(c_ulong, ))
     if not length:
         assert pa.send_message(nsstr, b'canBeConvertedToEncoding:', NSUTF8StringEncoding, restype=c_byte, argtypes=(c_ulong, )), (
-            'NSString cannot be losslessly converted to UTF-8')
+            'NSString cannot be losslessly converted to UTF-8 (which is impossible)')
         return ''
     return string_at(py_typecast(int, pa.send_message(nsstr, b'UTF8String', restype=c_void_p)), length).decode()
 
@@ -588,7 +572,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 WKScriptMessageHandlerWithReply,
             )
             logger.debug_log(f'{(WKNavigationDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply)=}')
-            # TODO
+            # TODO: the 2 msg handler protocols are nil, why?
             # map(pa.safe_get_proto, (
             #     b'WKNavigationDelegate',
             #     b'WKScriptMessageHandler',
@@ -604,6 +588,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 try:
                     pa.safe_add_meths(Py_WVHandler, meth_list)
                     pa.safe_add_protos(Py_WVHandler, proto_list)
+                    pa.safe_assert_protos(Py_WVHandler, proto_list)
                 except RuntimeError:
                     pa.objc_disposeClassPair(Py_WVHandler)
                     raise
@@ -804,7 +789,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         last_res = runcoro_on_loop(py_typecast(CoroutineType, res_or_coro)) if fn_iscoro[fn_id] else res_or_coro
 
             gen_run = run()
-            assert gen_run.send(None)  == 0
+            assert gen_run.send(None) == 0
             yield lambda *args: gen_run.send(args)
             return 0
     except Exception:
