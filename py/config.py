@@ -256,6 +256,6 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
 } catch(e) {
-    console.error({result: 'error', debugInfo: [document.URL], error: e});
+    console.error({result: 'error', debugInfo: [document.URL], error: e.toString()});
 }
 '''.encode()
