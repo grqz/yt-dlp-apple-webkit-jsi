@@ -120,5 +120,5 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
 
 ## Python return values
 
-Supported types are `str`, `int` within range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.
+Supported types are `None`, `str`, `int` within range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.  
 Note that dictionaries and lists are not yet supported. Please use JSON instead.
