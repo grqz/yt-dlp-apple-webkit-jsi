@@ -533,6 +533,11 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 WKScriptMessageHandler,
                 WKScriptMessageHandlerWithReply,
             )
+            logger.debug_log(f'{(
+                WKNavigationDelegate,
+                WKScriptMessageHandler,
+                WKScriptMessageHandlerWithReply,
+            )=}')
             # map(pa.safe_get_proto, (
             #     b'WKNavigationDelegate',
             #     b'WKScriptMessageHandler',
@@ -610,7 +615,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
 
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandlerWithReply:contentWorld:name:',
-                                p_wvhandler, p_handler_name, rp_pageworld,
+                                p_wvhandler,rp_pageworld, p_handler_name,
                                 argtypes=(c_void_p, c_void_p, c_void_p))
 
                             pa.send_message(
