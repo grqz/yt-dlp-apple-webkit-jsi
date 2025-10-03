@@ -605,13 +605,17 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 p_wvhandler, p_handler_name,
                                 argtypes=(c_void_p, c_void_p))
 
+                            p_comhandler_name = pa.safe_new_object(
+                                NSString, b'initWithUTF8String:', b'wkjs_com',
+                                argtypes=(c_char_p, ))
+                            exsk.callback(pa.release_obj, p_handler_name)
                             rp_pageworld = c_void_p(pa.send_message(
                                 WKContentWorld, b'pageWorld',
                                 restype=c_void_p))
 
                             pa.send_message(
                                 p_usrcontctlr, b'addScriptMessageHandlerWithReply:contentWorld:name:',
-                                p_wvhandler,rp_pageworld, p_handler_name,
+                                p_wvhandler,rp_pageworld, p_comhandler_name,
                                 argtypes=(c_void_p, c_void_p, c_void_p))
 
                             pa.send_message(
