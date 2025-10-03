@@ -494,7 +494,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             p_resstr = pa.safe_new_object(
                                 NSString, b'initWithCharacters:length:', result_utf16, len(result_utf16),
                                 argtypes=(c_char_p, c_ulong))
-                            res_or_exc(None, p_resstr)
+                            res_or_exc(p_resstr, None)
                             pa.release_obj(p_resstr)
 
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
