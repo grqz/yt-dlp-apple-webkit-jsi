@@ -461,7 +461,7 @@ class ObjCBlock(Structure):
         return f'ObjcBlock{pycbdesc}<isa={self.isa}, flags={self.flags}, reserved={self.reserved}, invoke={self.invoke}, desc={self.desc}>'
 
     def as_pycb(self, restype: Optional[type], *argtypes: type):
-        return CFUNCTYPE(restype, *argtypes)(self.invoke.value)
+        return CFUNCTYPE(restype, *argtypes)(self.invoke)
 
     def __hash__(self):
         return id(self)
