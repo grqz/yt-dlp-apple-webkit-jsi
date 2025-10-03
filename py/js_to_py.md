@@ -53,7 +53,7 @@ x;
 ```
 
 The return value you will get from python(pprinted, undefined=None, null=_NullTag):
-```log
+```py
 {'_bstr': 'a\x00\n\tbあx',
  '_self_': {'_bstr': 'a\x00\n\tbあx',
             '_self_': <Recursion on dict with id=4351871744>,
@@ -120,5 +120,5 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
 
 ## Python return values
 
-Supported types are `None`, `str`, `int` within range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.  
-Note that dictionaries and lists are not yet supported. Please use JSON instead.
+Supported types are `None`, `str`, `int` within the range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.  
+Note that dictionaries and lists are not yet supported, otherwise the promise `communicate` returns will result in an error. Please use JSON instead.

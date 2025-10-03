@@ -195,7 +195,7 @@ class WKJS_Task:
     SHUTDOWN = 2
     NEW_WEBVIEW = 3
     FREE_WEBVIEW = 4
-    ON_SCRIPTMSG = 5
+    ON_SCRIPTLOG = 5
     ON_SCRIPTCOMM = 6
 
 
@@ -699,7 +699,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         if wv:
                             pa.release_obj(c_void_p(wv))
 
-                    def on_script_message(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
+                    def on_script_log(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
                         rp_usrcontctlr = pa.send_message(
                             c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
                             b'userContentController', restype=c_void_p)
@@ -805,7 +805,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         nonlocal active
                         active = False
 
-                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_message, on_script_comm
+                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_log, on_script_comm
                     fn_iscoro = True, True, False, True, True, False, False
                     last_res = 0
                     while active:
@@ -841,7 +841,7 @@ def real_main():
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-            sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
+            sendmsg(WKJS_Task.ON_SCRIPTLOG, (wv, print))
             def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
                 logger.debug_log(f'received in comm channel: {res}')
                 if isinstance(res, get_args(PyResultType)):
