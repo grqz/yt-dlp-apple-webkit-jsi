@@ -275,6 +275,14 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
 
             kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
+            # RELEASE IT!!!
+            def alloc_nsstring_from_str(pystr: str):
+                str_utf16 = pystr.encode('utf-16-le')
+                p_str = pa.safe_new_object(
+                    NSString, b'initWithCharacters:length:', str_utf16, len(pystr),
+                    argtypes=(c_char_p, c_ulong))
+                return p_str
+
             def pyobj_from_nsobj_jsresult(
                 pa: PyNeApple,
                 jsobj: NULLABLE_VOIDP,
@@ -358,10 +366,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 if pyres is None:
                     return inst_NSNull
                 elif isinstance(pyres, str):
-                    str_utf16 = pyres.encode('utf-16-le')
-                    p_str = pa.safe_new_object(
-                        NSString, b'initWithCharacters:length:', str_utf16, len(pyres),
-                        argtypes=(c_char_p, c_ulong))
+                    p_str = alloc_nsstring_from_str(pyres)
                     pending_free.append(p_str)
                     return p_str
                 elif isinstance(pyres, int):
@@ -531,10 +536,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     def return_result(result: PyResultType, err: Optional[str]) -> None:
                         try:
                             if err is not None:
-                                err_utf16 = err.encode('utf-16-le')
-                                p_errstr = pa.safe_new_object(
-                                    NSString, b'initWithCharacters:length:', err_utf16, len(err),
-                                    argtypes=(c_char_p, c_ulong))
+                                p_errstr = alloc_nsstring_from_str(err)
                                 res_or_exc(None, p_errstr)
                                 pa.release_obj(p_errstr)
                             else:
@@ -715,16 +717,12 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         usrcontctlr_commcbdct[rp_usrcontctlr or 0] = cb_new
                         return ret
 
-                    async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
+                    async def navigate_to(webview: int, host: str, html: str) -> None:
                         fut_navidone: CFRL_Future[None] = CFRL_Future()
                         async with AsyncExitStack() as exsk:
-                            ps_html = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', html,
-                                argtypes=(c_char_p, ))
+                            ps_html = alloc_nsstring_from_str(html)
                             exsk.callback(pa.release_obj, ps_html)
-                            ps_base_url = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', host,
-                                argtypes=(c_char_p, ))
+                            ps_base_url = alloc_nsstring_from_str(host)
                             exsk.callback(pa.release_obj, ps_base_url)
                             purl_base = pa.safe_new_object(
                                 NSURL, b'initWithString:', ps_base_url,
@@ -742,20 +740,18 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
 
                             navi_cbdct[rp_navi.value] = cb_navi_done
 
-                            logger.debug_log(f'loading: local HTML@{HOST.decode()}')
+                            logger.debug_log(f'loading: local HTML@{host}')
 
                             await fut_navidone
                         logger.debug_log('navigation done')
 
-                    async def execute_js(webview: int, script: bytes) -> _JSResultType[None, type[_NullTag], _UnknownStructure]:
-                        fut_jsdone: CFRL_Future[tuple[c_void_p, c_void_p]] = CFRL_Future()
-                        jsresult_id = c_void_p()
-                        jsresult_err = c_void_p()
+                    async def execute_js(webview: int, script: str) -> _JSResultType[None, type[_NullTag], _UnknownStructure]:
+                        fut_jsdone: CFRL_Future[bool] = CFRL_Future()
+                        result_exc: Optional[Exception] = None
+                        result_pyobj: Optional[DefaultJSResult] = None
                         real_script = SCRIPT_TEMPL.replace(SCRIPT_PHOLDER, script)
                         async with AsyncExitStack() as exsk:
-                            ps_script = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', real_script,
-                                argtypes=(c_char_p, ))
+                            ps_script = alloc_nsstring_from_str(real_script)
                             exsk.callback(pa.release_obj, ps_script)
 
                             pd_jsargs = pa.safe_alloc_init(NSDictionary)
@@ -766,35 +762,33 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 restype=c_void_p))
 
                             def completion_handler(self: CRet.Py_PVoid, id_result: CRet.Py_PVoid, err: CRet.Py_PVoid):
-                                nonlocal jsresult_id, jsresult_err
-                                jsresult_id = c_void_p(pa.send_message(c_void_p(id_result or 0), b'copy', restype=c_void_p))
-                                jsresult_err = c_void_p(pa.send_message(c_void_p(err or 0), b'copy', restype=c_void_p))
+                                nonlocal result_exc, result_pyobj
+                                if err:
+                                    nserr = c_void_p(err)
+                                    code = pa.send_message(nserr, b'code', restype=c_long)
+                                    s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
+                                        nserr, b'domain', restype=c_void_p)), default=WKJS_UncaughtException.DOMAIN_DEFAULT)
+                                    s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
+                                        c_void_p(pa.send_message(nserr, b'userInfo', restype=c_void_p)),
+                                        b'description', restype=c_void_p)), default=WKJS_UncaughtException.UINFO_DEFAULT)
+                                    result_exc = WKJS_UncaughtException(err_at=err, code=code, domain=s_domain, user_info=s_uinfo)
+                                    fut_jsdone.set_result(False)
+                                    return
+                                result_pyobj = pyobj_from_nsobj_jsresult(pa, c_void_p(id_result), visited={}, null=_NullTag)
                                 logger.debug_log(f'JS done, resolving future; {id_result=}, {err=}')
-                                fut_jsdone.set_result((jsresult_id, jsresult_err))
+                                fut_jsdone.set_result(True)
 
                             chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
-
                             pa.send_message(
                                 # Requires iOS 15.0+, maybe test its availability first?
                                 c_void_p(webview), b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
                                 ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                                 argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                            await fut_jsdone
-                            exsk.callback(pa.release_obj, jsresult_id)
-                            exsk.callback(pa.release_obj, jsresult_err)
-                            if jsresult_err:
-                                code = pa.send_message(jsresult_err, b'code', restype=c_long)
-                                s_domain = str_from_nsstring(pa, c_void_p(pa.send_message(
-                                    jsresult_err, b'domain', restype=c_void_p)), default=WKJS_UncaughtException.DOMAIN_DEFAULT)
-                                s_uinfo = str_from_nsstring(pa, c_void_p(pa.send_message(
-                                    c_void_p(pa.send_message(jsresult_err, b'userInfo', restype=c_void_p)),
-                                    b'description', restype=c_void_p)), default=WKJS_UncaughtException.UINFO_DEFAULT)
-                                raise WKJS_UncaughtException(err_at=jsresult_err.value or 0, code=code, domain=s_domain, user_info=s_uinfo)
+                            if not await fut_jsdone:
+                                raise py_typecast(Exception, result_exc)
 
                             logger.debug_log('JS execution completed')
-
-                            result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
                             return result_pyobj
 
                     def shutdown():

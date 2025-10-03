@@ -1,5 +1,5 @@
-SCRIPT_PHOLDER = rb'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
-SCRIPT_TEMPL = rb'''
+SCRIPT_PHOLDER = r'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
+SCRIPT_TEMPL = r'''
 return await (async ()=>{  // IIAFE
 const communicate = (()=>{
 let __webkit = window.webkit;

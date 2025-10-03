@@ -1,5 +1,5 @@
-HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
-HOST = rb'''https://www.youtube.com/robots.txt'''
+HTML = r'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
+HOST = r'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 try {
 const val = await Promise.all([3, true, new Date, false].map(communicate));
@@ -227,4 +227,4 @@ console.info({result: 'success', debugInfo: [document.URL], data: pot});
 } catch(e) {
     console.error({result: 'error', debugInfo: [document.URL], error: e.toString()});
 }
-'''.encode()
+'''
