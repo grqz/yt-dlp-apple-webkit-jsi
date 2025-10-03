@@ -533,11 +533,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 WKScriptMessageHandler,
                 WKScriptMessageHandlerWithReply,
             )
-            logger.debug_log(f'{(
-                WKNavigationDelegate,
-                WKScriptMessageHandler,
-                WKScriptMessageHandlerWithReply,
-            )=}')
+            logger.debug_log(f'{(WKNavigationDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply)=}')
             # map(pa.safe_get_proto, (
             #     b'WKNavigationDelegate',
             #     b'WKScriptMessageHandler',
