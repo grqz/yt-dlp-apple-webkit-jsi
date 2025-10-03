@@ -2,13 +2,15 @@ HTML = rb'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></b
 HOST = rb'''https://www.youtube.com/robots.txt'''
 SCRIPT_PHOLDER = rb'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
 SCRIPT_TEMPL = rb'''
-(()=>{
+return await (async ()=>{  // IIAFE
+const communicate = (()=>{
 let __webkit = window.webkit;
-function __postmsg(x) {
+function __postmsg(x, channel) {
     window.webkit = __webkit;
-    window.webkit.messageHandlers.pywk.postMessage(x);
+    const ret = window.webkit.messageHandlers[channel].postMessage(x);
     __webkit = window.webkit;
     window.webkit = undefined;
+    return ret;
 }
 Object.entries({
     trace: 0,  // TRACE
@@ -20,20 +22,18 @@ Object.entries({
     error: 5,  // ERR
 }).forEach(([fn, logType])=>{
     console[fn] = function() {
-        __postmsg({logType, argsArr: Array.from(arguments)});
+        __postmsg({logType, argsArr: Array.from(arguments)}, 'wkjs_log');
     };
 });
 window.webkit = undefined;
+return x=>__postmsg(x, 'wkjs_com');
 })();
-return await (async ()=>{  // IIAFE
-try {
 /*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/
-} catch(e) {
-    console.error({result: 'error', debugInfo: [document.URL], error: e});
-}
 })();
 '''
 SCRIPT = r'''
+try {
+console.log('communicate(3)', 'is', communicate(3));
 console.log('started', 'generating pot');
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
@@ -255,4 +255,7 @@ const minter = await (async (integrityTokenResponse, webPoSignalOutput_) => {
 // console.log(`GVS: ${await minter(visitorData)}`);
 const pot = await minter(globalThis?.process?.argv[2] || 'dQw4w9WgXcQ');
 console.info({result: 'success', debugInfo: [document.URL], data: pot});
+} catch(e) {
+    console.error({result: 'error', debugInfo: [document.URL], error: e});
+}
 '''.encode()

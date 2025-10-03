@@ -21,11 +21,13 @@ from ctypes import (
     c_uint64,
     c_ulong,
     c_void_p,
+    cast,
     string_at,
 )
 from dataclasses import dataclass
 from pprint import pformat
 from threading import Condition
+from types import CoroutineType
 from typing import (
     Any,
     Awaitable,
@@ -57,6 +59,7 @@ U = TypeVar('U')
 V = TypeVar('V')
 
 
+# TODO: support exceptions
 class CFRL_Future(Awaitable[T]):
     __slots__ = '_cbs', '_done', '_result'
 
@@ -171,7 +174,7 @@ _JSResultType = Union[
     dt.datetime,
     dict['_JSResultType', '_JSResultType'],
     list['_JSResultType'],
-    V,  # type[_UnkownStructure]
+    V,  # _UnkownStructure
 ]
 DefaultJSResult = _JSResultType[None, type[_NullTag], _UnknownStructure]
 
@@ -183,6 +186,7 @@ class WKJS_Task:
     NEW_WEBVIEW = 3
     FREE_WEBVIEW = 4
     ON_SCRIPTMSG = 5
+    ON_SCRIPTCOMM = 6
 
 
 class WKJS_UncaughtException(Exception):
@@ -222,9 +226,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             WKWebView = pa.safe_objc_getClass(b'WKWebView')
             WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
             WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
-
-            WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
-            WKScriptMessageHandler = pa.objc_getProtocol(b'WKScriptMessageHandler')
 
             CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)
@@ -441,9 +442,15 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
 
             navi_cbdct: dict[int, Callable[[], None]] = {}
             usrcontctlr_cbdct: dict[int, Callable[[DefaultJSResult], None]] = {}
+            usrcontctlr_commcbdct: dict[
+                int,
+                'PFC_WVHandler.COMM_CBTYPE',
+            ] = {}
             class PFC_WVHandler:
-                SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION = b'v@:@@'
-                SEL_WEBVIEW_DIDFINISHNAVIGATION = pa.sel_registerName(b'webView:didFinishNavigation:')
+                COMM_CBTYPE = Callable[
+                    [DefaultJSResult, Callable[[str, Optional[str]], None]],
+                    None,
+                ]
 
                 @staticmethod
                 def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
@@ -451,8 +458,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     if cb := navi_cbdct.get(rp_navi or 0):
                         cb()
 
-                SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE = b'v@:@@'
-                SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE = pa.sel_registerName(b'userContentController:didReceiveScriptMessage:') 
                 @staticmethod
                 def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                     logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
@@ -461,49 +466,79 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     if cb := usrcontctlr_cbdct.get(rp_usrcontctlr or 0):
                         cb(pyobj)
 
-            PFC_WVHandler.webView0_didFinishNavigation1 = CFUNCTYPE(
-                None,
-                c_void_p, c_void_p, c_void_p, c_void_p)(PFC_WVHandler.webView0_didFinishNavigation1)
+                @staticmethod
+                def userContentController0_didReceiveScriptMessage1_replyHandler2(
+                    this: CRet.Py_PVoid, sel: CRet.Py_PVoid,
+                    rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid, rp_replyhandler: CRet.Py_PVoid
+                ):
+                    replyhandler = cast(rp_replyhandler or 0, POINTER(ObjCBlock)).contents
+                    logger.debug_log(
+                        f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr}'
+                        f'didReceiveScriptMessage: {rp_sm} replyHandler: &({replyhandler!r})]')
+                    res_or_exc = replyhandler.as_pycb(None, c_void_p, c_void_p)
+                    def return_result(result: str, err: Optional[str]) -> None:
+                        if err is not None:
+                            err_utf16 = err.encode('utf-16')
+                            p_errstr = pa.safe_new_object(
+                                NSString, b'initWithCharacters:length:', err_utf16, len(err_utf16),
+                                argtypes=(c_char_p, c_ulong))
+                            res_or_exc(None, p_errstr)
+                            pa.release_obj(p_errstr)
+                            return
+                        else:
+                            result_utf16 = result.encode('utf-16')
+                            p_resstr = pa.safe_new_object(
+                                NSString, b'initWithCharacters:length:', result_utf16, len(result_utf16),
+                                argtypes=(c_char_p, c_ulong))
+                            res_or_exc(None, p_resstr)
+                            pa.release_obj(p_resstr)
 
-            PFC_WVHandler.userContentController0_didReceiveScriptMessage1 = CFUNCTYPE(
-                None,
-                c_void_p, c_void_p, c_void_p, c_void_p)(PFC_WVHandler.userContentController0_didReceiveScriptMessage1)
+                    rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
+                    pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
+                    if cb := usrcontctlr_commcbdct.get(rp_usrcontctlr or 0):
+                        cb(pyobj, return_result)
 
             Py_WVHandler = c_void_p(pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0))
             meth_list: PyNeApple.METH_LIST_TYPE = (
                 (
-                    PFC_WVHandler.SEL_WEBVIEW_DIDFINISHNAVIGATION,
-                    PFC_WVHandler.webView0_didFinishNavigation1,
-                    PFC_WVHandler.SIGNATURE_WEBVIEW_DIDFINISHNAVIGATION
+                    pa.sel_registerName(b'webView:didFinishNavigation:'),
+                    CFUNCTYPE(
+                        None,
+                        c_void_p, c_void_p, c_void_p, c_void_p)(
+                            PFC_WVHandler.webView0_didFinishNavigation1),
+                    b'v@:@@',
                 ), (
-                    PFC_WVHandler.SEL_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE,
-                    PFC_WVHandler.userContentController0_didReceiveScriptMessage1,
-                    PFC_WVHandler.SIGNATURE_USERCONTENTCONTROLLER_DIDRECEIVESCRIPTMESSAGE
+                    pa.sel_registerName(b'userContentController:didReceiveScriptMessage:'),
+                    CFUNCTYPE(
+                        None,
+                        c_void_p, c_void_p, c_void_p, c_void_p)(
+                            PFC_WVHandler.userContentController0_didReceiveScriptMessage1),
+                    b'v@:@@',
+                ),
+                (
+                    pa.sel_registerName(b'userContentController:didReceiveScriptMessage:replyHandler:'),
+                    CFUNCTYPE(
+                        None,
+                        c_void_p, c_void_p, c_void_p, c_void_p, c_void_p)(
+                            PFC_WVHandler.userContentController0_didReceiveScriptMessage1_replyHandler2),
+                    b'v@:@@@?',
                 ),
             )
+            proto_list: PyNeApple.PROTO_LIST_TYPE = map(pa.safe_get_proto, (
+                b'WKNavigationDelegate',
+                b'WKScriptMessageHandler',
+                b'WKScriptMessageHandlerWithReply',
+            ))
             if not Py_WVHandler:
                 Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
                 logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
-                if not pa.class_conformsToProtocol(Py_WVHandler, WKNavigationDelegate):
-                    raise RuntimeError(
-                        'class PyForeignClass_WebViewHandler already exists '
-                        'but does not conform to the WKNavigationDelegate protocol')
-                if not pa.class_conformsToProtocol(Py_WVHandler, WKScriptMessageHandler):
-                    raise RuntimeError(
-                        'class PyForeignClass_WebViewHandler already exists '
-                        'but does not conform to the WKScriptMessageHandler protocol')
-
+                pa.safe_assert_protos(Py_WVHandler, proto_list)
                 pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
             else:
                 Py_WVHandler = py_typecast(NotNull_VoidP, Py_WVHandler)
                 try:
                     pa.safe_add_meths(Py_WVHandler, meth_list)
-                    if not pa.class_addProtocol(Py_WVHandler, WKNavigationDelegate):
-                        pa.objc_disposeClassPair(Py_WVHandler)
-                        raise RuntimeError('class_addProtocol failed for WKNavigationDelegate')
-                    if not pa.class_addProtocol(Py_WVHandler, WKScriptMessageHandler):
-                        pa.objc_disposeClassPair(Py_WVHandler)
-                        raise RuntimeError('class_addProtocol failed for WKScriptMessageHandler')
+                    pa.safe_add_protos(Py_WVHandler, proto_list)
                 except RuntimeError:
                     pa.objc_disposeClassPair(Py_WVHandler)
                     raise
@@ -551,7 +586,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             exsk.callback(pa.release_obj, p_usrcontctlr)
 
                             p_handler_name = pa.safe_new_object(
-                                NSString, b'initWithUTF8String:', b'pywk',
+                                NSString, b'initWithUTF8String:', b'wkjs_log',
                                 argtypes=(c_char_p, ))
                             exsk.callback(pa.release_obj, p_handler_name)
 
@@ -559,6 +594,15 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                                 p_usrcontctlr, b'addScriptMessageHandler:name:',
                                 p_wvhandler, p_handler_name,
                                 argtypes=(c_void_p, c_void_p))
+
+                            rp_pageworld = c_void_p(pa.send_message(
+                                WKContentWorld, b'pageWorld',
+                                restype=c_void_p))
+
+                            pa.send_message(
+                                p_usrcontctlr, b'addScriptMessageHandlerWithReply:contentWorld:name:',
+                                p_wvhandler, p_handler_name, rp_pageworld,
+                                argtypes=(c_void_p, c_void_p, c_void_p))
 
                             pa.send_message(
                                 p_cfg, b'setUserContentController:', p_usrcontctlr,
@@ -581,11 +625,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                         if wv:
                             pa.release_obj(c_void_p(wv))
 
-                    # TODO: w/ reply?
-                    # - https://developer.apple.com/documentation/webkit/wkscriptmessagehandlerwithreply?language=objc
-                    # - https://developer.apple.com/documentation/webkit/wkusercontentcontroller/addscriptmessagehandler(_:contentworld:name:)?language=objc
-                    # note: use [WKContentWorld pageWorld]
-                    async def on_script_message(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
+                    def on_script_message(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
                         rp_usrcontctlr = pa.send_message(
                             c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
                             b'userContentController', restype=c_void_p)
@@ -593,6 +633,16 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
                         ret = usrcontctlr_cbdct.get(rp_usrcontctlr or 0)
                         usrcontctlr_cbdct[rp_usrcontctlr or 0] = cb_new
+                        return ret
+
+                    def on_script_comm(webview: int, cb_new: PFC_WVHandler.COMM_CBTYPE) -> Optional[PFC_WVHandler.COMM_CBTYPE]:
+                        rp_usrcontctlr = pa.send_message(
+                            c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
+                            b'userContentController', restype=c_void_p)
+                        if not rp_usrcontctlr:
+                            raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
+                        ret = usrcontctlr_commcbdct.get(rp_usrcontctlr or 0)
+                        usrcontctlr_commcbdct[rp_usrcontctlr or 0] = cb_new
                         return ret
 
                     async def navigate_to(webview: int, host: bytes, html: bytes) -> None:
@@ -677,17 +727,19 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                             result_pyobj = pyobj_from_nsobj_jsresult(pa, jsresult_id, visited={}, null=_NullTag)
                             return result_pyobj
 
-                    async def shutdown():
+                    def shutdown():
                         nonlocal active
                         active = False
 
-                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_message
+                    fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_message, on_script_comm
+                    fn_iscoro = True, True, False, True, True, False, False
                     last_res = 0
                     while active:
                         task = yield last_res
                         assert task
                         fn_id, args = task
-                        last_res = runcoro_on_loop(fn_tup[fn_id](*args))
+                        res_or_coro = fn_tup[fn_id](*args)
+                        last_res = runcoro_on_loop(py_typecast(CoroutineType, res_or_coro)) if fn_iscoro[fn_id] else res_or_coro
 
             gen_run = run()
             assert gen_run.send(None)  == 0
@@ -716,6 +768,7 @@ def real_main():
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
             sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
+            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, str))
             result_pyobj = py_typecast(_JSResultType[None, type[_NullTag], _UnknownStructure], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:

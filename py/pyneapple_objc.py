@@ -384,6 +384,26 @@ class PyNeApple:
                     mname = self.sel_getName(msel) or b''
                     raise RuntimeError(f'Failed to add implementation for {mname}')
 
+    def safe_get_proto(self, name: bytes):
+        if proto := self.objc_getProtocol(name):
+            self.logger.debug_log(f'Protocol {name.decode()} at {proto}')
+            return py_typecast(NotNull_VoidP, c_void_p(proto))
+        raise RuntimeError(f'Failed to get protocol {name}')
+
+
+    PROTO_LIST_TYPE = Iterable[NotNull_VoidP]
+    def safe_add_protos(self, cls: NotNull_VoidP, proto_list: PROTO_LIST_TYPE):
+        for proto in proto_list:
+            if not self.class_addProtocol(cls, proto):
+                raise RuntimeError(f'class_addProtocol failed for protocol at {proto.value}')
+
+    def safe_assert_protos(self, cls: NotNull_VoidP, proto_list: PROTO_LIST_TYPE):
+        for proto in proto_list:
+            if not self.class_conformsToProtocol(cls, proto):
+                raise RuntimeError(
+                    f'class PyForeignClass_WebViewHandler already exists '
+                    f'but does not conform to the protocol at {proto.value}')
+
     def instanceof(self, obj: NULLABLE_VOIDP, cls: NULLABLE_VOIDP) -> bool:
         return bool(self.send_message(
             obj, b'isKindOfClass:',
@@ -432,6 +452,16 @@ class ObjCBlock(Structure):
             invoke=cast(self._invoke, c_void_p),
             desc=cast(byref(self._desc), POINTER(ObjCBlockDescBase)),
         )
+
+    def __str__(self):
+        return f'<Objective-C Block of isa at {self.isa}, flags: {self.flags}, invoke() pointer at {self.invoke}>'
+
+    def __repr__(self):
+        pycbdesc = f'(for Python callback {repr(self._invoke)})' if hasattr(self, '_invoke') else '(foreign function)'
+        return f'ObjcBlock{pycbdesc}<isa={self.isa}, flags={self.flags}, reserved={self.reserved}, invoke={self.invoke}, desc={self.desc}>'
+
+    def as_pycb(self, restype: Optional[type], *argtypes: type):
+        return CFUNCTYPE(restype, *argtypes)(self.invoke.value)
 
     def __hash__(self):
         return id(self)
