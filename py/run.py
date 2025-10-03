@@ -42,6 +42,7 @@ from typing import (
     TypeVar,
     Union,
     cast as py_typecast,
+    get_args,
     overload
 )
 
@@ -843,8 +844,8 @@ def real_main():
             sendmsg(WKJS_Task.ON_SCRIPTMSG, (wv, logger.debug_log))
             def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
                 logger.debug_log(f'received in comm channel: {res}')
-                if isinstance(res, PyResultType):
-                    cb(res, None)
+                if isinstance(res, get_args(PyResultType)):
+                    cb(py_typecast(PyResultType, res), None)
                 else:
                     cb(None, f'Received unknown type {type(res)}')
 

@@ -14,7 +14,7 @@ return Object.defineProperty(x, 'computed', {
 // x.fn = () => {},  // functions are unsupported
 x._value = 30,  // will be a float
 x._self_ = x,  // this will be another object, whose _self_ points to itself
-x.dt = new Date,  // dt.datetime in utc
+x.dt = new Date,  // datetime.datetime in utc
 x.u8arr = new Uint8Array([3, 46, 7]),
 x.carr = [[7, undefined],[3,7],[4,2],[8,0]],
 x.carr[0][1] = x.carr,
@@ -117,3 +117,8 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
  'u8arr': {'0': 3.0, '1': 46.0, '2': 7.0},
  'ああ': <class '__main__._NullTag'>}
 ```
+
+## Python return values
+
+Supported types are `str`, `int` within range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.
+Note that dictionaries and lists are not yet supported. Please use JSON instead.
