@@ -33,7 +33,8 @@ return x=>__postmsg(x, 'wkjs_com');
 '''
 SCRIPT = r'''
 try {
-console.log('started', 'generating pot', JSON.stringify(communicate(3)));
+const val = communicate(3);
+console.log('started', 'generating pot', typeof val, Object.keys(val), val.toString(), JSON.stringify(val));
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
 const GOOG_API_KEY = 'AIzaSyDyT5W0Jh49F30Pqqtyfdf7pDLFKLJoAnw';
