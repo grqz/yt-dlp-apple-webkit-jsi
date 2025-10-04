@@ -50,8 +50,12 @@ def main():
             except StopIteration:
                 ...
             next(gen)
-    except StopIteration as e:
-        return e.value
+    except StopIteration:
+        return 0
+    except Exception:
+        import traceback
+        logger.write_err(traceback.format_exc())
+        return 1
 
 
 if __name__ == '__main__':
