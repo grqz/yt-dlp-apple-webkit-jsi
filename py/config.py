@@ -2,7 +2,7 @@ HTML = r'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></bo
 HOST = r'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 try {
-const val = await Promise.all([3, true, new Date, false].map(communicate));
+const val = await Promise.all([3, null, true, new Date, false].map(communicate));
 console.log('started generating pot, communicate result: ', val);
 // pot for browser, navigate to https://www.youtube.com/robots.txt first
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko)';
