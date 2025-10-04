@@ -42,7 +42,7 @@ def main():
             result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:
-            logger.debug_log(f'Uncaught exception from js: {e}')
+            logger.write_err(f'Uncaught exception from JS: {e!r}')
         finally:
             sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
             try:

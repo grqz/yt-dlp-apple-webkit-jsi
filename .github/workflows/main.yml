@@ -34,7 +34,7 @@ jobs:
       run: |
         ulimit -c unlimited
         sudo chmod a+rw /cores
-        python -m py.run
+        python -m run_easy || python -m py.run
     - if: failure()
       run: >
         lldb -c core --batch

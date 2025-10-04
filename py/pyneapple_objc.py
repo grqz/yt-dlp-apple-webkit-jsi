@@ -241,10 +241,10 @@ class PyNeApple:
             self.sel_registerName = self.cfn_at(self._objc(b'sel_registerName').value, c_void_p, c_char_p)
             self.sel_getName = self.cfn_at(self._objc(b'sel_getName').value, c_char_p, c_void_p)
             return self
-        except Exception as e:
+        except BaseException:
             if hasattr(self, '_stack'):
                 self._stack.close()
-            raise e
+            raise
 
     def __exit__(self, exc_type, exc_value, traceback):
         return self._stack.__exit__(exc_type, exc_value, traceback)

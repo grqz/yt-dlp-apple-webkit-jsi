@@ -206,7 +206,15 @@ class WKJS_LogType(enum.Enum):
 # TODO: container class for log capture
 
 
-def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, None]:
+SENDMSG_CBTYPE = Callable[[int, tuple], any]
+LOG_CBTYPE = Callable[[DefaultJSResult], None]
+COMM_CBTYPE = Callable[
+    [DefaultJSResult, Callable[[PyResultType, Optional[str]], None]],
+    None,
+]
+
+
+def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
     with PyNeApple(logger=logger) as pa:
         pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
@@ -484,16 +492,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, None
             return res.ret
 
         navi_cbdct: dict[int, Callable[[], None]] = {}
-        usrcontctlr_cbdct: dict[int, Callable[[DefaultJSResult], None]] = {}
-        usrcontctlr_commcbdct: dict[
-            int,
-            'PFC_WVHandler.COMM_CBTYPE',
-        ] = {}
+        usrcontctlr_cbdct: dict[int, LOG_CBTYPE] = {}
+        usrcontctlr_commcbdct: dict[int, COMM_CBTYPE] = {}
         class PFC_WVHandler:
-            COMM_CBTYPE = Callable[
-                [DefaultJSResult, Callable[[PyResultType, Optional[str]], None]],
-                None,
-            ]
 
             @staticmethod
             def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
@@ -669,7 +670,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, None
                     if wv:
                         pa.release_obj(c_void_p(wv))
 
-                def on_script_log(webview: int, cb_new: Callable[[DefaultJSResult], None]) -> Optional[Callable[[DefaultJSResult], None]]:
+                def on_script_log(webview: int, cb_new: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
                     rp_usrcontctlr = pa.send_message(
                         c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
                         b'userContentController', restype=c_void_p)
@@ -679,7 +680,7 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, None
                     usrcontctlr_cbdct[rp_usrcontctlr or 0] = cb_new
                     return ret
 
-                def on_script_comm(webview: int, cb_new: PFC_WVHandler.COMM_CBTYPE) -> Optional[PFC_WVHandler.COMM_CBTYPE]:
+                def on_script_comm(webview: int, cb_new: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
                     rp_usrcontctlr = pa.send_message(
                         c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
                         b'userContentController', restype=c_void_p)
