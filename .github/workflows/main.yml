@@ -54,7 +54,6 @@ jobs:
         path: st.txt
         compression-level: 9
   c:
-    if: 0
     strategy:
       matrix:
         os:
@@ -67,5 +66,9 @@ jobs:
     timeout-minutes: 1
     steps:
     - uses: actions/checkout@v4
+    # - name: dump asm
+    #   run: |
+    #     clang -O2 -S -masm=intel --std=c99 -Wall -Wextra -pedantic -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-unused-parameter -fblocks -fno-objc-arc super.m
+    #     cat super.s
     - run: |
         make hello && ./hello

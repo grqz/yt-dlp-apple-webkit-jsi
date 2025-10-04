@@ -220,10 +220,6 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
             WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
 
-            WKNavigationDelegate = pa.objc_getClass(b'WKNavigationDelegate')
-            WKScriptMessageHandler = pa.objc_getClass(b'WKScriptMessageHandler')
-            WKScriptMessageHandlerWithReply = pa.objc_getClass(b'WKScriptMessageHandlerWithReply')
-
             CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)
             CFRunLoopGetMain = pa.cfn_at(cf(b'CFRunLoopGetMain').value, c_void_p)
@@ -566,29 +562,14 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                     b'v@:@@@?',
                 ),
             )
-            proto_list: PyNeApple.PROTO_LIST_TYPE = (
-                # WKNavigationDelegate,
-                # WKScriptMessageHandler,
-                # WKScriptMessageHandlerWithReply,
-            )
-            logger.debug_log(f'{(WKNavigationDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply)=}')
-            # TODO: the 2 msg handler protocols are nil, why?
-            # map(pa.safe_get_proto, (
-            #     b'WKNavigationDelegate',
-            #     b'WKScriptMessageHandler',
-            #     b'WKScriptMessageHandlerWithReply',
-            # ))
             if not Py_WVHandler:
                 Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
                 logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
-                pa.safe_assert_protos(Py_WVHandler, proto_list)
                 pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
             else:
                 Py_WVHandler = py_typecast(NotNull_VoidP, Py_WVHandler)
                 try:
                     pa.safe_add_meths(Py_WVHandler, meth_list)
-                    pa.safe_add_protos(Py_WVHandler, proto_list)
-                    pa.safe_assert_protos(Py_WVHandler, proto_list)
                 except RuntimeError:
                     pa.objc_disposeClassPair(Py_WVHandler)
                     raise
