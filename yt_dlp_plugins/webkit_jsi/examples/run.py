@@ -4,15 +4,18 @@ import sys
 from pprint import pformat
 from typing import cast as py_typecast, Callable, get_args, Optional
 
-from .logging import Logger
+from lib.logging import Logger
+from lib.api import WKJS_Task, WKJS_UncaughtException, DefaultJSResult, PyResultType, get_gen
+
 from .config import HOST, HTML, SCRIPT
-from .api import WKJS_Task, WKJS_UncaughtException, DefaultJSResult, PyResultType, get_gen
 
 def main():
     logger = Logger(debug=True)
     logger.debug_log(f'PID: {os.getpid()}')
     if os.getenv('CI'):
-        PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
+        PATH2CORE = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                os.path.realpath(__file__))))), 'core')
         if os.path.lexists(PATH2CORE):
             logger.debug_log(f'removing exisiting file at {PATH2CORE}')
             os.remove(PATH2CORE)

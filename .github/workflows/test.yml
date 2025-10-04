@@ -30,11 +30,17 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
+    - name: run easy API
+      run: |
+        cd yt_dlp_plugins/webkit_jsi
+        python -m examples.run_easy
     - name: real run
       run: |
+        cd yt_dlp_plugins/webkit_jsi
         ulimit -c unlimited
         sudo chmod a+rw /cores
-        python -m py.run_easy || python -m py.run
+        python -m py.run
+        test -L "${{ github.workspace }}/core"
     - if: failure()
       run: >
         lldb -c core --batch

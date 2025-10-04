@@ -4,10 +4,11 @@ import traceback
 from pprint import pprint
 from typing import cast as py_typecast, Callable, get_args, Optional
 
-from .logging import Logger
+from lib.logging import Logger
+from lib.api import NullTag, DefaultJSResult, PyResultType, WKJS_UncaughtException
+from lib.easy import WKJSE_Factory, WKJSE_Webview
+
 from .config import HOST, HTML, SCRIPT
-from .api import NullTag, DefaultJSResult, PyResultType, WKJS_UncaughtException
-from .easy import WKJSE_Factory, WKJSE_Webview
 
 def main():
     logger = Logger()
