@@ -5,7 +5,7 @@ from pprint import pformat
 from typing import cast as py_typecast, Callable, get_args, Optional
 
 from lib.logging import Logger
-from lib.api import WKJS_Task, WKJS_UncaughtException, DefaultJSResult, PyResultType, get_gen
+from lib.api import NullTag, WKJS_Task, WKJS_UncaughtException, DefaultJSResult, PyResultType, get_gen
 
 from .config import HOST, HTML, SCRIPT
 
@@ -30,7 +30,9 @@ def main():
             sendmsg(WKJS_Task.ON_SCRIPTLOG, (wv, print))
             def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
                 logger.debug_log(f'received in comm channel: {res}')
-                if isinstance(res, get_args(PyResultType)):
+                if res is NullTag:
+                    cb(None, None)
+                elif isinstance(res, get_args(PyResultType)):
                     cb(py_typecast(PyResultType, res), None)
                 else:
                     cb(None, f'Received unknown type {type(res)}')
