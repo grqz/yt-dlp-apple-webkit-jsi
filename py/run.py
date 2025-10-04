@@ -9,7 +9,7 @@ from .config import HOST, HTML, SCRIPT
 from .api import WKJS_Task, WKJS_UncaughtException, DefaultJSResult, PyResultType, get_gen
 
 def main():
-    logger = Logger(debug=not True)
+    logger = Logger(debug=True)
     logger.debug_log(f'PID: {os.getpid()}')
     if os.getenv('CI'):
         PATH2CORE = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'core')
