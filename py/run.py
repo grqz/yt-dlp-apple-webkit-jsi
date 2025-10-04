@@ -36,6 +36,7 @@ def main():
             # `communicate` returns a promise which will be resolved when `cb` is called
             # It's unnecessary to await the promise if the communication is single-way
             # (Note that `communicate` is a local const variable)
+            # See js_to_py.md for limitations
             sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
 
             # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
