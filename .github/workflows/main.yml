@@ -42,10 +42,6 @@ jobs:
         -o 'thread backtrace all'
         -o 'register read'
         -o 'disassemble --pc --count 50'
-        -o 'di -n objc_msgSendSuper2'
-        -o 'di -n objc_msgSendSuper'
-        -o 'di -n objc_msgSend'
-        -o 'di -n __sel_registerName'
         | tee st.txt
     - if: failure()
       uses: actions/upload-artifact@v4
@@ -68,7 +64,9 @@ jobs:
     - uses: actions/checkout@v4
     # - name: dump asm
     #   run: |
+    #     cd misc
     #     clang -O2 -S -masm=intel --std=c99 -Wall -Wextra -pedantic -Wno-unused-but-set-variable -Wno-cast-function-type -Wno-unused-parameter -fblocks -fno-objc-arc super.m
     #     cat super.s
     - run: |
+        cd misc
         make hello && ./hello

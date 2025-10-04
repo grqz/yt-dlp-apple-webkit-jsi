@@ -1,5 +1,5 @@
 a.out
 *.o
-hello
-translated
-core
+misc/hello
+misc/translated
+py/core
