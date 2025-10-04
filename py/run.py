@@ -32,7 +32,13 @@ def main():
                 else:
                     cb(None, f'Received unknown type {type(res)}')
 
+            # Use `communicate(...)` in JS to call `script_comm_cb`
+            # `communicate` returns a promise which will be resolved when `cb` is called
+            # It's unnecessary to await the promise if the communication is single-way
+            # (Note that `communicate` is a local const variable)
             sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
+
+            # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
             result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:
@@ -43,8 +49,7 @@ def main():
                 sendmsg(WKJS_Task.SHUTDOWN, ())
             except StopIteration:
                 ...
-            finally:
-                next(gen)
+            next(gen)
     except StopIteration as e:
         return e.value
 

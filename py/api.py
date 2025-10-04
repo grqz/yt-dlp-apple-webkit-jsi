@@ -220,9 +220,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
             WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
             WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
 
-            WKNavigationDelegate = pa.objc_getProtocol(b'WKNavigationDelegate')
-            WKScriptMessageHandler = pa.objc_getProtocol(b'WKScriptMessageHandler')
-            WKScriptMessageHandlerWithReply = pa.objc_getProtocol(b'WKScriptMessageHandlerWithReply')
+            WKNavigationDelegate = pa.objc_getClass(b'WKNavigationDelegate')
+            WKScriptMessageHandler = pa.objc_getClass(b'WKScriptMessageHandler')
+            WKScriptMessageHandlerWithReply = pa.objc_getClass(b'WKScriptMessageHandlerWithReply')
 
             CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
             CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)
@@ -567,9 +567,9 @@ def get_gen(logger: Logger) -> Generator[Callable[[int, tuple], Any], None, Lite
                 ),
             )
             proto_list: PyNeApple.PROTO_LIST_TYPE = (
-                WKNavigationDelegate,
-                WKScriptMessageHandler,
-                WKScriptMessageHandlerWithReply,
+                # WKNavigationDelegate,
+                # WKScriptMessageHandler,
+                # WKScriptMessageHandlerWithReply,
             )
             logger.debug_log(f'{(WKNavigationDelegate, WKScriptMessageHandler, WKScriptMessageHandlerWithReply)=}')
             # TODO: the 2 msg handler protocols are nil, why?
