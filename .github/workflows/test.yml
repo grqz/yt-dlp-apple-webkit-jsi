@@ -3,8 +3,9 @@ on:
   push:
     branches:
       - master
+
 jobs:
-  build:
+  testpy:
     strategy:
       matrix:
         pyvsn:

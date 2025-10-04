@@ -31,7 +31,6 @@ from typing import (
     Coroutine,
     Generator,
     Generic,
-    Literal,
     Optional,
     TypeVar,
     Union,

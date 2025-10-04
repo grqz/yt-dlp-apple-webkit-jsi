@@ -187,7 +187,7 @@ class PyNeApple:
 
     def __init__(self, logger: Logger):
         if platform.uname()[0] != 'Darwin':
-            print('Warning: kernel is not Darwin, PyNeApple might not function correctly')
+            logger.write_err('Warning: kernel is not Darwin, PyNeApple might not function correctly')
         self._init = False
         self.logger = logger
 
