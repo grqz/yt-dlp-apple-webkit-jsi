@@ -6,18 +6,21 @@ from typing import cast as py_typecast, Callable, get_args, Optional
 
 from .logging import Logger
 from .config import HOST, HTML, SCRIPT
-from .api import DefaultJSResult, PyResultType, WKJS_UncaughtException
+from .api import NullTag, DefaultJSResult, PyResultType, WKJS_UncaughtException
 from .easy import WKJSE_Factory, WKJSE_Webview
 
 def main():
     logger = Logger()
     try:
+        # Simple identity function
         def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
             logger.debug_log(f'received in comm channel: {res}')
-            if isinstance(res, get_args(PyResultType)):
+            if res is NullTag:
+                cb(None, None)
+            elif isinstance(res, get_args(PyResultType)):
                 cb(py_typecast(PyResultType, res), None)
             else:
-                cb(None, f'Received unknown type {type(res)}')
+                cb(None, f'Received value {res} of unknown type {type(res)}')
         with WKJSE_Factory(logger) as send, WKJSE_Webview(send) as wv:
             wv.navigate_to(HOST, HTML)
             wv.on_script_log(print)

@@ -52,19 +52,19 @@ x.realfloat = 0.1 + 0.2,  // obviously not 0.3
 x;
 ```
 
-The return value you will get from python(pprinted, undefined=None, null=_NullTag):
+The return value you will get from python(pprinted, undefined=None, null=NullTag):
 ```py
 {'_bstr': 'a\x00\n\tbあx',
  '_self_': {'_bstr': 'a\x00\n\tbあx',
             '_self_': <Recursion on dict with id=4351871744>,
             '_value': 30.0,
             'ab': {},
-            'arrBint': [<class '__main__._NullTag'>,
-                        <class '__main__._NullTag'>],
+            'arrBint': [<class '__main__.NullTag'>,
+                        <class '__main__.NullTag'>],
             'arrWithBlank': ['first',
-                             <class '__main__._NullTag'>,
-                             <class '__main__._NullTag'>,
-                             <class '__main__._NullTag'>,
+                             <class '__main__.NullTag'>,
+                             <class '__main__.NullTag'>,
+                             <class '__main__.NullTag'>,
                              'last'],
             'booleanv': [1, 0],
             'carr': [[7.0,
@@ -88,14 +88,14 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
             'realfloat': 0.30000000000000004,
             'set': {},
             'u8arr': {'0': 3.0, '1': 46.0, '2': 7.0},
-            'ああ': <class '__main__._NullTag'>},
+            'ああ': <class '__main__.NullTag'>},
  '_value': 30.0,
  'ab': {},
- 'arrBint': [<class '__main__._NullTag'>, <class '__main__._NullTag'>],
+ 'arrBint': [<class '__main__.NullTag'>, <class '__main__.NullTag'>],
  'arrWithBlank': ['first',
-                  <class '__main__._NullTag'>,
-                  <class '__main__._NullTag'>,
-                  <class '__main__._NullTag'>,
+                  <class '__main__.NullTag'>,
+                  <class '__main__.NullTag'>,
+                  <class '__main__.NullTag'>,
                   'last'],
  'booleanv': [1, 0],
  'carr': [[7.0, <Recursion on list with id=4348490752>],
@@ -115,7 +115,7 @@ The return value you will get from python(pprinted, undefined=None, null=_NullTa
  'realfloat': 0.30000000000000004,
  'set': {},
  'u8arr': {'0': 3.0, '1': 46.0, '2': 7.0},
- 'ああ': <class '__main__._NullTag'>}
+ 'ああ': <class '__main__.NullTag'>}
 ```
 
 ## Python return values

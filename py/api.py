@@ -141,7 +141,7 @@ class _UnknownStructure:
     typename: str
 
 
-class _NullTag:
+class NullTag:
     ...
 
 
@@ -156,7 +156,7 @@ _JSResultType = Union[
     list['_JSResultType'],
     V,  # _UnkownStructure
 ]
-DefaultJSResult = _JSResultType[None, type[_NullTag], _UnknownStructure]
+DefaultJSResult = _JSResultType[None, type[NullTag], _UnknownStructure]
 
 PyResultType = Union[
     None,
@@ -506,7 +506,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
             def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                 logger.debug_log(f'[(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
                 rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
-                pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
+                pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=NullTag)
                 if cb := usrcontctlr_cbdct.get(rp_usrcontctlr or 0):
                     cb(pyobj)
 
@@ -539,7 +539,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 # TODO(?): expose some CFRL utils to the callback?
                 try:
                     rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
-                    pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=_NullTag)
+                    pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=NullTag)
                     usrcontctlr_commcbdct[rp_usrcontctlr or 0](pyobj, return_result)
                 except BaseException as e:
                     logger.debug_log(f'Error handling script message: {e!r}')
@@ -718,7 +718,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         await fut_navidone
                     logger.debug_log('navigation done')
 
-                async def execute_js(webview: int, script: str) -> _JSResultType[None, type[_NullTag], _UnknownStructure]:
+                async def execute_js(webview: int, script: str) -> _JSResultType[None, type[NullTag], _UnknownStructure]:
                     fut_jsdone: CFRL_Future[bool] = CFRL_Future()
                     result_exc: Optional[Exception] = None
                     result_pyobj: Optional[DefaultJSResult] = None
@@ -747,7 +747,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                                 result_exc = WKJS_UncaughtException(err_at=err, code=code, domain=s_domain, user_info=s_uinfo)
                                 fut_jsdone.set_result(False)
                                 return
-                            result_pyobj = pyobj_from_nsobj_jsresult(pa, c_void_p(id_result), visited={}, null=_NullTag)
+                            result_pyobj = pyobj_from_nsobj_jsresult(pa, c_void_p(id_result), visited={}, null=NullTag)
                             logger.debug_log(f'JS done, resolving future; {id_result=}, {err=}')
                             fut_jsdone.set_result(True)
 
