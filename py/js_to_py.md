@@ -120,5 +120,5 @@ The return value you will get from python(pprinted, undefined=None, null=NullTag
 
 ## Python return values
 
-Supported types are `None`, `str`, `int` within the range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.  
+Supported types are `None` (null in JS, don't use NullTag), `str`, `int` within the range [LLONG_MIN, ULLONG_MAX], `float`, `datetime.datetime`.  
 Note that dictionaries and lists are not yet supported, otherwise the promise `communicate` returns will result in an error. Please use JSON instead.
