@@ -1,5 +1,6 @@
+__pycache__
 a.out
 *.o
 misc/hello
 misc/translated
-py/core
+core
