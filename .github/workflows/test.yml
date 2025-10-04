@@ -39,7 +39,7 @@ jobs:
         cd yt_dlp_plugins/webkit_jsi
         ulimit -c unlimited
         sudo chmod a+rw /cores
-        python -m py.run
+        python -m examples.run
         test -L "${{ github.workspace }}/core"
     - if: failure()
       run: >
