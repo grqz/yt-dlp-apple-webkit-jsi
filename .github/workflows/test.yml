@@ -62,9 +62,9 @@ jobs:
         . .ve/bin/activate
         pip install \
           . \
-          "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno" \
-          "git+https://github.com/yt-dlp/ejs@main"
-        yt-dlp -vF dQw4w9WgXcQ
+          "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
+        yt-dlp -vF --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" --remote-components ejs:github \
+           dQw4w9WgXcQ
   c:
     strategy:
       matrix:

@@ -25,8 +25,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
     PROVIDER_VERSION = __version__
     JS_RUNTIME_NAME = 'apple-webkit-jsi'
     PROVIDER_NAME = 'apple-webkit-jsi'
-    # TODO: repo url
-    BUG_REPORT_LOCATION = 'https://github.com/grqz/actpg/issues?q='
+    BUG_REPORT_LOCATION = 'https://github.com/grqz/yt-dlp-apple-webkit-jsi/issues?q='
 
 
     def is_available(self) -> bool:
