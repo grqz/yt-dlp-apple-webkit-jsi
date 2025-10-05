@@ -56,6 +56,12 @@ jobs:
         name: ${{ matrix.os }}-${{ matrix.pyvsn }}-bt
         path: st.txt
         compression-level: 9
+    - name: test yt-dlp works
+      run: |
+        python -m venv .ve
+        . .ve/bin/activate
+        pip install . "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
+        yt-dlp -vF dQw4w9WgXcQ
   c:
     strategy:
       matrix:

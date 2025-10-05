@@ -21,11 +21,11 @@ __version__ = '0.0.1'
 
 
 @register_provider
-class AppleWebKitJSP(JsRuntimeChalBaseJCP):
+class AppleWebKitJCP(JsRuntimeChalBaseJCP):
     PROVIDER_VERSION = __version__
     JS_RUNTIME_NAME = 'apple-webkit-jsi'
     PROVIDER_NAME = 'apple-webkit-jsi'
-    # TODO
+    # TODO: repo url
     BUG_REPORT_LOCATION = 'https://github.com/grqz/actpg/issues?q='
 
 
@@ -60,7 +60,7 @@ class AppleWebKitJSP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        # TODO: global facory
+        # TODO: cached facory/webview
         with WKJSE_Factory(Logger()) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
             try:
@@ -72,6 +72,6 @@ class AppleWebKitJSP(JsRuntimeChalBaseJCP):
             return result
 
 
-@register_preference(AppleWebKitJSP)
+@register_preference(AppleWebKitJCP)
 def my_provider_preference(provider: JsChallengeProvider, requests: list[JsChallengeRequest]) -> int:
     return 500

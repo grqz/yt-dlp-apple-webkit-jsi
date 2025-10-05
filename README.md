@@ -4,7 +4,7 @@ A yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, should work on mo
 # Installing
 
 ## Requirements
-<!--TODO: 3.10+-->>
+<!--TODO: 3.10+-->
 1. Python. CPython 3.9+ and PyPy 3.10+ are supported. Other implementations and versions might or might not work.
 2. A device with Apple's operating system. This plugin _should_ work on iOS 14.0+, and MacOS 12.0+, on x86\_64 or arm64. Other apple's operating systems might or might not work.
 3. yt-dlp **`2025.<TODO:MinVer>`** or above.
@@ -44,7 +44,6 @@ For more locations and methods, see [installing yt-dlp plugins](<https://github.
 
 ---
 
-<!--TODO: verify-->
 If installed correctly, you should see the provider's version in `yt-dlp -v` output:
 
-    [debug] [youtube] [jsc] JS Challenge Providers: apple-webkit-jsi-0.0.1 (external)
+    [debug] [youtube] [jsc] JS Challenge Providers: bun (unavailable), deno, jsinterp (unavailable), node (unavailable), apple-webkit-jsi-0.0.1 (external)

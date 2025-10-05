@@ -11,8 +11,7 @@ requires-python = ">=3.9"
 keywords = ["yt-dlp", "yt-dlp-plugin", "yt-dlp-jsc-provider"]  # TODO: pot?
 maintainers = [{ name = "grqz" }]
 dependencies = [
-    # TODO: remove
-    "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
+    # "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
 ]
 
 [tool.hatch.env.default]
