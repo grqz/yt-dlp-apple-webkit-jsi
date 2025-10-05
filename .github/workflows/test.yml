@@ -60,8 +60,11 @@ jobs:
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        pip install . "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
-        yt-dlp -vF dQw4w9WgXcQ --remote-components ejs:github
+        pip install \
+          . \
+          "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno" \
+          "git+https://github.com/yt-dlp/ejs@main"
+        yt-dlp -vF dQw4w9WgXcQ
   c:
     strategy:
       matrix:
