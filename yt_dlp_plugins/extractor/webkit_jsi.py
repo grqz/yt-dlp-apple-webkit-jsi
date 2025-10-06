@@ -57,7 +57,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})();' + stdin
+        script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})(); if(0){' + stdin + '}'
         self.logger.info(f'started solving challenge, {script=}')
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
