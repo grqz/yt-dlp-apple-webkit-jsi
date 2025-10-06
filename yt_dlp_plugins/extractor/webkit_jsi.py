@@ -13,7 +13,7 @@ from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
 from ..webkit_jsi.lib.logging import Logger
 from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
-from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_json, jsres_to_log
+from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_log
 
 
 __version__ = '0.0.1'
