@@ -278,6 +278,11 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 argtypes=(c_char_p, c_ulong))
             return p_str
 
+        py_str = r'superWe\iR(\0\u3042\x01\x0a\0\0zzzstr'
+        s = alloc_nsstring_from_str(py_str)
+        logger.write_err(f'{str_from_nsstring(pa, s) == s=}')
+        pa.release_obj(s)
+
         def pyobj_from_nsobj_jsresult(
             pa: PyNeApple,
             jsobj: NULLABLE_VOIDP,
