@@ -53,19 +53,21 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             if not args:
                 return
             str_to_log = json.dumps(args[0], separators=(',', ':')) + '\n'
-            self.logger.debug(f'[JS][{ltype.name}] {str_to_log}')
+            self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
             if ltype == WKJS_LogType.ERR:
                 err += str_to_log
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
+        self.logger.info(f'started solving challenge, script length: {len(stdin)}')
         # TODO: cached facory/webview
-        with WKJSE_Factory(Logger()) as send, WKJSE_Webview(send) as webview:
+        with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
             try:
                 webview.execute_js(stdin)
             except WKJS_UncaughtException as e:
                 raise JsChallengeProviderError(repr(e), False)
+            self.logger.info(f'Javascript returned {result=}, {err=}')
             if err:
                 raise JsChallengeProviderError(f'Error running Apple WebKit: {err}')
             return result
