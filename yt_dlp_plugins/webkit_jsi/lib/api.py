@@ -278,11 +278,12 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 argtypes=(c_char_p, c_ulong))
             return p_str
 
-        py_str = r'superWe\iR(\0\u3042\x01\x0a\0\0zzzstr'
-        s = alloc_nsstring_from_str(py_str)
-        sback = str_from_nsstring(pa, s)
-        logger.write_err(f'{(sback, py_str, sback == py_str, py_str.encode(), sback.encode())=}')
-        pa.release_obj(s)
+        def _test_str_conversion(py_str=r'superWe\iR(\0\u3042\x01\x0a\0\0zzzstr'):
+            s = alloc_nsstring_from_str(py_str)
+            sback = str_from_nsstring(pa, s)
+            logger.write_err(f'{(sback, py_str, sback == py_str, py_str.encode(), sback.encode())=}')
+            assert sback == py_str
+            pa.release_obj(s)
 
         def pyobj_from_nsobj_jsresult(
             pa: PyNeApple,
@@ -773,8 +774,8 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     nonlocal active
                     active = False
 
-                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_log, on_script_comm
-                fn_iscoro = True, True, False, True, True, False, False
+                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_log, on_script_comm, _test_str_conversion
+                fn_iscoro = True, True, False, True, True, False, False, False
                 last_res = 0
                 while active:
                     task = yield last_res
