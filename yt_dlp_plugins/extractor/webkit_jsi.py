@@ -47,6 +47,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         err = ''
 
         def on_log(msg):
+            self.logger.info(f'received js message')
             nonlocal result, err
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
@@ -64,7 +65,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
             try:
-                webview.execute_js(stdin)
+                webview.execute_js('console.log(null)')
             except WKJS_UncaughtException as e:
                 raise JsChallengeProviderError(repr(e), False)
             self.logger.info(f'Javascript returned {result=}, {err=}')
