@@ -62,7 +62,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             send(7, (stdin, ))
-            send(7, ('ordinary string', ))
             webview.on_script_log(on_log)
             try:
                 webview.execute_js(script)

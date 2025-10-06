@@ -24,6 +24,8 @@ def main():
     gen = get_gen(logger=logger)
     try:
         sendmsg = next(gen)
+        sendmsg(7, ())  # default case
+        sendmsg(7, ('ordinary string', ))
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))

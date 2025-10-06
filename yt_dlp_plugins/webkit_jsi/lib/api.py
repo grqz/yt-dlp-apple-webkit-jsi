@@ -281,7 +281,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
         def _test_str_conversion(py_str='superWe\\iR(\0\u3042\x01\x0a\0\0zzzstr'):
             s = alloc_nsstring_from_str(py_str)
             sback = str_from_nsstring(pa, s)
-            logger.write_err(f'{(sback, py_str, sback == py_str, py_str.encode(), sback.encode())=}')
+            logger.write_err(f'{(len(sback), len(py_str), sback == py_str)=}')
             assert sback == py_str
             pa.release_obj(s)
 
