@@ -46,10 +46,10 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         err = ''
 
         def on_log(msg):
-            self.logger.info(f'received js message')
             nonlocal result, err
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
+            self.logger.info(f'received js message in logvchannel {ltype.name}: {args}')
             if not len(args):
                 return
             str_to_log = jsres_to_json(args[0], separators=(',', ':')) + '\n'
