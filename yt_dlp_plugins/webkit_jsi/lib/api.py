@@ -283,7 +283,8 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
             s = alloc_nsstring_from_str(py_str)
             sback = str_from_nsstring(pa, s)
             logger.write_err(f'{(len(sback), len(py_str), sback == py_str)=}')
-            logger.debug_log('\n'.join(context_diff(py_str, sback, fromfile='the_right_string', tofile='string_with_loss')))
+            tolinelist = lambda s_: list(map(lambda x: x+'\n', s_.splitlines()))
+            logger.debug_log('\n'.join(context_diff(tolinelist(py_str), tolinelist(sback), fromfile='the_right_string', tofile='string_with_loss')))
             assert sback == py_str
             pa.release_obj(s)
 
