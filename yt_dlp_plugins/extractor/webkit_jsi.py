@@ -13,7 +13,7 @@ from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
 from ..webkit_jsi.lib.logging import Logger
 from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
-from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_json
+from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_json, jsres_to_log
 
 
 __version__ = '0.0.1'
@@ -50,9 +50,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
             self.logger.info(f'received js message in logvchannel {ltype.name}: {args}')
-            if not len(args):
-                return
-            str_to_log = jsres_to_json(args[0], separators=(',', ':')) + '\n'
+            str_to_log = jsres_to_log(args)
             self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
             if ltype == WKJS_LogType.ERR:
                 err += str_to_log

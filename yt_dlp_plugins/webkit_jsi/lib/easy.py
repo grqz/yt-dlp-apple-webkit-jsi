@@ -67,3 +67,16 @@ class WKJSE_Webview:
 
 def jsres_to_json(jsres: DefaultJSResult, **kwargs):
     return json.dumps(None if jsres is NullTag else jsres, **kwargs)
+
+def jsres_to_log1(jsres: DefaultJSResult) -> str:
+    if jsres is None:
+        return 'undefined'
+    elif jsres is NullTag:
+        return 'null'
+    elif isinstance(jsres, str):
+        return jsres
+    else:
+        return json.dumps(jsres, separators=(',', ':'))
+
+def jsres_to_log(*jsres: DefaultJSResult):
+    return ' '.join(map(jsres_to_log1, jsres)) + '\n'
