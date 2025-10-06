@@ -26,6 +26,7 @@ def main():
         sendmsg = next(gen)
         sendmsg(7, ())  # default case
         sendmsg(7, ('ordinary string', ))
+        sendmsg(7, ('\0' * 28602851, ))
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
         try:
             sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
