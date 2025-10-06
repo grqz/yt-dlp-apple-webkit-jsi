@@ -57,13 +57,13 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        self.logger.info(f'started solving challenge, script : {stdin}')
+        script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})();' + stdin
+        self.logger.info(f'started solving challenge, {script=}')
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
             try:
-                # webview.execute_js('const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])')
-                webview.execute_js(stdin)
+                webview.execute_js(script)
             except WKJS_UncaughtException as e:
                 raise JsChallengeProviderError(repr(e), False)
             self.logger.info(f'Javascript returned {result=}, {err=}')
