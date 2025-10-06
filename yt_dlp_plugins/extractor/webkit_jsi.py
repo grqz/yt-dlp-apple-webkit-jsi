@@ -50,7 +50,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             nonlocal result, err
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
-            if not args:
+            if not len(args):
                 return
             str_to_log = jsres_to_json(args[0], separators=(',', ':')) + '\n'
             self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
