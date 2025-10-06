@@ -83,7 +83,7 @@ def jsres_to_log1(jsres: DefaultJSResult) -> str:
         return jsres
     else:
         print(f'obj {jsres}')
-        return json.dumps(jsres, separators=(',', ':'))
+        return json.dumps(jsres, separators=(',', ':'), default=lambda *_, **__: None)
 
 
 def jsres_to_log(*jsres: DefaultJSResult):
