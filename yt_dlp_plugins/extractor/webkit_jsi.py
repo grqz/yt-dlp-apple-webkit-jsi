@@ -59,11 +59,24 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
         script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})(); if(0){' + stdin + '}'
         # in -2860285:-2610285
-        last500 = script[-2860285:-2735285]
-        self.logger.info(f'started solving challenge, {len(script)=}, {last500.encode()}')
+        problematic = script[-2860285:-2735285]
+        self.logger.info(f'started solving challenge, {len(script)=}, {problematic.encode()}')
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
-            send(7, (last500, ))
+            f = lambda x: send(7, (x, ))
+            s = problematic
+            l, h = 0, len(s)
+            if f(s):
+                assert False
+            while h - l > 1:
+                m = (l+h)//2
+                if f(s[:m]):  # other half
+                    l = m
+                else:
+                    h = m
+            s_ctx = s[h-30:h+30]
+            self.logger.info(f'{l=}, {h=}, {s_ctx=}, {f(s_ctx)=}')
+            send(7, (problematic, ))
             # send(7, (stdin, ))
             webview.on_script_log(on_log)
             try:

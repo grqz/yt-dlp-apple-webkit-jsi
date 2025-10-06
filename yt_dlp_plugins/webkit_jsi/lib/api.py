@@ -285,8 +285,8 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
             logger.write_err(f'{(len(sback), len(py_str), sback == py_str)=}')
             tolinelist = lambda s_: s_.splitlines(keepends=True)
             logger.debug_log('\n'.join(unified_diff(tolinelist(py_str), tolinelist(sback), fromfile='the_right_string', tofile='string_with_loss')))
-            assert sback == py_str
             pa.release_obj(s)
+            return sback == py_str
 
         def pyobj_from_nsobj_jsresult(
             pa: PyNeApple,
