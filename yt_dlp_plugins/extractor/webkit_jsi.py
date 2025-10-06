@@ -1,4 +1,3 @@
-import json
 import platform
 
 from yt_dlp.extractor.youtube.jsc.provider import (
@@ -14,7 +13,7 @@ from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
 from ..webkit_jsi.lib.logging import Logger
 from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
-from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview
+from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_json
 
 
 __version__ = '0.0.1'
@@ -53,7 +52,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
             if not args:
                 return
-            str_to_log = json.dumps(args[0], separators=(',', ':')) + '\n'
+            str_to_log = jsres_to_json(args[0], separators=(',', ':')) + '\n'
             self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
             if ltype == WKJS_LogType.ERR:
                 err += str_to_log

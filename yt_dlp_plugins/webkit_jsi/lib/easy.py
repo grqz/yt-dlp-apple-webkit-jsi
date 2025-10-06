@@ -2,10 +2,11 @@
 A MORE PYTHONIC API
 """
 
+import json
 from typing import Optional, cast as py_typecast
 
 from .logging import Logger
-from .api import COMM_CBTYPE, LOG_CBTYPE, SENDMSG_CBTYPE, DefaultJSResult, WKJS_Task, get_gen
+from .api import COMM_CBTYPE, LOG_CBTYPE, SENDMSG_CBTYPE, DefaultJSResult, NullTag, WKJS_Task, get_gen
 
 class WKJSE_Factory:
     __slots__ = '_gen', '_sendmsg'
@@ -63,3 +64,6 @@ class WKJSE_Webview:
     def on_script_comm(self, cb: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
         return py_typecast(Optional[COMM_CBTYPE], self._send(WKJS_Task.ON_SCRIPTCOMM, (self._wv, cb)))
 
+
+def jsres_to_json(jsres: DefaultJSResult, **kwargs):
+    return json.dumps(None if jsres is NullTag else jsres, **kwargs)
