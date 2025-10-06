@@ -73,12 +73,16 @@ def jsres_to_json(jsres: DefaultJSResult, **kwargs):
 def jsres_to_log1(jsres: DefaultJSResult) -> str:
     print(f'Converting {jsres=} to log format')
     if jsres is None:
+        print('undefined')
         return 'undefined'
     elif jsres is NullTag:
+        print('null')
         return 'null'
     elif isinstance(jsres, str):
+        print(f'string {jsres}')
         return jsres
     else:
+        print(f'obj {jsres}')
         return json.dumps(jsres, separators=(',', ':'))
 
 

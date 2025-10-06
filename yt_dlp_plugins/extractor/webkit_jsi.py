@@ -51,7 +51,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
             self.logger.info(f'received js message in logvchannel {ltype.name}: {args}')
             try:
-                print(f'Calling {args=} to convert {args=} to log format')
                 str_to_log = jsres_to_log(args)
             except BaseException as e:
                 self.logger.error(f'error serialising: {e!r}')
