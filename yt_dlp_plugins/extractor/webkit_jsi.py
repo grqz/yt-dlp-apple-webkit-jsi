@@ -50,7 +50,11 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
             self.logger.info(f'received js message in logvchannel {ltype.name}: {args}')
-            str_to_log = jsres_to_log(args)
+            try:
+                str_to_log = jsres_to_log(args)
+            except BaseException as e:
+                self.logger.error(f'error serialising: {e!r}')
+                raise
             self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
             if ltype == WKJS_LogType.ERR:
                 err += str_to_log
