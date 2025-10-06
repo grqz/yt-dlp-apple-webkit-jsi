@@ -64,7 +64,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
             try:
-                webview.execute_js('console.log(null)')
+                webview.execute_js('const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])')
             except WKJS_UncaughtException as e:
                 raise JsChallengeProviderError(repr(e), False)
             self.logger.info(f'Javascript returned {result=}, {err=}')
