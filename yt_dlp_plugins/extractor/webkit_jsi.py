@@ -59,7 +59,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        self.logger.info(f'started solving challenge, script length: {len(stdin)}')
+        self.logger.info(f'started solving challenge, script : {stdin}')
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             webview.on_script_log(on_log)
