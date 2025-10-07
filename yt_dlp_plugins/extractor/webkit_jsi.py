@@ -58,6 +58,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                 result += str_to_log
 
         script = 'try{' + stdin + '}catch(e){function strerror(e, update) { const msg = e instanceof Error ? `${e.name}: ${e.message}` + (e.cause && e.cause !== e ? ` (caused by ${strerror(e.cause)})` : "") : `Unknown error: ${JSON.stringify(e)}`; if (update) { const idx = msg.indexOf(": "); e.message = idx == -1 ? msg : msg.slice(idx + 2); } return msg; } console.error(strerror(e), e.stack);}'
+        script = r'new Function("console.log(\"a\")")()'
         # script = stdin
         # in -2860285:-2610285
         problematic = script[-2860285:-2735285]
