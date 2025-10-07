@@ -52,7 +52,11 @@ def main():
             logger.debug_log(f'{pformat(result_pyobj)}')
         except WKJS_UncaughtException as e:
             logger.write_err(f'Uncaught exception from JS: {e!r}')
+        except BaseException as e:
+            logger.debug_log('caught {e!r}')
+            raise
         finally:
+            logger.debug_log('freeing webview')
             sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
             try:
                 sendmsg(WKJS_Task.SHUTDOWN, ())
