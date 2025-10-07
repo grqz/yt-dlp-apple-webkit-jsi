@@ -65,22 +65,66 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             f = lambda x: send(7, (x, ))
             s = problematic
-            l, m, h = 0, 0, len(s)
-            if f(s):
-                assert False
-            while h - l > 1:
-                m = (l+h)//2
-                lhvalid, hhvalid = f(s[l:m]), f(s[m:h])
-                if not lhvalid and not hhvalid:
-                    break
-                elif lhvalid:  # lower half is well formed
-                    l = m
-                elif hhvalid:
-                    h = m
+            segs: list[tuple[int, int]] = []
+            def _ctxof(t: tuple[int, int], n=30, e=None):
+                l, h = t
+                r = problematic[min(0, l - n):max(h + n, len(problematic))]
+                if e:
+                    r = r.encode(e)
+                return r
+
+            segstmp: list[int] = []
+            def _sch(l, h):
+                if l==h or f(s[l:h]):
+                    return
+                if h-l == 1:
+                    segstmp.append(l)
+                m = (l+h)/2
+                lhvalid, rhvalid = f(s[l:m]), f(s[m:h])
+                assert not (lhvalid and rhvalid)
+                if not lhvalid and not rhvalid:
+                    _sch(l, m)
+                    _sch(m, h)
+                elif lhvalid:
+                    _sch(m, h)
                 else:
-                    assert not (lhvalid and hhvalid)
-            s_ctx = s[l-20:h+20]
-            self.logger.info(f'{l=}, {h=}, {s_ctx=}, {f(s_ctx)=}')
+                    _sch(l, m)
+
+            # l, m, h = 0, 0, len(s)
+            # assert not f(s)
+            # while h - l > 1:
+            #     m = (l+h)//2
+            #     lhvalid, hhvalid = f(s[l:m]), f(s[m:h])
+            #     assert not (lhvalid and hhvalid)
+            #     if not lhvalid and not hhvalid:
+            #         ih, il = l, m  # search on the left half
+            #         while ih - il > 1:
+            #             im = (ih+il)//2
+            #             ilhvalid, ihhvalid = f(s[il:im]), f(s[im:ih])
+            #             assert not (ilhvalid and ihhvalid)
+            #             # TODO
+            #         # break
+            #     elif lhvalid:  # lower half is well formed
+            #         l = m
+            #     else:
+            #         h = m
+            # s_ctx = s[l-20:h+20]
+            _sch(0, len(problematic))
+
+            assert segstmp
+            l_ch = segstmp[0]
+            h_ch = segstmp[0]
+            for i in sorted(segstmp)[1:]:
+                if i == h_ch + 1:
+                    ...
+                else:
+                    segs.append((l_ch, h_ch))
+                    l_ch = i
+                h_ch = i
+            segs.append((l_ch, h_ch))
+
+            self.logger.info(f'{len(segs)} segments problematic')
+            [self.logger.info(f'{t[0]=}, {t[1]=}, {_ctxof(t, 3)=}') for t in segs]
             send(7, (problematic, ))
             # send(7, (stdin, ))
             webview.on_script_log(on_log)
