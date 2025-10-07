@@ -79,6 +79,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                     return
                 if h-l == 1:
                     segstmp.append(l)
+                    return
                 m = (l+h)//2
                 lhvalid, rhvalid = f(s[l:m]), f(s[m:h])
                 assert not (lhvalid and rhvalid)
