@@ -62,7 +62,10 @@ def main():
                 sendmsg(WKJS_Task.SHUTDOWN, ())
             except StopIteration:
                 ...
-            next(gen)
+            try:
+                next(gen)
+            except StopIteration:
+                return 0
     except StopIteration:
         return 0
     except BaseException:
