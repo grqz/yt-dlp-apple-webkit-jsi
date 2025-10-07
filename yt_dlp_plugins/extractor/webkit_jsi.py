@@ -70,11 +70,16 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                 assert False
             while h - l > 1:
                 m = (l+h)//2
-                if f(s[:m]):  # other half
+                lhvalid, hhvalid = f(s[:m]), f(s[m:])
+                if not lhvalid and not hhvalid:
+                    break
+                elif lhvalid:  # lower half is well formed
+                    h = m
+                elif hhvalid:
                     l = m
                 else:
-                    h = m
-            s_ctx = s[h-30:h+30]
+                    assert not (lhvalid and hhvalid)
+            s_ctx = s[l-20:h+20]
             self.logger.info(f'{l=}, {h=}, {s_ctx=}, {f(s_ctx)=}')
             send(7, (problematic, ))
             # send(7, (stdin, ))
