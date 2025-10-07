@@ -67,7 +67,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             segs: list[tuple[int, int]] = []
             def _ctxof(t: tuple[int, int], n=30, e=None):
                 l, h = t
-                r = problematic[min(0, l - n):max(h + n, len(problematic))]
+                r = problematic[max(0, l - n):min(h + n, len(problematic))]
                 if e:
                     r = r.encode(e)
                 return r
