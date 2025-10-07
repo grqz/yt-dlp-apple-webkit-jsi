@@ -1,5 +1,5 @@
 diff --git a/test/test_jsc/test_runtime.py b/test/test_jsc/test_runtime.py
-index 853b94a9c..2e90e6b12 100644
+index 0557d68c6..5c667e879 100644
 --- a/test/test_jsc/test_runtime.py
 +++ b/test/test_jsc/test_runtime.py
 @@ -22,6 +22,7 @@
@@ -8,7 +8,7 @@ index 853b94a9c..2e90e6b12 100644
  
 +from yt_dlp_plugins.extractor.webkit_jsi import AppleWebKitJCP
  
- pytestmark = pytest.mark.skipif(not yt_dlp_jsc, reason='yt-dlp-jsc not available')
+ pytestmark = pytest.mark.skipif(not yt_dlp_ejs, reason='yt-dlp-ejs not available')
  
 @@ -63,7 +64,7 @@
  ]
@@ -17,5 +17,5 @@ index 853b94a9c..2e90e6b12 100644
 -@pytest.fixture(params=[BunJCP, DenoJCP, NodeJCP])
 +@pytest.fixture(params=[AppleWebKitJCP])
  def jcp(request, ie, logger):
-     obj = request.param(ie, logger, settings={'debug': ['true']})
+     obj = request.param(ie, logger)
      if not obj.is_available():

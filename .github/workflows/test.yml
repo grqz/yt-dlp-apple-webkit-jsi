@@ -71,7 +71,7 @@ jobs:
         pip install . pytest "git+https://github.com/yt-dlp/ejs@main"
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
-        git apply ../misc/ytest.diff
+        git apply --3way ../misc/ytest.diff
         pytest test/test_jsc/test_runtime.py
         # TODO: fail the CI when challenge solving fails
         python -myt_dlp -vF --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" --remote-components ejs:github \
