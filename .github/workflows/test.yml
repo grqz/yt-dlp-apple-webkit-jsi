@@ -65,7 +65,7 @@ jobs:
           . \
           "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
         yt-dlp -vF --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" --remote-components ejs:github \
-           dQw4w9WgXcQ
+           dQw4w9WgXcQ 6oanIo_2Z4Q WO2b03Zdu4Q
   c:
     strategy:
       matrix:
