@@ -57,7 +57,8 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        script = '(()=>{/*const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])*/})(); if(1){' + stdin + '}'
+        script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})();if(0){' + stdin + '}'
+        script = stdin
         # in -2860285:-2610285
         problematic = script[-2860285:-2735285]
         self.logger.info(f'started solving challenge, {len(script)=}, {problematic.encode()}')
@@ -108,10 +109,10 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                     h_ch = i
                 segs.append((l_ch, h_ch))
 
-            self.logger.info(f'{len(segs)} segments problematic')
-            [self.logger.info(f'{t[0]=}, {t[1]=}, {_ctxof(t, 3)=}') for t in segs]
-            send(7, (problematic, ))
-            # send(7, (stdin, ))
+                self.logger.info(f'{len(segs)} segments problematic')
+                [self.logger.info(f'{t[0]=}, {t[1]=}, {_ctxof(t, 3)=}') for t in segs]
+                send(7, (problematic, ))
+            send(7, (script, ))
             webview.on_script_log(on_log)
             try:
                 webview.execute_js(script)

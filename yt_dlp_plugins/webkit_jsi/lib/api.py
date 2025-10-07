@@ -276,6 +276,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
             # p_str = pa.safe_new_object(
             #     NSString, b'initWithCharacters:length:', str_utf16, len(pystr),
             #     argtypes=(c_char_p, c_ulong))
+            # the above code doesn't work for some reason(?
             str_utf8 = pystr.encode()
             p_str = pa.safe_new_object(
                 NSString, b'initWithBytes:length:encoding:', str_utf8, len(str_utf8), NSUTF8StringEncoding,
