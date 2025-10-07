@@ -90,7 +90,7 @@ class CFRL_Future(Awaitable[T]):
         if self._done:
             return py_typecast(T, self._result)
         else:
-            yield self
+            return (yield self)
 
 
 @dataclass
