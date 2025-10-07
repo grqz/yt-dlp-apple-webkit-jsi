@@ -64,7 +64,9 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             f = lambda x: send(7, (x, ))
-            assert f(b'5\xd8\xcf\xdc'.decode('utf-16-le'))
+            pchr, pchb='𝓏',b'5\xd8\xcf\xdc'.decode('utf-16-le')
+            self.logger.debug(f'{(pchr, pchb, pchr==pchb)=}')
+            assert f(pchr) and f(pchb)
             segs: list[tuple[int, int]] = []
             def _ctxof(t: tuple[int, int], n=30, e=None):
                 l, h = t
