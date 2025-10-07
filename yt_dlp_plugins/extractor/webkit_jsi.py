@@ -65,12 +65,12 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             f = lambda x: send(7, (x, ))
             s = problematic
-            l, h = 0, len(s)
+            l, m, h = 0, 0, len(s)
             if f(s):
                 assert False
             while h - l > 1:
                 m = (l+h)//2
-                lhvalid, hhvalid = f(s[:m]), f(s[m:])
+                lhvalid, hhvalid = f(s[l:m]), f(s[m:h])
                 if not lhvalid and not hhvalid:
                     break
                 elif lhvalid:  # lower half is well formed
