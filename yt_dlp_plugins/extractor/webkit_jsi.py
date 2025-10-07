@@ -96,17 +96,17 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
             _sch(0, len(problematic))
 
-            assert segstmp
-            l_ch = segstmp[0]
-            h_ch = segstmp[0]
-            for i in sorted(segstmp)[1:]:
-                if i == h_ch + 1:
-                    ...
-                else:
-                    segs.append((l_ch, h_ch))
-                    l_ch = i
-                h_ch = i
-            segs.append((l_ch, h_ch))
+            if segstmp:
+                l_ch = segstmp[0]
+                h_ch = segstmp[0]
+                for i in sorted(segstmp)[1:]:
+                    if i == h_ch + 1:
+                        ...
+                    else:
+                        segs.append((l_ch, h_ch))
+                        l_ch = i
+                    h_ch = i
+                segs.append((l_ch, h_ch))
 
             self.logger.info(f'{len(segs)} segments problematic')
             [self.logger.info(f'{t[0]=}, {t[1]=}, {_ctxof(t, 3)=}') for t in segs]
