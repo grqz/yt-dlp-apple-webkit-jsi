@@ -1,4 +1,6 @@
 import platform
+from functools import cached_property
+from typing import Optional
 
 from yt_dlp.extractor.youtube.jsc.provider import (
     JsChallengeProviderError,
@@ -21,11 +23,16 @@ __version__ = '0.0.1'
 
 @register_provider
 class AppleWebKitJCP(JsRuntimeChalBaseJCP):
+    __slots__ = '_lazy_factory', '_lazy_webview'
     PROVIDER_VERSION = __version__
     JS_RUNTIME_NAME = 'apple-webkit-jsi'
     PROVIDER_NAME = 'apple-webkit-jsi'
     BUG_REPORT_LOCATION = 'https://github.com/grqz/yt-dlp-apple-webkit-jsi/issues?q='
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._lazy_factory = WKJSE_Factory(Logger())
+        self._lazy_webview: Optional[WKJSE_Webview] = None
 
     def is_available(self) -> bool:
         """
@@ -39,7 +46,17 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def close(self):
         # Optional close hook, called when YoutubeDL is closed.
-        pass
+        if self._lazy_webview:
+            self._lazy_webview.__exit__(None, None, None)
+            self._lazy_factory.__exit__(None, None, None)
+        super().close()
+
+    @cached_property
+    def lazy_webview(self):
+        if self._lazy_webview is None:
+            send = self._lazy_factory.__enter__()
+            self._lazy_webview = WKJSE_Webview(send).__enter__()
+        return self._lazy_webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
         result = ''
@@ -57,72 +74,22 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        script = 'try{' + stdin + '}catch(e){function strerror(e, update) { const msg = e instanceof Error ? `${e.name}: ${e.message}` + (e.cause && e.cause !== e ? ` (caused by ${strerror(e.cause)})` : "") : `Unknown error: ${JSON.stringify(e)}`; if (update) { const idx = msg.indexOf(": "); e.message = idx == -1 ? msg : msg.slice(idx + 2); } return msg; } console.error(strerror(e), e.stack);}'
+        script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
         # script = stdin
-        # in -2860285:-2610285
-        problematic = script[-2860285:-2735285]
-        self.logger.info(f'started solving challenge, {len(script)=}, {problematic.encode()}')
+        # TODO: make this logger compatible with dlp's
         # TODO: cached facory/webview
-        with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
-            f = lambda x: send(7, (x, ))
-            pchr, pchb='𝓏',b'5\xd8\xcf\xdc'.decode('utf-16-le')
-            self.logger.debug(f'{(pchr, pchb, pchr==pchb)=}')
-            assert f(pchr) and f(pchb)
-            segs: list[tuple[int, int]] = []
-            def _ctxof(t: tuple[int, int], n=30, e=None):
-                l, h = t
-                r = problematic[max(0, l - n):min(h + n, len(problematic))]
-                if e:
-                    r = r.encode(e)
-                return r
-
-            segstmp: list[int] = []
-            def _sch(l, h):
-                s = problematic
-                if l==h or f(s[l:h]):
-                    return
-                if h-l == 1:
-                    segstmp.append(l)
-                    return
-                m = (l+h)//2
-                lhvalid, rhvalid = f(s[l:m]), f(s[m:h])
-                assert not (lhvalid and rhvalid)
-                if not lhvalid and not rhvalid:
-                    _sch(l, m)
-                    _sch(m, h)
-                elif lhvalid:
-                    _sch(m, h)
-                else:
-                    _sch(l, m)
-
-            _sch(0, len(problematic))
-
-            if segstmp:
-                l_ch = segstmp[0]
-                h_ch = segstmp[0]
-                for i in sorted(segstmp)[1:]:
-                    if i == h_ch + 1:
-                        ...
-                    else:
-                        segs.append((l_ch, h_ch))
-                        l_ch = i
-                    h_ch = i
-                segs.append((l_ch, h_ch))
-
-                self.logger.info(f'{len(segs)} segments problematic')
-                [self.logger.info(f'{t[0]=}, {t[1]=}, {_ctxof(t, 3)=}') for t in segs]
-                send(7, (problematic, ))
-            send(7, (script, ))
-            webview.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
-            webview.on_script_log(on_log)
-            try:
-                webview.execute_js(script)
-            except WKJS_UncaughtException as e:
-                raise JsChallengeProviderError(repr(e), False)
-            self.logger.info(f'Javascript returned {result=}, {err=}')
-            if err:
-                raise JsChallengeProviderError(f'Error running Apple WebKit: {err}')
-            return result
+        # with WKJSE_Factory(Logger()) as send, WKJSE_Webview(send) as webview:
+        webview = self.lazy_webview
+        webview.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
+        webview.on_script_log(on_log)
+        try:
+            webview.execute_js(script)
+        except WKJS_UncaughtException as e:
+            raise JsChallengeProviderError(repr(e), False)
+        self.logger.info(f'Javascript returned {result=}, {err=}')
+        if err:
+            raise JsChallengeProviderError(f'Error running Apple WebKit: {err}')
+        return result
 
 
 @register_preference(AppleWebKitJCP)
