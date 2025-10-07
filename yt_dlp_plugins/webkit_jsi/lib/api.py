@@ -192,6 +192,15 @@ class WKJS_UncaughtException(Exception):
             f'domain: {self.domain or WKJS_UncaughtException.DOMAIN_DEFAULT}, '
             f'user info: {self.user_info or WKJS_UncaughtException.UINFO_DEFAULT}')
 
+    def __repr__(self) -> str:
+        slst = [f'err_at={self.err_at}, code={self.code}']
+        if self.domain is not None:
+            slst.append(f'domain={self.domain}')
+        if self.user_info is not None:
+            slst.append(f'user_info={self.user_info}')
+        s = ', '.join(slst)
+        return f'WKJS_UncaughtException({s})'
+
 
 class WKJS_LogType(enum.Enum):
     TRACE = 0
