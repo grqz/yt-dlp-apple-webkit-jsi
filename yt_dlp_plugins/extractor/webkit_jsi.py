@@ -64,6 +64,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             f = lambda x: send(7, (x, ))
+            assert f(b'5\xd8\xcf\xdc'.decode('utf-16-le'))
             segs: list[tuple[int, int]] = []
             def _ctxof(t: tuple[int, int], n=30, e=None):
                 l, h = t
@@ -91,25 +92,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                 else:
                     _sch(l, m)
 
-            # l, m, h = 0, 0, len(s)
-            # assert not f(s)
-            # while h - l > 1:
-            #     m = (l+h)//2
-            #     lhvalid, hhvalid = f(s[l:m]), f(s[m:h])
-            #     assert not (lhvalid and hhvalid)
-            #     if not lhvalid and not hhvalid:
-            #         ih, il = l, m  # search on the left half
-            #         while ih - il > 1:
-            #             im = (ih+il)//2
-            #             ilhvalid, ihhvalid = f(s[il:im]), f(s[im:ih])
-            #             assert not (ilhvalid and ihhvalid)
-            #             # TODO
-            #         # break
-            #     elif lhvalid:  # lower half is well formed
-            #         l = m
-            #     else:
-            #         h = m
-            # s_ctx = s[l-20:h+20]
             _sch(0, len(problematic))
 
             assert segstmp
