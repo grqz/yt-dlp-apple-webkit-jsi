@@ -57,8 +57,8 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
-        script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})();if(1){try{' + stdin + '}catch(e){console.error(e.toString());}}'
-        # script = stdin
+        # script = '(()=>{const a = 3; let b = 4; function c(){return Array.from(arguments);} const d = JSON.stringify(c(a,b)); console.log([null, d])})();if(1){try{' + stdin + '}catch(e){console.error(e.toString());}}'
+        script = stdin
         # in -2860285:-2610285
         problematic = script[-2860285:-2735285]
         self.logger.info(f'started solving challenge, {len(script)=}, {problematic.encode()}')

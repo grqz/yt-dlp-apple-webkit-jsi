@@ -774,8 +774,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
                         bres = await fut_jsdone
-                        logger.debug_log(f'{bres=}')
-                        assert bres is True or bres is False, bres
+                        assert bres is True or bres is False, f'guess why im here'
                         if bres is False:
                             raise py_typecast(Exception, result_exc)
 
