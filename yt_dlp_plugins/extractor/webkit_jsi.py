@@ -74,9 +74,9 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
                 if not lhvalid and not hhvalid:
                     break
                 elif lhvalid:  # lower half is well formed
-                    h = m
-                elif hhvalid:
                     l = m
+                elif hhvalid:
+                    h = m
                 else:
                     assert not (lhvalid and hhvalid)
             s_ctx = s[l-20:h+20]
