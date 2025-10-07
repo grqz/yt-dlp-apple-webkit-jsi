@@ -733,9 +733,9 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         await fut_navidone
                     logger.debug_log('navigation done')
 
-                async def execute_js(webview: int, script: str) -> _JSResultType[None, type[NullTag], _UnknownStructure]:
+                async def execute_js(webview: int, script: str) -> tuple[DefaultJSResult, Optional[WKJS_UncaughtException]]:
                     fut_jsdone: CFRL_Future[bool] = CFRL_Future()
-                    result_exc: Optional[Exception] = None
+                    result_exc: Optional[WKJS_UncaughtException] = None
                     result_pyobj: Optional[DefaultJSResult] = None
                     real_script = SCRIPT_TEMPL.replace(SCRIPT_PHOLDER, script)
                     async with AsyncExitStack() as exsk:
@@ -773,13 +773,10 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                             argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                        bres = await fut_jsdone
-                        assert bres is True or bres is False, f'guess why im here'
-                        if bres is False:
-                            raise py_typecast(Exception, result_exc)
+                        await fut_jsdone
 
                         logger.debug_log('JS execution completed')
-                        return result_pyobj
+                        return result_pyobj, result_exc
 
                 def shutdown():
                     nonlocal active

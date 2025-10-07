@@ -6,7 +6,7 @@ import json
 from typing import Optional, cast as py_typecast
 
 from .logging import Logger
-from .api import COMM_CBTYPE, LOG_CBTYPE, SENDMSG_CBTYPE, DefaultJSResult, NullTag, WKJS_Task, get_gen
+from .api import COMM_CBTYPE, LOG_CBTYPE, SENDMSG_CBTYPE, DefaultJSResult, NullTag, WKJS_Task, WKJS_UncaughtException, get_gen
 
 class WKJSE_Factory:
     __slots__ = '_gen', '_sendmsg'
@@ -57,7 +57,10 @@ class WKJSE_Webview:
         self._send(WKJS_Task.NAVIGATE_TO, (self._wv, host, html))
 
     def execute_js(self, script: str) -> DefaultJSResult:
-        self._send(WKJS_Task.EXECUTE_JS, (self._wv, script))
+        res, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], self._send(WKJS_Task.EXECUTE_JS, (self._wv, script)))
+        if exc is not None:
+            raise exc
+        return res
 
     def on_script_log(self, cb: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
         return py_typecast(Optional[LOG_CBTYPE], self._send(WKJS_Task.ON_SCRIPTLOG, (self._wv, cb)))

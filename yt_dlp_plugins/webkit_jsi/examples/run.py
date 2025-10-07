@@ -52,11 +52,10 @@ def main():
         sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
 
         # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
-        try:
-            result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
-        except WKJS_UncaughtException as e:
-            logger.write_err(f'Uncaught exception from JS: {e!r}')
-            raise
+        result_pyobj, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
+        if exc is not None:
+            logger.write_err(f'Uncaught exception from JS: {exc!r}')
+            raise exc
         logger.debug_log(f'{pformat(result_pyobj)}')
     except BaseException as e:
         logger.write_err(f'caught exception {e!r}')
