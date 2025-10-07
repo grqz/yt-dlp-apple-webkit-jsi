@@ -37,9 +37,11 @@ jobs:
         ulimit -c unlimited
         sudo chmod a+rw /cores
         python -m examples.run_easy || {
-          echo "::notice::Failure with $?, rerunning with logs"
-          python -m examples.run
+          echo "::warning::Failure with $?, rerunning with logs"
+          r=0
+          python -m examples.run || r=$?
           test -L "${{ github.workspace }}/core"
+          exit $r
         }
     - if: failure()
       run: >
