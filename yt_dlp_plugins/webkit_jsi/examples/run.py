@@ -53,7 +53,7 @@ def main():
         except WKJS_UncaughtException as e:
             logger.write_err(f'Uncaught exception from JS: {e!r}')
         except BaseException as e:
-            logger.debug_log('caught {e!r}')
+            logger.debug_log(f'caught {e!r}')
             raise
         finally:
             logger.debug_log('freeing webview')
