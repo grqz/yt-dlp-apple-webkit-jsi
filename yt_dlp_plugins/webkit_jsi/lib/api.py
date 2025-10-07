@@ -272,10 +272,14 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
-            str_utf16 = pystr.encode('utf-16-le')
+            # str_utf16 = pystr.encode('utf-16-le')
+            # p_str = pa.safe_new_object(
+            #     NSString, b'initWithCharacters:length:', str_utf16, len(pystr),
+            #     argtypes=(c_char_p, c_ulong))
+            str_utf8 = pystr.encode()
             p_str = pa.safe_new_object(
-                NSString, b'initWithCharacters:length:', str_utf16, len(pystr),
-                argtypes=(c_char_p, c_ulong))
+                NSString, b'initWithBytes:length:encoding:', str_utf8, len(str_utf8), NSUTF8StringEncoding,
+                    argtypes=(c_char_p, c_ulong, c_ulong))
             return p_str
 
         def _test_str_conversion(py_str='superWe\\iR(\0\u3042\x01\x0a\0\0zzzstr'):
