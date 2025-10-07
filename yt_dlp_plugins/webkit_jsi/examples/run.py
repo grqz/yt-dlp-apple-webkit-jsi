@@ -28,49 +28,51 @@ def main():
         sendmsg(7, ('ordinary string', ))
         sendmsg(7, ('\0' * 28602851, ))
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
-        try:
-            sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-            sendmsg(WKJS_Task.ON_SCRIPTLOG, (wv, print))
-            def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
-                logger.debug_log(f'received in comm channel: {res}')
-                if res is NullTag:
-                    cb(None, None)
-                elif isinstance(res, get_args(PyResultType)):
-                    cb(py_typecast(PyResultType, res), None)
-                else:
-                    cb(None, f'Received unknown type {type(res)}')
-
-            # Use `communicate(...)` in JS to call `script_comm_cb`
-            # `communicate` returns a promise which will be resolved when `cb` is called
-            # It's unnecessary to await the promise if the communication is single-way
-            # (Note that `communicate` is a local const variable)
-            # See js_to_py.md for limitations
-            sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
-
-            # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
-            result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
-            logger.debug_log(f'{pformat(result_pyobj)}')
-        except WKJS_UncaughtException as e:
-            logger.write_err(f'Uncaught exception from JS: {e!r}')
-        except BaseException as e:
-            logger.debug_log(f'caught {e!r}')
-            raise
-        finally:
-            logger.debug_log('freeing webview')
-            sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
-            try:
-                sendmsg(WKJS_Task.SHUTDOWN, ())
-            except StopIteration:
-                ...
-            try:
-                next(gen)
-            except StopIteration:
-                return 0
     except BaseException:
         import traceback
         logger.write_err('err!')
         logger.write_err(traceback.format_exc())
         return 1
+    try:
+        sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
+        sendmsg(WKJS_Task.ON_SCRIPTLOG, (wv, print))
+        def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
+            logger.debug_log(f'received in comm channel: {res}')
+            if res is NullTag:
+                cb(None, None)
+            elif isinstance(res, get_args(PyResultType)):
+                cb(py_typecast(PyResultType, res), None)
+            else:
+                cb(None, f'Received unknown type {type(res)}')
+
+        # Use `communicate(...)` in JS to call `script_comm_cb`
+        # `communicate` returns a promise which will be resolved when `cb` is called
+        # It's unnecessary to await the promise if the communication is single-way
+        # (Note that `communicate` is a local const variable)
+        # See js_to_py.md for limitations
+        sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
+
+        # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
+        result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
+        logger.debug_log(f'{pformat(result_pyobj)}')
+    except WKJS_UncaughtException as e:
+        logger.write_err(f'Uncaught exception from JS: {e!r}')
+    except BaseException as e:
+        import traceback
+        logger.write_err('err!')
+        logger.write_err(traceback.format_exc())
+        return 1
+    finally:
+        logger.debug_log('freeing webview')
+        sendmsg(WKJS_Task.FREE_WEBVIEW, (wv, ))
+        try:
+            sendmsg(WKJS_Task.SHUTDOWN, ())
+        except StopIteration:
+            ...
+        try:
+            next(gen)
+        except StopIteration:
+            return 0
 
 
 if __name__ == '__main__':
