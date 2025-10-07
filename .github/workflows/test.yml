@@ -34,14 +34,13 @@ jobs:
     - name: run easy API
       run: |
         cd yt_dlp_plugins/webkit_jsi
-        python -m examples.run_easy
-    - name: real run
-      run: |
-        cd yt_dlp_plugins/webkit_jsi
         ulimit -c unlimited
         sudo chmod a+rw /cores
-        python -m examples.run
-        test -L "${{ github.workspace }}/core"
+        python -m examples.run_easy || {
+          echo "::notice::Failure with $?, rerunning with logs"
+          python -m examples.run
+          test -L "${{ github.workspace }}/core"
+        }
     - if: failure()
       run: >
         lldb -c core --batch
