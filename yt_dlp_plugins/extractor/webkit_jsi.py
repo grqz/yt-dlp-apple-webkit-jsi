@@ -64,7 +64,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         # TODO: cached facory/webview
         with WKJSE_Factory(Logger(debug=True)) as send, WKJSE_Webview(send) as webview:
             f = lambda x: send(7, (x, ))
-            s = problematic
             segs: list[tuple[int, int]] = []
             def _ctxof(t: tuple[int, int], n=30, e=None):
                 l, h = t
@@ -75,11 +74,12 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
             segstmp: list[int] = []
             def _sch(l, h):
+                s = problematic
                 if l==h or f(s[l:h]):
                     return
                 if h-l == 1:
                     segstmp.append(l)
-                m = (l+h)/2
+                m = (l+h)//2
                 lhvalid, rhvalid = f(s[l:m]), f(s[m:h])
                 assert not (lhvalid and rhvalid)
                 if not lhvalid and not rhvalid:
