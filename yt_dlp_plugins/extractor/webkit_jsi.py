@@ -1,5 +1,4 @@
 import platform
-from functools import cached_property
 from typing import Optional
 
 from yt_dlp.extractor.youtube.jsc.provider import (
@@ -51,11 +50,14 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             self._lazy_factory.__exit__(None, None, None)
         super().close()
 
-    @cached_property
+    @property
     def lazy_webview(self):
         if self._lazy_webview is None:
+            self.logger.info('Constructing webview')
             send = self._lazy_factory.__enter__()
             self._lazy_webview = WKJSE_Webview(send).__enter__()
+            self._lazy_webview.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
+            self.logger.info('Webview constructed')
         return self._lazy_webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
@@ -76,16 +78,14 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
         # script = stdin
         # TODO: make this logger compatible with dlp's
-        # TODO: cached facory/webview
         # with WKJSE_Factory(Logger()) as send, WKJSE_Webview(send) as webview:
         webview = self.lazy_webview
-        webview.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
         webview.on_script_log(on_log)
         try:
             webview.execute_js(script)
         except WKJS_UncaughtException as e:
             raise JsChallengeProviderError(repr(e), False)
-        self.logger.info(f'Javascript returned {result=}, {err=}')
+        self.logger.trace(f'Javascript returned {result=}, {err=}')
         if err:
             raise JsChallengeProviderError(f'Error running Apple WebKit: {err}')
         return result
