@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 
 from pprint import pformat
 from typing import cast as py_typecast, Callable, get_args, Optional
@@ -29,7 +30,6 @@ def main():
         sendmsg(7, ('\0' * 28602851, ))
         wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
     except BaseException:
-        import traceback
         logger.write_err('err!')
         logger.write_err(traceback.format_exc())
         return 1
@@ -57,9 +57,9 @@ def main():
         logger.debug_log(f'{pformat(result_pyobj)}')
     except WKJS_UncaughtException as e:
         logger.write_err(f'Uncaught exception from JS: {e!r}')
+        logger.write_err(traceback.format_exc())
+        return 1
     except BaseException as e:
-        import traceback
-        logger.write_err('err!')
         logger.write_err(traceback.format_exc())
         return 1
     finally:
