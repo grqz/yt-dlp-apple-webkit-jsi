@@ -60,6 +60,7 @@ def main():
             raise
         logger.debug_log(f'{pformat(result_pyobj)}')
     except BaseException as e:
+        logger.write_err(f'caught exception {e!r}')
         logger.write_err(traceback.format_exc())
         return 1
     finally:
