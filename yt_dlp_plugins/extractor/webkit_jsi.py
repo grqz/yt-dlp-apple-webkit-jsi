@@ -66,9 +66,8 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             nonlocal result, err
             assert isinstance(msg, dict)
             ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
-            self.logger.info(f'received js message in logvchannel {ltype.name}: {args}, calling {jsres_to_log=} on it')
             str_to_log = jsres_to_log(*args)
-            self.logger.info(f'[JS][{ltype.name}] {str_to_log}')
+            self.logger.trace(f'[JS][{ltype.name}] {str_to_log}')
             if ltype == WKJS_LogType.ERR:
                 err += str_to_log
             elif ltype == WKJS_LogType.INFO:
