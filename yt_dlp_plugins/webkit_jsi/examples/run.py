@@ -53,7 +53,6 @@ def main():
 
         # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
         try:
-            raise AssertionError
             result_pyobj = py_typecast(DefaultJSResult, sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))
         except WKJS_UncaughtException as e:
             logger.write_err(f'Uncaught exception from JS: {e!r}')
