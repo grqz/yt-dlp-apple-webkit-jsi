@@ -64,8 +64,9 @@ jobs:
         pip install \
           . \
           "yt-dlp @ git+https://github.com/Grub4K/yt-dlp@feat/jsc-deno"
+        # TODO: fail the CI when challenge solving fails
         yt-dlp -vF --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" --remote-components ejs:github \
-           dQw4w9WgXcQ 6oanIo_2Z4Q WO2b03Zdu4Q
+           dQw4w9WgXcQ C0DPdy98e4c
   c:
     strategy:
       matrix:
