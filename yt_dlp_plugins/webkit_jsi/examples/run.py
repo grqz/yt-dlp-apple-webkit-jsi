@@ -65,8 +65,9 @@ def main():
             next(gen)
     except StopIteration:
         return 0
-    except Exception:
+    except BaseException:
         import traceback
+        logger.write_err('err!')
         logger.write_err(traceback.format_exc())
         return 1
 
