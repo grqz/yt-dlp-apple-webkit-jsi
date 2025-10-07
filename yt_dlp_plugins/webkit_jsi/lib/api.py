@@ -436,6 +436,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     if exc is not None:
                         fut = coro.throw(exc)
                     else:
+                        logger.debug_log(f'send {v=} to {coro=}')
                         fut = coro.send(v)
                     # TODO: support awaitables that aren't futures, e.g. coro
                 except StopIteration as si:
@@ -772,7 +773,9 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                             argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
 
-                        if (await fut_jsdone) is False:
+                        bres = await fut_jsdone
+                        assert bres is True or bres is False
+                        if bres is False:
                             raise py_typecast(Exception, result_exc)
 
                         logger.debug_log('JS execution completed')
