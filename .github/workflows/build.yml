@@ -54,7 +54,8 @@ jobs:
         | jq -r --arg authortime "$(git log --format='%at' -n1 ${tag})" \
         '.[]|select((.mergedAt|strptime("%Y-%m-%dT%H:%M:%SZ")|mktime)>($authortime|tonumber))| "* \(.title) by @\(.author.login) in #\(.number|tostring)"' \
         >> CHANGELOG.md
-        printf "\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/${tag}...${version}\n" >> CHANGELOG.md
+        # This will only work for around 18 centuries
+        printf "\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/${tag:-${{ github.event.default_branch }}%%40%%7B700000day%%7D}...${version}\n" >> CHANGELOG.md
 
         r=$(cat CHANGELOG.md)                           # <--- Read release Notes
         r="${r//'%'/'%25'}"                             # Multiline escape sequences for %
