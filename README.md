@@ -13,6 +13,7 @@ A yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, should work on mo
 
 **pip/pipx**
 
+<!--TODO: actually publish-->
 If yt-dlp is installed through `pip` or `pipx`, you can install the plugin with the following:
 
 ```
@@ -26,6 +27,7 @@ python3 -m pip install -U yt-dlp-apple-webkit-jsi
 
 **Manual**
 
+<!--TODO: actually publish-->
 1. Go to the [latest release](<https://github.com/grqz/yt-dlp-apple-webkit-jsi/releases/latest>)
 2. Find `yt-dlp-apple-webkit-jsi.zip` and download it to one of the [yt-dlp plugin locations](<https://github.com/yt-dlp/yt-dlp#installing-plugins>)
 
