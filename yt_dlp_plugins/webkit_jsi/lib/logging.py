@@ -65,3 +65,4 @@ class DefaultLoggerImpl(AbstractLogger):
 
     def error(self, message: str, *, cause=None) -> None:
         self._out(message + f' (caused by {cause!r})' if cause is not None else message, flush=False, fd=2)
+# TODO: cause: Optional[Exception], or BaseException?

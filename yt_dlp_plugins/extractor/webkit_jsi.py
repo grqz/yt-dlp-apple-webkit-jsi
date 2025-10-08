@@ -34,7 +34,7 @@ class IEWithAttr(InfoExtractor):
 
 @register_provider
 class AppleWebKitJCP(JsRuntimeChalBaseJCP):
-    __slots__ = '__cached_logger',
+    __slots__ = ()
     PROVIDER_VERSION = __version__
     JS_RUNTIME_NAME = 'apple-webkit-jsi'
     PROVIDER_NAME = 'apple-webkit-jsi'
@@ -42,9 +42,9 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__cached_logger = self.logger
-        self.__cached_logger.debug('<debug: Init>')
-        self.__cached_logger.trace('<trace: Init>')
+        self.logger.debug('<debug: Init>')
+        self.logger.trace('<trace: Init>')
+        self.logger.info(f'loglevel: {self.logger.log_level}')
         self.ie = py_typecast(IEWithAttr, self.ie)
         if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(py_typecast(AbstractLogger, self.logger))
@@ -82,8 +82,9 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
-        self.__cached_logger.debug('<debug: Run JS Runtime>')
-        self.__cached_logger.trace('<trace: Run JS Runtime>')
+        self.logger.debug('<debug: Run JS Runtime>')
+        self.logger.trace('<trace: Run JS Runtime>')
+        self.logger.info(f'loglevel: {self.logger.log_level}')
         # TODO: trace logs don't show up even with jsc_trace=true
         self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''
