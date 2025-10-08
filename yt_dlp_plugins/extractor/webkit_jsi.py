@@ -20,9 +20,13 @@ from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_log
 __version__ = '0.0.2'
 
 
+FACTORY_CACHE_TYPE = WKJSE_Factory
+WEBVIEW_CACHE_TYPE = Optional[WKJSE_Webview]
+
+
 @register_provider
 class AppleWebKitJCP(JsRuntimeChalBaseJCP):
-    __slots__ = '_lazy_factory', '_lazy_webview'
+    __slots__ = () 
     PROVIDER_VERSION = __version__
     JS_RUNTIME_NAME = 'apple-webkit-jsi'
     PROVIDER_NAME = 'apple-webkit-jsi'
@@ -30,8 +34,9 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._lazy_factory = WKJSE_Factory(Logger())
-        self._lazy_webview: Optional[WKJSE_Webview] = None
+        if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(Logger())
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
 
     def is_available(self) -> bool:
         """
@@ -45,20 +50,24 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def close(self):
         # Optional close hook, called when YoutubeDL is closed.
-        if self._lazy_webview:
-            self._lazy_webview.__exit__(None, None, None)
-            self._lazy_factory.__exit__(None, None, None)
+        if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is not None:
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview.__exit__(None, None, None)
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__exit__(None, None, None)
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = None
         super().close()
 
     @property
     def lazy_webview(self):
-        if self._lazy_webview is None:
+        if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is None:
             self.logger.info('Constructing webview')
-            send = self._lazy_factory.__enter__()
-            self._lazy_webview = WKJSE_Webview(send).__enter__()
-            self._lazy_webview.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
+            send = self.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
+            wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
             self.logger.info('Webview constructed')
-        return self._lazy_webview
+            return wv
+        else:
+            return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
         result = ''

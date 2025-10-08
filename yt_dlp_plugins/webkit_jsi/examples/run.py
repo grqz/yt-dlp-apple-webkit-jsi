@@ -34,7 +34,8 @@ def main():
         return 1
     try:
         sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-        sendmsg(WKJS_Task.ON_SCRIPTLOG, (wv, print))
+        ucc = sendmsg(WKJS_Task.GET_USRCONTCTLR, (wv, ))
+        sendmsg(WKJS_Task.ON_SCRIPTLOG2, (ucc, print))
         def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
             logger.debug_log(f'received in comm channel: {res}')
             if res is NullTag:
@@ -49,7 +50,7 @@ def main():
         # It's unnecessary to await the promise if the communication is single-way
         # (Note that `communicate` is a local const variable)
         # See js_to_py.md for limitations
-        sendmsg(WKJS_Task.ON_SCRIPTCOMM, (wv, script_comm_cb))
+        sendmsg(WKJS_Task.ON_SCRIPTCOMM2, (ucc, script_comm_cb))
 
         # `SCRIPT` is the async function body. `result_pyobj` is the return value of the function
         result_pyobj, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], sendmsg(WKJS_Task.EXECUTE_JS, (wv, SCRIPT)))

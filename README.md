@@ -1,4 +1,4 @@
-A yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, should work on most modern apple devices.
+A pure Python yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, should work on most modern apple devices.
 
 
 # Installing

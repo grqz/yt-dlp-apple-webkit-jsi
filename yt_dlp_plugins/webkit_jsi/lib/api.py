@@ -171,8 +171,9 @@ class WKJS_Task:
     SHUTDOWN = 2
     NEW_WEBVIEW = 3
     FREE_WEBVIEW = 4
-    ON_SCRIPTLOG = 5
-    ON_SCRIPTCOMM = 6
+    GET_USRCONTCTLR = 5
+    ON_SCRIPTLOG2 = 6
+    ON_SCRIPTCOMM2 = 7
 
 
 class WKJS_UncaughtException(Exception):
@@ -209,9 +210,6 @@ class WKJS_LogType(enum.Enum):
     WARN = 3
     ASSERT = 4
     ERR = 5
-
-
-# TODO: container class for log capture
 
 
 SENDMSG_CBTYPE = Callable[[int, tuple], any]
@@ -281,26 +279,12 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
-            # str_utf16 = pystr.encode('utf-16-le')
-            # p_str = pa.safe_new_object(
-            #     NSString, b'initWithCharacters:length:', str_utf16, len(pystr),
-            #     argtypes=(c_char_p, c_ulong))
-            # the above code doesn't work for some reason(?
+            # DO NOT USE b'initWithCharacters:length:'!
             str_utf8 = pystr.encode()
             p_str = pa.safe_new_object(
                 NSString, b'initWithBytes:length:encoding:', str_utf8, len(str_utf8), NSUTF8StringEncoding,
                     argtypes=(c_char_p, c_ulong, c_ulong))
             return p_str
-
-        def _test_str_conversion(py_str='superWe\\iR(\0\u3042\x01\x0a\0\0zzzstr'):
-            from difflib import unified_diff
-            s = alloc_nsstring_from_str(py_str)
-            sback = str_from_nsstring(pa, s)
-            logger.write_err(f'{(len(sback), len(py_str), sback == py_str)=}')
-            tolinelist = lambda s_: s_.splitlines(keepends=True)
-            logger.debug_log('\n'.join(unified_diff(tolinelist(py_str), tolinelist(sback), fromfile='the_right_string', tofile='string_with_loss')))
-            pa.release_obj(s)
-            return sback == py_str
 
         def pyobj_from_nsobj_jsresult(
             pa: PyNeApple,
@@ -692,24 +676,22 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     if wv:
                         pa.release_obj(c_void_p(wv))
 
-                def on_script_log(webview: int, cb_new: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
+                def get_usrcontctlr(webview: int) -> int:
                     rp_usrcontctlr = pa.send_message(
                         c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
                         b'userContentController', restype=c_void_p)
                     if not rp_usrcontctlr:
                         raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
-                    ret = usrcontctlr_cbdct.get(rp_usrcontctlr or 0)
-                    usrcontctlr_cbdct[rp_usrcontctlr or 0] = cb_new
+                    return rp_usrcontctlr
+
+                def on_script_log(usrcontctlr: int, cb_new: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
+                    ret = usrcontctlr_cbdct.get(usrcontctlr)
+                    usrcontctlr_cbdct[usrcontctlr] = cb_new
                     return ret
 
-                def on_script_comm(webview: int, cb_new: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
-                    rp_usrcontctlr = pa.send_message(
-                        c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
-                        b'userContentController', restype=c_void_p)
-                    if not rp_usrcontctlr:
-                        raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
-                    ret = usrcontctlr_commcbdct.get(rp_usrcontctlr or 0)
-                    usrcontctlr_commcbdct[rp_usrcontctlr or 0] = cb_new
+                def on_script_comm(usrcontctlr: int, cb_new: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
+                    ret = usrcontctlr_commcbdct.get(usrcontctlr or 0)
+                    usrcontctlr_commcbdct[usrcontctlr] = cb_new
                     return ret
 
                 async def navigate_to(webview: int, host: str, html: str) -> None:
@@ -775,7 +757,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
                         chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
                         pa.send_message(
-                            # Requires iOS 15.0+, maybe test its availability first?
+                            # Requires iOS 14.0+, maybe test its availability first?
                             c_void_p(webview), b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
                             ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                             argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))
@@ -789,7 +771,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     nonlocal active
                     active = False
 
-                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_log, on_script_comm, _test_str_conversion
+                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, get_usrcontctlr, on_script_log, on_script_comm
                 fn_iscoro = True, True, False, True, True, False, False, False
                 last_res = 0
                 while active:

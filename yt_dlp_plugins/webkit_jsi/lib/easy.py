@@ -16,12 +16,12 @@ class WKJSE_Factory:
         self._sendmsg = None
 
     def __enter__(self):
-        assert self._sendmsg is None
+        assert self._gen is not None and self._sendmsg is None
         self._sendmsg = self._gen.send(None)
         return self._sendmsg
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        assert self._sendmsg is not None
+        assert self._gen is not None and self._sendmsg is not None
         try:
             self._sendmsg(WKJS_Task.SHUTDOWN, ())
         except StopIteration:
@@ -35,14 +35,24 @@ class WKJSE_Factory:
             ...
         else:
             assert False, 'shutdown failure (outer)'
+        self._sendmsg = None
+        self._gen = None
 
 
 class WKJSE_Webview:
-    __slots__ = '_send', '_wv'
+    __slots__ = '_send', '_wv', '_ucc_v'
 
     def __init__(self, sendmsg: SENDMSG_CBTYPE):
         self._send = sendmsg
         self._wv = 0
+        self._ucc_v: Optional[int] = None
+
+    @property
+    def _ucc(self) -> int:
+        assert self._wv
+        if not self._ucc_v:
+            self._ucc_v = py_typecast(int, self._send(WKJS_Task.GET_USRCONTCTLR, (self._wv, )))
+        return self._ucc_v
 
     def __enter__(self):
         assert not self._wv
@@ -52,6 +62,8 @@ class WKJSE_Webview:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         assert self._wv
         self._send(WKJS_Task.FREE_WEBVIEW, (self._wv, ))
+        self._wv = 0
+        self._ucc_v = None
 
     def navigate_to(self, host: str, html: str) ->  None:
         self._send(WKJS_Task.NAVIGATE_TO, (self._wv, host, html))
@@ -63,10 +75,10 @@ class WKJSE_Webview:
         return res
 
     def on_script_log(self, cb: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
-        return py_typecast(Optional[LOG_CBTYPE], self._send(WKJS_Task.ON_SCRIPTLOG, (self._wv, cb)))
+        return py_typecast(Optional[LOG_CBTYPE], self._send(WKJS_Task.ON_SCRIPTLOG2, (self._ucc, cb)))
 
     def on_script_comm(self, cb: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
-        return py_typecast(Optional[COMM_CBTYPE], self._send(WKJS_Task.ON_SCRIPTCOMM, (self._wv, cb)))
+        return py_typecast(Optional[COMM_CBTYPE], self._send(WKJS_Task.ON_SCRIPTCOMM2, (self._ucc, cb)))
 
 
 def jsres_to_json(jsres: DefaultJSResult, **kwargs):
@@ -86,3 +98,6 @@ def jsres_to_log1(jsres: DefaultJSResult) -> str:
 
 def jsres_to_log(*jsres: DefaultJSResult):
     return ' '.join(map(jsres_to_log1, jsres)) + '\n'
+
+
+# TODO(?): container class for log capture
