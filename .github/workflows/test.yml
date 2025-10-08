@@ -78,7 +78,8 @@ jobs:
         git apply --3way ../misc/ytest.diff
         pytest test/test_jsc/test_runtime.py
         # TODO: fail the CI when challenge solving fails
-        python -myt_dlp -vF --extractor-args "youtube:jsc_trace=true" --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" --remote-components ejs:github \
+        # --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev"
+        python -myt_dlp -vF --extractor-args "youtube:jsc_trace=true" --remote-components ejs:github --no-js-runtimes \
            dQw4w9WgXcQ dQw4w9WgXcQ
   c:
     strategy:
