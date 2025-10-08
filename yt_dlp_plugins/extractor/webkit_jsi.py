@@ -42,6 +42,8 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger.debug('<debug: Init>')
+        self.logger.trace('<trace: Init>')
         self.ie = py_typecast(IEWithAttr, self.ie)
         if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(py_typecast(AbstractLogger, self.logger))
