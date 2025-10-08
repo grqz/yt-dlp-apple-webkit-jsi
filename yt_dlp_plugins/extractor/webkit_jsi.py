@@ -1,6 +1,7 @@
 import platform
-from typing import Optional
+from typing import Optional, cast as py_typecast
 
+from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.extractor.youtube.jsc.provider import (
     JsChallengeProviderError,
     register_provider,
@@ -24,6 +25,13 @@ FACTORY_CACHE_TYPE = WKJSE_Factory
 WEBVIEW_CACHE_TYPE = Optional[WKJSE_Webview]
 
 
+class IEWithAttr(InfoExtractor):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.__yt_dlp_plugin__apple_webkit_jsi__factory: FACTORY_CACHE_TYPE = WKJSE_Factory(Logger())
+        self.__yt_dlp_plugin__apple_webkit_jsi__webview: WEBVIEW_CACHE_TYPE = None
+
+
 @register_provider
 class AppleWebKitJCP(JsRuntimeChalBaseJCP):
     __slots__ = () 
@@ -34,6 +42,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ie = py_typecast(IEWithAttr, self.ie)
         if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(Logger())
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
@@ -54,14 +63,14 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview.__exit__(None, None, None)
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__exit__(None, None, None)
-            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = None
+            # the Factory class 
         super().close()
 
     @property
     def lazy_webview(self):
         if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is None:
             self.logger.info('Constructing webview')
-            send = self.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
+            send = self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
             wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
             self.logger.info('Webview constructed')
