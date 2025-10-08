@@ -17,7 +17,7 @@ from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
 from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_log
 
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 @register_provider

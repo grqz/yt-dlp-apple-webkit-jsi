@@ -44,6 +44,6 @@ For more locations and methods, see [installing yt-dlp plugins](<https://github.
 
 ---
 
-If installed correctly, you should see the provider's version in `yt-dlp -v` output:
+If installed correctly, you should see the provider's version in `yt-dlp -v` output (this might not be the latest version):
 
     [debug] [youtube] [jsc] JS Challenge Providers: bun (unavailable), deno (unavailable), jsinterp (unavailable), node (unavailable), apple-webkit-jsi-0.0.1 (external)
