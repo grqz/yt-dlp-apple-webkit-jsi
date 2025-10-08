@@ -5,13 +5,13 @@ A MORE PYTHONIC API
 import json
 from typing import Optional, cast as py_typecast
 
-from .logging import Logger
+from .logging import AbstractLogger
 from .api import COMM_CBTYPE, LOG_CBTYPE, SENDMSG_CBTYPE, DefaultJSResult, NullTag, WKJS_Task, WKJS_UncaughtException, get_gen
 
 class WKJSE_Factory:
     __slots__ = '_gen', '_sendmsg'
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: AbstractLogger):
         self._gen = get_gen(logger)
         self._sendmsg = None
 

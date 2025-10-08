@@ -13,7 +13,7 @@ from yt_dlp.extractor.youtube.jsc.provider import (
 # PRIVATE API!
 from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
-from ..webkit_jsi.lib.logging import Logger
+from ..webkit_jsi.lib.logging import AbstractLogger, DefaultLoggerImpl as Logger
 from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
 from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview, jsres_to_log
 
@@ -44,7 +44,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         super().__init__(*args, **kwargs)
         self.ie = py_typecast(IEWithAttr, self.ie)
         if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
-            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(Logger())
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(py_typecast(AbstractLogger, self.logger))
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
 
     def is_available(self) -> bool:
@@ -93,10 +93,10 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             elif ltype == WKJS_LogType.INFO:
                 result += str_to_log
 
+        # the default exception handler doesn't let you see the stacktrace
         script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
         # script = stdin
         # TODO: make this logger compatible with dlp's
-        # with WKJSE_Factory(Logger()) as send, WKJSE_Webview(send) as webview:
         webview = self.lazy_webview
         webview.on_script_log(on_log)
         try:

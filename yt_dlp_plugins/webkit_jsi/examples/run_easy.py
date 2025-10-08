@@ -4,7 +4,7 @@ import traceback
 from pprint import pprint
 from typing import cast as py_typecast, Callable, get_args, Optional
 
-from lib.logging import Logger
+from lib.logging import DefaultLoggerImpl as Logger
 from lib.api import NullTag, DefaultJSResult, PyResultType, WKJS_UncaughtException
 from lib.easy import WKJSE_Factory, WKJSE_Webview
 
@@ -15,7 +15,7 @@ def main():
     try:
         # Simple identity function
         def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
-            logger.debug_log(f'received in comm channel: {res}')
+            logger.debug(f'received in comm channel: {res}')
             if res is NullTag:
                 cb(None, None)
             elif isinstance(res, get_args(PyResultType)):
@@ -38,10 +38,10 @@ def main():
             pprint(wv.execute_js(SCRIPT))
         return 0
     except WKJS_UncaughtException as e:
-        logger.write_err(f'Uncaught exception from JS: {e!r}')
+        logger.error(f'Uncaught exception from JS: {e!r}')
         return 1
     except Exception:
-        logger.write_err(traceback.format_exc())
+        logger.error(traceback.format_exc())
         return 1
 
 

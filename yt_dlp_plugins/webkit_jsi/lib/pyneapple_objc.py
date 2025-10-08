@@ -31,7 +31,7 @@ from ctypes.util import find_library
 from functools import wraps
 from typing import Any, Callable, Generator, Iterable, Optional, Protocol, TypeVar, Union, overload, cast as py_typecast
 
-from .logging import Logger
+from .logging import AbstractLogger
 
 
 T = TypeVar('T')
@@ -43,9 +43,9 @@ def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):
     return c_fn
 
 
-def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type, logger: Logger) -> Callable:
+def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type, logger: AbstractLogger) -> Callable:
     argss = ', '.join(str(t) for t in argtypes)
-    logger.debug_log(f'Casting function pointer {addr} to {restype}(*)({argss})')
+    logger.trace(f'Casting function pointer {addr} to {restype}(*)({argss})')
     return CFUNCTYPE(restype, *argtypes)(addr)
 
 
@@ -99,15 +99,15 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
     fn_dlerror = setup_signature(ldl.dlerror, c_char_p)
 
     @contextmanager
-    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY, *, logger: Logger) -> Generator[DLSYM_FUNC, None, None]:
-        logger.debug_log(f'will dlopen {path.decode()}')
+    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY, *, logger: AbstractLogger) -> Generator[DLSYM_FUNC, None, None]:
+        logger.trace(f'will dlopen {path.decode()}')
         h_lib = DLError.handle(
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
         try:
-            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=lambda x: c_void_p((lambda x: logger.debug_log(f'dlsym@{x}', ret=x))(x)))
+            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=c_void_p)
         finally:
-            logger.debug_log(f'will dlclose {path.decode()}')
+            logger.trace(f'will dlclose {path.decode()}')
             DLError.handle(
                 not fn_dlclose(h_lib),
                 b'dlclose', path.decode(), fn_dlerror())
@@ -185,9 +185,9 @@ class PyNeApple:
             return find_library(fwk_name)
         return f'/System/Library/Frameworks/{fwk_name}.framework/{fwk_name}'
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: AbstractLogger):
         if platform.uname()[0] != 'Darwin':
-            logger.write_err('Warning: kernel is not Darwin, PyNeApple might not function correctly')
+            logger.warning('Warning: kernel is not Darwin, PyNeApple might not function correctly', once=True)
         self._init = False
         self.logger = logger
 
@@ -315,18 +315,19 @@ class PyNeApple:
         if restype and issubclass(restype, Structure):
             raise NotImplementedError
         sel = c_void_p(self.sel_registerName(sel_name))
-        self.logger.debug_log(f'SEL for {sel_name.decode()}: {sel.value}')
         if is_super:
             klass = self.object_getClass(obj)
             if not klass:
                 raise ValueError(f'unexpected nil class of object at {obj.value}')
             receiver = objc_super(receiver=obj, super_class=c_void_p(klass))
-            self.logger.debug_log(
-                f'supercall2 {sel_name} on {receiver.super_class=}; {receiver.receiver=}; &receiver={addressof(receiver)}')
+            self.logger.trace(
+                f'[objc_super2{{.receiver={receiver.receiver=}, .class={receiver.super_class=}}} '
+                f'{sel_name.decode()}]')
             return self.cfn_at(
                 self._objc(b'objc_msgSendSuper2').value, restype,
                 POINTER(objc_super), c_void_p, *argtypes)(byref(receiver), sel, *args)
             assert False, 'Guess why I\'m here'
+        self.logger.trace(f'[(id){obj.value} {sel_name.decode()}]')
         return self.cfn_at(self.pobjc_msgSend, restype, c_void_p, c_void_p, *argtypes)(obj, sel, *args)
 
     def safe_alloc_init(self, cls: NULLABLE_VOIDP) -> NotNull_VoidP:
@@ -345,7 +346,7 @@ class PyNeApple:
         return py_typecast(NotNull_VoidP, obj)
 
     def release_obj(self, obj: NULLABLE_VOIDP) -> None:
-        self.logger.debug_log(f'Releasing object at {obj.value}')
+        self.logger.trace(f'<ABI>[{obj.value} release]')
         self.objc_release(obj)
 
     def release_on_exit(self, obj: NULLABLE_VOIDP):
@@ -353,7 +354,7 @@ class PyNeApple:
 
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
         if Cls := self.objc_getClass(name):
-            self.logger.debug_log(f'getClass {name.decode()} = {Cls}')
+            self.logger.trace(f'objc_getClass({name.decode()}) = {Cls}')
             return py_typecast(NotNull_VoidP, c_void_p(Cls))
         else:
             raise RuntimeError(f'Failed to get class {name.decode()}')
@@ -386,7 +387,7 @@ class PyNeApple:
 
     def safe_get_proto(self, name: bytes):
         if proto := self.objc_getProtocol(name):
-            self.logger.debug_log(f'Protocol {name.decode()} at {proto}')
+            self.logger.trace(f'objc_getProtocol({name.decode()}) = {proto}')
             return py_typecast(NotNull_VoidP, c_void_p(proto))
         raise RuntimeError(f'Failed to get protocol {name}')
 
