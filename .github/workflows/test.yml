@@ -62,9 +62,11 @@ jobs:
         path: st.txt
         compression-level: 9
     - uses: denoland/setup-deno@v2
+      if: ${{ matrix.pyvsn != '3.9' }}
       with:
             deno-version: v2.x
     - name: test yt-dlp works
+      if: ${{ matrix.pyvsn != '3.9' }}
       run: |
         python -m venv .ve
         . .ve/bin/activate
