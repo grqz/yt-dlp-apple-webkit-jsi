@@ -79,6 +79,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
+        self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''
         err = ''
 
