@@ -60,6 +60,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
     def close(self):
         # Optional close hook, called when YoutubeDL is closed.
         if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is not None:
+            self.logger.trace('ydl died, performing cleanup')
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview.__exit__(None, None, None)
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = None
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__exit__(None, None, None)
@@ -79,7 +80,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
-        # TODO: trace logs don't show up even with jsc_trace=true
         self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''
         err = ''
