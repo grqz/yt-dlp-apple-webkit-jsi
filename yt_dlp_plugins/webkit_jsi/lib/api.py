@@ -569,7 +569,6 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     logger.debug_log(f'Error handling script message: {e!r}')
                     return_result(None, repr(e))
 
-        Py_WVHandler = c_void_p(pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0))
         meth_list: PyNeApple.METH_LIST_TYPE = (
             (
                 pa.sel_registerName(b'webView:didFinishNavigation:'),
@@ -595,20 +594,19 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 b'v@:@@@?',
             ),
         )
-        if not Py_WVHandler:
-            Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
-            logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
-            pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
-        else:
-            Py_WVHandler = py_typecast(NotNull_VoidP, Py_WVHandler)
+        if i_Py_WVHandler := pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0)
+            Py_WVHandler = py_typecast(NotNull_VoidP, c_void_p(i_Py_WVHandler))
             try:
                 pa.safe_add_meths(Py_WVHandler, meth_list)
             except RuntimeError:
                 pa.objc_disposeClassPair(Py_WVHandler)
                 raise
-            else:
-                pa.objc_registerClassPair(Py_WVHandler)
-                logger.debug_log('Registered PyForeignClass_WebViewHandler')
+            pa.objc_registerClassPair(Py_WVHandler)
+            logger.debug_log('Registered PyForeignClass_WebViewHandler')
+        else:
+            Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
+            logger.debug_log('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
+            pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
         logger.debug_log(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
 
         def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:

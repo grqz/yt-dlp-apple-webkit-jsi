@@ -352,11 +352,11 @@ class PyNeApple:
         self._stack.callback(self.release_obj, obj)
 
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
-        Cls = c_void_p(self.objc_getClass(name))
-        if not Cls.value:
+        if Cls := self.objc_getClass(name):
+            self.logger.debug_log(f'getClass {name.decode()} = {Cls.value}')
+            return py_typecast(NotNull_VoidP, c_void_p(Cls))
+        else:
             raise RuntimeError(f'Failed to get class {name.decode()}')
-        self.logger.debug_log(f'getClass {name.decode()} = {Cls.value}')
-        return py_typecast(NotNull_VoidP, Cls.value)
 
     def make_block(self, cb: Callable, restype: Optional[type] = None, *argtypes: type, signature: Optional[bytes] = None) -> 'ObjCBlock':
         return ObjCBlock(self, cb, restype, *argtypes, signature=signature)
