@@ -78,7 +78,7 @@ jobs:
         git apply --3way ../misc/ytest.diff
         pytest test/test_jsc/test_runtime.py
         python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
-          --extractor-args "youtube:jsc_trace=true"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
+          --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
 
     - name: test yt-dlp works(3.9)
@@ -90,7 +90,7 @@ jobs:
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
         python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
-          --extractor-args "youtube:jsc_trace=true"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
+          --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
   c:
     strategy:
