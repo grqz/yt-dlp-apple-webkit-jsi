@@ -32,6 +32,8 @@ jobs:
     timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
@@ -91,6 +93,8 @@ jobs:
     timeout-minutes: 1
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
     # - name: dump asm
     #   run: |
     #     cd misc
