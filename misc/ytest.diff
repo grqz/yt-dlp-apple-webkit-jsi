@@ -1,21 +1,25 @@
 diff --git a/test/test_jsc/test_runtime.py b/test/test_jsc/test_runtime.py
-index 0557d68c6..5c667e879 100644
+index abd8b9f3f..10506d9d8 100644
 --- a/test/test_jsc/test_runtime.py
 +++ b/test/test_jsc/test_runtime.py
-@@ -22,6 +22,7 @@
- from yt_dlp.extractor.youtube.jsc._builtin.deno import DenoJCP
- from yt_dlp.extractor.youtube.jsc._builtin.node import NodeJCP
+@@ -18,10 +18,8 @@
+     SigChallengeInput,
+     SigChallengeOutput,
+ )
+-from yt_dlp.extractor.youtube.jsc._builtin.bun import BunJCP
+-from yt_dlp.extractor.youtube.jsc._builtin.deno import DenoJCP
+-from yt_dlp.extractor.youtube.jsc._builtin.node import NodeJCP
  
 +from yt_dlp_plugins.extractor.webkit_jsi import AppleWebKitJCP
  
  pytestmark = pytest.mark.skipif(not yt_dlp_ejs, reason='yt-dlp-ejs not available')
  
-@@ -63,7 +64,7 @@
+@@ -63,7 +61,7 @@
  ]
  
  
 -@pytest.fixture(params=[BunJCP, DenoJCP, NodeJCP])
 +@pytest.fixture(params=[AppleWebKitJCP])
  def jcp(request, ie, logger):
-     obj = request.param(ie, logger)
+     obj = request.param(ie, logger, None)
      if not obj.is_available():
