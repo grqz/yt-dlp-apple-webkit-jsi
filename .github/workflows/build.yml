@@ -39,6 +39,7 @@ jobs:
       id: bundle
       env:
         GH_TOKEN: ${{ github.token }}
+        def_branch: ${{ github.event.default_branch }}
         tag: ${{ steps.set_variables.outputs.tag }}
         version: ${{ steps.set_variables.outputs.version }}
         project_name: ${{ steps.set_variables.outputs.project_name }}
@@ -54,8 +55,9 @@ jobs:
         | jq -r --arg authortime "$(git log --format='%at' -n1 ${tag})" \
         '.[]|select((.mergedAt|strptime("%Y-%m-%dT%H:%M:%SZ")|mktime)>($authortime|tonumber))| "* \(.title) by @\(.author.login) in #\(.number|tostring)"' \
         >> CHANGELOG.md
-        # This will only work for around 18 centuries
-        printf "\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/${tag:-${{ github.event.default_branch }}%%40%%7B700000day%%7D}...${version}\n" >> CHANGELOG.md
+        # This hack will only work for around 18 centuries
+        commit_origin="${def_branch}%%40%%7B700000day%%7D"
+        printf "\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/${tag:-$commit_origin}...${version}\n" >> CHANGELOG.md
 
         r=$(cat CHANGELOG.md)                           # <--- Read release Notes
         r="${r//'%'/'%25'}"                             # Multiline escape sequences for %
