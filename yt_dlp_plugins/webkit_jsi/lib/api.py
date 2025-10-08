@@ -594,7 +594,7 @@ def get_gen(logger: Logger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 b'v@:@@@?',
             ),
         )
-        if i_Py_WVHandler := pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0)
+        if i_Py_WVHandler := pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0):
             Py_WVHandler = py_typecast(NotNull_VoidP, c_void_p(i_Py_WVHandler))
             try:
                 pa.safe_add_meths(Py_WVHandler, meth_list)
