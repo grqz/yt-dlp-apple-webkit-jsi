@@ -353,7 +353,7 @@ class PyNeApple:
 
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
         if Cls := self.objc_getClass(name):
-            self.logger.debug_log(f'getClass {name.decode()} = {Cls.value}')
+            self.logger.debug_log(f'getClass {name.decode()} = {Cls}')
             return py_typecast(NotNull_VoidP, c_void_p(Cls))
         else:
             raise RuntimeError(f'Failed to get class {name.decode()}')
