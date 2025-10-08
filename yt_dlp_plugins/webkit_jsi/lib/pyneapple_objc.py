@@ -43,12 +43,6 @@ def setup_signature(c_fn, restype: Optional[type] = None, *argtypes: type):
     return c_fn
 
 
-def cfn_at(addr: int, restype: Optional[type] = None, *argtypes: type, logger: AbstractLogger) -> Callable:
-    argss = ', '.join(str(t) for t in argtypes)
-    logger.trace(f'Casting function pointer {addr} to {restype}(*)({argss})')
-    return CFUNCTYPE(restype, *argtypes)(addr)
-
-
 class DLError(OSError):
     __slots__ = ()
     UNKNOWN_ERROR = b'<unknown error>'
@@ -192,7 +186,7 @@ class PyNeApple:
         self.logger = logger
 
     def cfn_at(self, addr: int, restype: Optional[type] = None, *argtypes: type) -> Callable:
-        return cfn_at(addr, restype, *argtypes, logger=self.logger)
+        return CFUNCTYPE(restype, *argtypes)(addr)
 
     def __enter__(self):
         if self._init:

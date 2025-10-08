@@ -42,9 +42,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger.debug('<debug: Init>')
-        self.logger.trace('<trace: Init>')
-        self.logger.info(f'loglevel<init>: {self.logger.log_level}')
         self.ie = py_typecast(IEWithAttr, self.ie)
         if not hasattr(self.ie, '__yt_dlp_plugin__apple_webkit_jsi__factory'):
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory = WKJSE_Factory(py_typecast(AbstractLogger, self.logger))
@@ -82,9 +79,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
     def _run_js_runtime(self, stdin: str, /) -> str:
-        self.logger.debug('<debug: Run JS Runtime>')
-        self.logger.trace('<trace: Run JS Runtime>')
-        self.logger.error(f'loglevel<_run_js_runtime>: {self.logger.log_level}')
         # TODO: trace logs don't show up even with jsc_trace=true
         self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''

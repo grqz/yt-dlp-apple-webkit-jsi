@@ -329,10 +329,10 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                 def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                     nonlocal d
-                    logger.trace(f'visit s dict@{userarg=}; {k=}; {v=}')
+                    # logger.trace(f'visit s dict@{userarg=}; {k=}; {v=}')
                     k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
                     v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                    logger.trace(f'visit e dict@{userarg=}; {k_=}; {v_=}')
+                    # logger.trace(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                     d[k_] = v_
 
                 CFDictionaryApplyFunction(jsobj, visitor, jsobj)
@@ -343,9 +343,9 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 visited[jsobj.value] = arr
                 for i in range(larr):
                     v = CFArrayGetValueAtIndex(jsobj, i)
-                    logger.trace(f'visit s arr@{jsobj.value}; {v=}')
+                    # logger.trace(f'visit s arr@{jsobj.value}; {v=}')
                     v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                    logger.trace(f'visit e arr@{jsobj.value}; {v_=}')
+                    # logger.trace(f'visit e arr@{jsobj.value}; {v_=}')
                     arr.append(v_)
                 return arr
             else:
