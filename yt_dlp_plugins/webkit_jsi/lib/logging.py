@@ -2,25 +2,27 @@ import abc
 import os
 
 from stat import S_ISREG
-from typing import Any, Literal, Optional, Protocol, TypeVar, Union, overload
+from typing import Literal, Optional, Union
 
 
-T = TypeVar('T')
-
-
-class AbstractLogger(Protocol):
+class AbstractLogger(abc.ABC):
+    @abc.abstractmethod
     def trace(self, message: str) -> None:
         pass
 
+    @abc.abstractmethod
     def debug(self, message: str, *, once=False) -> None:
         pass
 
+    @abc.abstractmethod
     def info(self, message: str) -> None:
         pass
 
+    @abc.abstractmethod
     def warning(self, message: str, *, once=False) -> None:
         pass
 
+    @abc.abstractmethod
     def error(self, message: str, *, cause=None) -> None:
         pass
 
@@ -63,33 +65,3 @@ class DefaultLoggerImpl(AbstractLogger):
 
     def error(self, message: str, *, cause=None) -> None:
         self._out(message + f' (caused by {cause!r})' if cause is not None else message, flush=False, fd=2)
-
-
-# class Logger:
-#     class _DefaultTag:
-#         ...
-# 
-#     STDOUT_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
-#     STDERR_IS_ISREG = S_ISREG(os.fstat(1).st_mode)
-# 
-#     __slots__ = '_debug',
-# 
-#     def __init__(self, debug=False) -> None:
-#         self._debug = debug
-# 
-#     @overload
-#     def debug_log(self, msg: T, *, end='\n') -> T: ...
-#     @overload
-#     def debug_log(self, msg, *, end='\n', ret: T) -> T: ...
-# 
-#     def debug_log(self, msg, *, end='\n', ret: Any = _DefaultTag):
-#         if self._debug:
-#             os.write(1, (str(msg) + end).encode())
-#             if Logger.STDOUT_IS_ISREG:
-#                 os.fsync(1)
-#         return msg if ret is Logger._DefaultTag else ret
-# 
-#     def write_err(self, msg, end='\n'):
-#         os.write(2, (str(msg) + end).encode())
-#         if Logger.STDERR_IS_ISREG:
-#             os.fsync(2)
