@@ -77,10 +77,21 @@ jobs:
         cd yt-dlp
         git apply --3way ../misc/ytest.diff
         pytest test/test_jsc/test_runtime.py
-        # TODO: fail the CI when challenge solving fails
-        # --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev"
-        python -myt_dlp -vF --extractor-args "youtube:jsc_trace=true" --remote-components ejs:github --no-js-runtimes \
-           dQw4w9WgXcQ dQw4w9WgXcQ
+        python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
+          --extractor-args "youtube:jsc_trace=true"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
+          dQw4w9WgXcQ dQw4w9WgXcQ
+
+    - name: test yt-dlp works(3.9)
+      if: ${{ matrix.pyvsn == '3.9' }}
+      run: |
+        python -m venv .ve
+        . .ve/bin/activate
+        pip install .
+        git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
+        cd yt-dlp
+        python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
+          --extractor-args "youtube:jsc_trace=true"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
+          dQw4w9WgXcQ dQw4w9WgXcQ
   c:
     strategy:
       matrix:

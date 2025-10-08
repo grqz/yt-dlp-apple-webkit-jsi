@@ -84,7 +84,7 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
     def _run_js_runtime(self, stdin: str, /) -> str:
         self.logger.debug('<debug: Run JS Runtime>')
         self.logger.trace('<trace: Run JS Runtime>')
-        self.logger.info(f'loglevel<_run_js_runtime>: {self.logger.log_level}')
+        self.logger.error(f'loglevel<_run_js_runtime>: {self.logger.log_level}')
         # TODO: trace logs don't show up even with jsc_trace=true
         self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''
@@ -104,7 +104,6 @@ class AppleWebKitJCP(JsRuntimeChalBaseJCP):
         # the default exception handler doesn't let you see the stacktrace
         script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
         # script = stdin
-        # TODO: make this logger compatible with dlp's
         webview = self.lazy_webview
         webview.on_script_log(on_log)
         try:
