@@ -2,6 +2,7 @@ import platform
 from typing import Generic, Optional, Protocol, TypeVar
 
 from yt_dlp.extractor.common import InfoExtractor
+from yt_dlp.utils import version_tuple
 
 from ..webkit_jsi.lib.logging import AbstractLogger, DefaultLoggerImpl as Logger
 from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview
@@ -53,8 +54,12 @@ class AppleWebKitMixin(Generic[_T]):
         # platform.uname()[0] == 'Darwin'
         if not platform.uname().system == 'Darwin':
             return False
+        real_system = platform.system()
+        if real_system in {'iOS', 'iPadOS'}:
+            return version_tuple(platform.ios_ver().release) >= (14, )
+        elif real_system == 'Darwin':
+            return version_tuple(platform.mac_ver()[0]) > (11, )
         return True
-        # if 
 
     @property
     def _lazy_webview(self: _T):
