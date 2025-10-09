@@ -9,7 +9,6 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
-    addressof,
     byref,
     c_bool,
     c_byte,
@@ -80,8 +79,15 @@ class NotNull_VoidP(Protocol):
 
 DLSYM_FUNC = Callable[[bytes], NotNull_VoidP]
 
+class DLSYM_FACT(Protocol):
+    logger: AbstractLogger
 
-def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
+    @contextmanager
+    def __call__(self, path: bytes, mode: int =  os.RTLD_LAZY) -> Generator[DLSYM_FUNC, None, None]:
+        ...
+
+
+def get_dlsym_factory(*, logger: AbstractLogger, ldl_openmode: int = os.RTLD_NOW):
     ldl = CDLL(find_library('dl'), mode=ldl_openmode)
     # void *dlopen(const char *file, int mode);
     fn_dlopen = setup_signature(ldl.dlopen, c_void_p, c_char_p, c_int)
@@ -92,20 +98,25 @@ def dlsym_factory(ldl_openmode: int = os.RTLD_NOW):
     # char *dlerror(void);
     fn_dlerror = setup_signature(ldl.dlerror, c_char_p)
 
+    dlsym_getctxmgr: 'DLSYM_FACT'
+
     @contextmanager
-    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY, *, logger: AbstractLogger) -> Generator[DLSYM_FUNC, None, None]:
-        logger.trace(f'will dlopen {path.decode()}')
+    def dlsym_factory(path: bytes, mode: int = os.RTLD_LAZY) -> Generator[DLSYM_FUNC, None, None]:
+        dlsym_getctxmgr.logger.trace(f'will dlopen {path.decode()}')
         h_lib = DLError.handle(
             fn_dlopen(path, mode),
             b'dlopen', path.decode(), fn_dlerror())
+        lib_dlsym = DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=c_void_p)
         try:
-            yield DLError.wrap(fn_dlsym, b'dlsym', fn_dlerror, c_void_p(h_lib), success_handle=c_void_p)
+            yield lib_dlsym
         finally:
-            logger.trace(f'will dlclose {path.decode()}')
+            dlsym_getctxmgr.logger.trace(f'will dlclose {path.decode()}')
             DLError.handle(
                 not fn_dlclose(h_lib),
                 b'dlclose', path.decode(), fn_dlerror())
-    return dlsym_factory
+    dlsym_getctxmgr = py_typecast(DLSYM_FACT, dlsym_factory)
+    dlsym_getctxmgr.logger = logger
+    return dlsym_getctxmgr
 
 
 class objc_super(Structure):
@@ -188,17 +199,23 @@ class PyNeApple:
     def cfn_at(self, addr: int, restype: Optional[type] = None, *argtypes: type) -> Callable:
         return CFUNCTYPE(restype, *argtypes)(addr)
 
+    def set_logger(self, new_logger: AbstractLogger):
+        old_logger = self.logger
+        self.logger = new_logger
+        self.dlsym_of_lib.logger = new_logger
+        return old_logger
+
     def __enter__(self):
         if self._init:
             raise RuntimeError('instance already initialized, please create a new instance')
         try:
             self._stack = ExitStack()
-            self.dlsym_of_lib = dlsym_factory()
+            self.dlsym_of_lib = get_dlsym_factory(logger=self.logger)
             self._fwks: dict[str, DLSYM_FUNC] = {}
             self._init = True
 
-            self._objc = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_NOW, logger=self.logger))
-            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libSystem.B.dylib', os.RTLD_LAZY, logger=self.logger))
+            self._objc = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libobjc.A.dylib', os.RTLD_NOW))
+            self._system = self._stack.enter_context(self.dlsym_of_lib(b'/usr/lib/libSystem.B.dylib', os.RTLD_LAZY))
             self.p_NSConcreteMallocBlock = self._system(b'_NSConcreteMallocBlock').value
 
             self.class_addProtocol = self.cfn_at(self._objc(b'class_addProtocol').value, c_byte, c_void_p, c_void_p)
@@ -252,7 +269,7 @@ class PyNeApple:
         return self._system
 
     def open_dylib(self, path: bytes, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
-        return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode, logger=self.logger))
+        return self._stack.enter_context(self.dlsym_of_lib(path, mode=mode))
 
     def load_framework_from_path(self, fwk_name: str, fwk_path: Optional[str] = None, mode=os.RTLD_LAZY) -> DLSYM_FUNC:
         if not fwk_path:

@@ -174,6 +174,7 @@ class WKJS_Task:
     GET_USRCONTCTLR = 5
     ON_SCRIPTLOG2 = 6
     ON_SCRIPTCOMM2 = 7
+    SET_LOGGER = 8
 
 
 class WKJS_UncaughtException(Exception):
@@ -251,7 +252,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         currloop = c_void_p(pa.cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
         mainloop = c_void_p(CFRunLoopGetMain())
         if currloop.value != mainloop.value:
-            logger.warning('running code on another loop is an experimental feature')
+            pa.logger.warning('running code on another loop is an experimental feature')
         CFDateGetAbsoluteTime = pa.cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
         CFNumberGetValue = pa.cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
         kCFNumberFloat64Type = c_long(6)
@@ -329,10 +330,10 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 @CFUNCTYPE(None, c_void_p, c_void_p, c_void_p)
                 def visitor(k: CRet.Py_PVoid, v: CRet.Py_PVoid, userarg: CRet.Py_PVoid):
                     nonlocal d
-                    # logger.trace(f'visit s dict@{userarg=}; {k=}; {v=}')
+                    # pa.logger.trace(f'visit s dict@{userarg=}; {k=}; {v=}')
                     k_ = pyobj_from_nsobj_jsresult(pa, c_void_p(k), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
                     v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                    # logger.trace(f'visit e dict@{userarg=}; {k_=}; {v_=}')
+                    # pa.logger.trace(f'visit e dict@{userarg=}; {k_=}; {v_=}')
                     d[k_] = v_
 
                 CFDictionaryApplyFunction(jsobj, visitor, jsobj)
@@ -343,14 +344,14 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 visited[jsobj.value] = arr
                 for i in range(larr):
                     v = CFArrayGetValueAtIndex(jsobj, i)
-                    # logger.trace(f'visit s arr@{jsobj.value}; {v=}')
+                    # pa.logger.trace(f'visit s arr@{jsobj.value}; {v=}')
                     v_ = pyobj_from_nsobj_jsresult(pa, c_void_p(v), visited=visited, undefined=undefined, null=null, on_unknown_st=on_unknown_st)
-                    # logger.trace(f'visit e arr@{jsobj.value}; {v_=}')
+                    # pa.logger.trace(f'visit e arr@{jsobj.value}; {v_=}')
                     arr.append(v_)
                 return arr
             else:
                 tn = py_typecast(bytes, pa.class_getName(pa.object_getClass(jsobj))).decode()
-                logger.trace(f'unk@{jsobj.value=}; {tn=}')
+                pa.logger.trace(f'unk@{jsobj.value=}; {tn=}')
                 unk_res = on_unknown_st(tn)
                 visited[jsobj.value] = unk_res
                 return unk_res
@@ -413,11 +414,11 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         ) -> CFRL_CoroResult[Union[T, U]]:
             # Default is returned when the coroutine wrongly calls CFRunLoopStop(loop) or its equivalent
             res = CFRL_CoroResult[Union[T, U]](default)
-            logger.trace(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
+            pa.logger.trace(f'_runcoro_on_loop_base: starting coroutine: {coro=}')
 
             def _coro_step(v: Any = None, *, exc: Optional[BaseException] = None):
                 nonlocal res
-                logger.trace(f'coro step: {v=}; {exc=}')
+                pa.logger.trace(f'coro step: {v=}; {exc=}')
                 fut: CFRL_Future
                 try:
                     if exc is not None:
@@ -426,37 +427,37 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         fut = coro.send(v)
                     # TODO: support awaitables that aren't futures, e.g. coro
                 except StopIteration as si:
-                    logger.trace(f'stopping with return value: {si.value=}')
+                    pa.logger.trace(f'stopping with return value: {si.value=}')
                     res.ret = si.value
                     finish(si)
                     return
                 except BaseException as e:
-                    logger.trace(f'will throw exc raised from coro: {e=}')
+                    pa.logger.trace(f'will throw exc raised from coro: {e=}')
                     res.rexc = e
                     finish(e)
                     return
 
                 def _on_fut_done(f: CFRL_Future):
-                    logger.trace(f'fut done: {f=}')
+                    pa.logger.trace(f'fut done: {f=}')
                     try:
                         fut_res = f.result()
                     except BaseException as fut_err:
-                        logger.trace(f'fut exc: {fut_err=}, scheduling exc callback')
+                        pa.logger.trace(f'fut exc: {fut_err=}, scheduling exc callback')
 
                         def _exc_cb(fut_err=fut_err):
-                            logger.trace(f'fut exc cb: calling _coro_step with {fut_err=}')
+                            pa.logger.trace(f'fut exc cb: calling _coro_step with {fut_err=}')
                             _coro_step(exc=fut_err)
                         scheduled = _exc_cb
                     else:
-                        logger.trace(f'fut res: {fut_res=}, scheduling done callback')
+                        pa.logger.trace(f'fut res: {fut_res=}, scheduling done callback')
 
                         def _normal_cb():
-                            logger.trace(f'fut cb, calling _coro_step with {fut_res=}')
+                            pa.logger.trace(f'fut cb, calling _coro_step with {fut_res=}')
                             _coro_step(fut_res)
                         scheduled = _normal_cb
                     schedule_on(loop, scheduled, var_keepalive=var_keepalive)
                 fut.add_done_callback(_on_fut_done)
-                logger.trace(f'added done callback {_on_fut_done=} to fut {fut=}')
+                pa.logger.trace(f'added done callback {_on_fut_done=} to fut {fut=}')
 
             schedule_on(loop, _coro_step, var_keepalive=var_keepalive)
             return res
@@ -465,7 +466,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
             var_keepalive = set()
             res = _runcoro_on_loop_base(coro, var_keepalive=var_keepalive, loop=currloop, default=default, finish=lambda exc: CFRunLoopStop(currloop))
             CFRunLoopRun()
-            logger.trace(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
+            pa.logger.trace(f'runcoro_on_current done: {res.rexc=}; {res.ret=}')
             if res.rexc is not None:
                 raise res.rexc from None
             return res.ret
@@ -487,7 +488,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 while not finished:
                     cv.wait()
 
-            logger.trace(f'runcoro_on_loop done: {res.rexc=}; {res.ret=}')
+            pa.logger.trace(f'runcoro_on_loop done: {res.rexc=}; {res.ret=}')
             if res.rexc is not None:
                 raise res.rexc from None
             return res.ret
@@ -496,16 +497,15 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         usrcontctlr_cbdct: dict[int, LOG_CBTYPE] = {}
         usrcontctlr_commcbdct: dict[int, COMM_CBTYPE] = {}
         class PFC_WVHandler:
-
             @staticmethod
             def webView0_didFinishNavigation1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_webview: CRet.Py_PVoid, rp_navi: CRet.Py_PVoid) -> None:
-                logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
+                pa.logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} webView: {rp_webview} didFinishNavigation: {rp_navi}]')
                 if cb := navi_cbdct.get(rp_navi or 0):
                     cb()
 
             @staticmethod
             def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
-                logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
+                pa.logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
                 rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
                 pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=NullTag)
                 if cb := usrcontctlr_cbdct.get(rp_usrcontctlr or 0):
@@ -517,7 +517,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid, rp_replyhandler: CRet.Py_PVoid
             ):
                 replyhandler = cast(rp_replyhandler or 0, POINTER(ObjCBlock)).contents
-                logger.trace(
+                pa.logger.trace(
                         f'Callback: [(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} '
                     f'didReceiveScriptMessage: {rp_sm} replyHandler: &({replyhandler!r})]')
                 res_or_exc = replyhandler.as_pycb(None, c_void_p, c_void_p)
@@ -534,7 +534,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             res_or_exc(nsobj, None)
                             list(map(pa.release_obj, pending_free))
                     except Exception as e:
-                        logger.warning(f'Error sending script message, did the conversion fail? {e!r}')
+                        pa.logger.warning(f'Error sending script message, did the conversion fail? {e!r}')
                         return_result(None, repr(e))
 
                 # TODO(?): expose some CFRL utils to the callback?
@@ -543,7 +543,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     pyobj = pyobj_from_nsobj_jsresult(pa, rp_msgbody, visited={}, null=NullTag)
                     usrcontctlr_commcbdct[rp_usrcontctlr or 0](pyobj, return_result)
                 except BaseException as e:
-                    logger.warning(f'Error while handling script message: {e!r}')
+                    pa.logger.warning(f'Error while handling script message: {e!r}')
                     return_result(None, repr(e))
 
         meth_list: PyNeApple.METH_LIST_TYPE = (
@@ -579,12 +579,12 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 pa.objc_disposeClassPair(Py_WVHandler)
                 raise
             pa.objc_registerClassPair(Py_WVHandler)
-            logger.trace('Registered PyForeignClass_WebViewHandler')
+            pa.logger.trace('Registered PyForeignClass_WebViewHandler')
         else:
             Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
-            logger.trace('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
+            pa.logger.trace('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
             pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
-        logger.trace(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
+        pa.logger.trace(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
 
         def run() -> Generator[Any, Optional[tuple[int, tuple]], None]:
             with ExitStack() as exsk_out:
@@ -660,7 +660,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     pa.send_message(
                         p_webview, b'setNavigationDelegate:',
                         p_wvhandler, argtypes=(c_void_p, ))
-                    logger.trace('webview full init')
+                    pa.logger.trace('webview full init')
                     return p_webview.value
 
                 async def free_webview(wv: int) -> None:
@@ -702,14 +702,14 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             restype=c_void_p, argtypes=(c_void_p, c_void_p))))
 
                         def cb_navi_done():
-                            logger.trace('navigation done, resolving future')
+                            pa.logger.trace('navigation done, resolving future')
                             fut_navidone.set_result(None)
 
                         navi_cbdct[rp_navi.value] = cb_navi_done
-                        logger.trace(f'Navigation started on {host}')
+                        pa.logger.trace(f'Navigation started on {host}')
 
                         await fut_navidone
-                    logger.trace('navigation done')
+                    pa.logger.trace('navigation done')
 
                 async def execute_js(webview: int, script: str) -> tuple[DefaultJSResult, Optional[WKJS_UncaughtException]]:
                     fut_jsdone: CFRL_Future[bool] = CFRL_Future()
@@ -741,7 +741,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                                 fut_jsdone.set_result(False)
                                 return
                             result_pyobj = pyobj_from_nsobj_jsresult(pa, c_void_p(id_result), visited={}, null=NullTag)
-                            logger.trace(f'JS done, resolving future; {id_result=}, {err=}')
+                            pa.logger.trace(f'JS done, resolving future; {id_result=}, {err=}')
                             fut_jsdone.set_result(True)
 
                         chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
@@ -753,15 +753,15 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
                         await fut_jsdone
 
-                        logger.trace('JS execution completed')
+                        pa.logger.trace('JS execution completed')
                         return result_pyobj, result_exc
 
                 def shutdown():
                     nonlocal active
                     active = False
 
-                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, get_usrcontctlr, on_script_log, on_script_comm
-                fn_iscoro = True, True, False, True, True, False, False, False
+                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, get_usrcontctlr, on_script_log, on_script_comm, pa.set_logger
+                fn_iscoro = True, True, False, True, True, False, False, False, False
                 last_res = 0
                 while active:
                     task = yield last_res

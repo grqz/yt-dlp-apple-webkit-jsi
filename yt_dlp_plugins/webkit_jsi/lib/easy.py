@@ -20,6 +20,10 @@ class WKJSE_Factory:
         self._sendmsg = self._gen.send(None)
         return self._sendmsg
 
+    def set_logger(self, new_logger: AbstractLogger):
+        assert self._gen is not None and self._sendmsg is not None
+        return py_typecast(AbstractLogger, self._sendmsg(WKJS_Task.SET_LOGGER, (new_logger, )))
+
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         assert self._gen is not None and self._sendmsg is not None
         try:

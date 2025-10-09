@@ -37,6 +37,7 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
+    - run: python -c "import platform;print(platform.uname()[2])"
     - name: run easy API
       run: |
         cd yt_dlp_plugins/webkit_jsi
