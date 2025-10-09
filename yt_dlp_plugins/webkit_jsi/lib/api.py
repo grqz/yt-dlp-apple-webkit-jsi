@@ -206,6 +206,10 @@ class WKJS_UncaughtException(Exception):
         return f'WKJS_UncaughtException({s})'
 
 
+class WKJS_SELNoSupportError(RuntimeError):
+    ...
+
+
 class WKJS_LogType(enum.Enum):
     TRACE = 0
     DIAG = 1
@@ -244,6 +248,17 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         WKWebView = pa.safe_objc_getClass(b'WKWebView')
         WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
         WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
+
+        if not pa.send_message(
+            WKUserContentController, b'instancesRespondToSelector:',
+            pa.sel_registerName(b'addScriptMessageHandlerWithReply:contentWorld:name:'),
+            restype=c_byte, argtypes=(c_void_p, )):
+                raise WKJS_SELNoSupportError('-[WKUserContentController addScriptMessageHandlerWithReply:contentWorld:name:]')
+        if not pa.send_message(
+            WKWebView, b'instancesRespondToSelector:',
+            pa.sel_registerName(b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:'),
+            restype=c_byte, argtypes=(c_void_p, )):
+                raise WKJS_SELNoSupportError('-[WKWebView callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:]')
 
         CFRunLoopStop = pa.cfn_at(cf(b'CFRunLoopStop').value, None, c_void_p)
         CFRunLoopRun = pa.cfn_at(cf(b'CFRunLoopRun').value, None)

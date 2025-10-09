@@ -8,7 +8,7 @@ from yt_dlp.extractor.youtube.jsc.provider import (
     JsChallengeRequest,
 )
 
-# PRIVATE API! Keep an eye on upstrem changes
+# PRIVATE API! Keep an eye on upstream changes
 from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
 from .webkit_jsi import AppleWebKitMixin, _IEWithAttr
@@ -47,7 +47,7 @@ class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
         # the default exception handler doesn't let you see the stacktrace
         script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
         # script = stdin
-        webview = self._lazy_webview
+        webview = self._get_webview_lazy()
         webview.on_script_log(on_log)
         try:
             webview.execute_js(script)

@@ -33,6 +33,7 @@ _T = TypeVar('_T', bound=_IECP_Proto)
 
 class AppleWebKitMixin(Generic[_T]):
     __slots__ = ()
+    IS_AVAIL = True
     PROVIDER_VERSION = __version__
     PROVIDER_NAME = 'apple-webkit-jsi'
     BUG_REPORT_LOCATION = 'https://github.com/grqz/yt-dlp-apple-webkit-jsi/issues?q='
@@ -53,19 +54,24 @@ class AppleWebKitMixin(Generic[_T]):
 
     def is_available(self: _T) -> bool:
         ures = os.uname()
-        return ures.sysname == 'Darwin' and version_tuple(ures.release) >= DarwinMinVer
+        return AppleWebKitMixin.IS_AVAIL and ures.sysname == 'Darwin' and version_tuple(ures.release) >= DarwinMinVer
 
-    @property
-    def _lazy_webview(self: _T):
+    def _get_webview_lazy(self: _T):
         if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is None:
             self.logger.info('Constructing webview')
-            send = self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
-            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
-            self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
-            wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
-            self.logger.info('Webview constructed')
-            return wv
+            try:
+                send = self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
+                self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
+                self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
+                wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
+            except Exception:
+                AppleWebKitMixin.IS_AVAIL = False
+                raise
+            else:
+                self.logger.info('Webview constructed')
+                return wv
         else:
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
 
 __all__ = []
