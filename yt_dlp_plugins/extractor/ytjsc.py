@@ -29,7 +29,6 @@ class AppleWebKitJCP(_AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
         self._try_init_factory()
 
     def _run_js_runtime(self, stdin: str, /) -> str:
-        self._start()
         self.logger.trace(f'solving challenge, script length: {len(stdin)}')
         result = ''
         err = ''
