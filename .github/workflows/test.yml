@@ -65,15 +65,20 @@ jobs:
         path: st.txt
         compression-level: 9
     - uses: denoland/setup-deno@v2
-      if: ${{ matrix.pyvsn != '3.9' }}
+      # if: ${{ matrix.pyvsn != '3.9' }}
       with:
             deno-version: v2.x
     - name: test yt-dlp works
-      if: ${{ matrix.pyvsn != '3.9' }}
+      # if: ${{ matrix.pyvsn != '3.9' }}
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        pip install . pytest "git+https://github.com/yt-dlp/ejs@main"
+        # pip install . pytest # "git+https://github.com/yt-dlp/ejs@main"
+        git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
+        cd ejs
+        git apply --3way ../misc/ejs.diff
+        pip install . .. pytest
+        cd ..
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
         git apply --3way ../misc/ytest.diff
@@ -83,7 +88,8 @@ jobs:
           dQw4w9WgXcQ dQw4w9WgXcQ
 
     - name: test yt-dlp works(3.9)
-      if: ${{ matrix.pyvsn == '3.9' }}
+      # if: ${{ matrix.pyvsn == '3.9' }}
+      if: 0
       run: |
         python -m venv .ve
         . .ve/bin/activate
