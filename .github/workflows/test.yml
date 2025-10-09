@@ -37,7 +37,7 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: python -c "import platform as p;u = p.uname(); assert u.system == 'Darwin'; print((u.system, p.mac_ver().release if p.system()[0] == 'D' else p.ios_ver().release))"
+    - run: python -c "import platform as p;u = p.uname(); assert u.system == 'Darwin'; print((u.system, p.mac_ver()[0] if p.system()[0] == 'D' else p.ios_ver().release))"
     - name: run easy API
       run: |
         cd yt_dlp_plugins/webkit_jsi
