@@ -746,7 +746,8 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
                         chblock = pa.make_block(completion_handler, None, POINTER(ObjCBlock), c_void_p, c_void_p)
                         pa.send_message(
-                            # Requires iOS 14.0+, maybe test its availability first?
+                            # Requires iOS 14.0+, maybe test its availability first
+                            # TODO: respondsToSelector:@selector(callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:)
                             c_void_p(webview), b'callAsyncJavaScript:arguments:inFrame:inContentWorld:completionHandler:',
                             ps_script, pd_jsargs, c_void_p(None), rp_pageworld, byref(chblock),
                             argtypes=(c_void_p, c_void_p, c_void_p, c_void_p, POINTER(ObjCBlock)))

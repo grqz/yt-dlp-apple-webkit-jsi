@@ -1,6 +1,6 @@
-import platform
-from typing import Generic, Optional, Protocol, TypeVar
+import os
 
+from typing import Generic, Optional, Protocol, TypeVar
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.utils import version_tuple
 
@@ -51,15 +51,10 @@ class AppleWebKitMixin(Generic[_T]):
             # the Factory class has assertions, don't have to reset to None
 
     def is_available(self: _T) -> bool:
-        # platform.uname()[0] == 'Darwin'
-        if not platform.uname().system == 'Darwin':
+        if not os.uname().sysname == 'Darwin':
             return False
-        real_system = platform.system()
-        if real_system in {'iOS', 'iPadOS'}:
-            return version_tuple(platform.ios_ver().release) >= (14, )
-        elif real_system == 'Darwin':
-            return version_tuple(platform.mac_ver()[0]) > (11, )
-        return True
+        rel = version_tuple(os.uname().release)
+        return rel >= (20, )
 
     @property
     def _lazy_webview(self: _T):
