@@ -37,7 +37,7 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: python -c "import platform as p;u = p.uname(); print((u.system, u.release, p.mac_ver()))"
+    - run: python -c "import platform as p;u = p.uname(); print((u.system, p.mac_ver()[0], p.ios_ver()))"
     - name: run easy API
       run: |
         cd yt_dlp_plugins/webkit_jsi
