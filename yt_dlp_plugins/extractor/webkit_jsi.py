@@ -56,15 +56,12 @@ class _AppleWebKitMixin(Generic[_T]):
         return True
         # if 
 
-    def __start(self: _T) -> AbstractLogger:
-        return self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
-
     @property
     def _lazy_webview(self: _T):
         if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is None:
-            _AppleWebKitMixin.__start(self)
             self.logger.info('Constructing webview')
             send = self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
+            self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
             self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
             wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
             self.logger.info('Webview constructed')
