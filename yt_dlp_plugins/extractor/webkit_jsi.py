@@ -6,9 +6,10 @@ from yt_dlp.utils import version_tuple
 
 from ..webkit_jsi.lib.logging import AbstractLogger, DefaultLoggerImpl as Logger
 from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview
+from ..webkit_jsi.lib.api import DarwinMinVer
 
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 FACTORY_CACHE_TYPE = WKJSE_Factory
@@ -51,10 +52,8 @@ class AppleWebKitMixin(Generic[_T]):
             # the Factory class has assertions, don't have to reset to None
 
     def is_available(self: _T) -> bool:
-        if not os.uname().sysname == 'Darwin':
-            return False
-        rel = version_tuple(os.uname().release)
-        return rel >= (20, )
+        ures = os.uname()
+        return ures.sysname == 'Darwin' and version_tuple(ures.release) >= DarwinMinVer
 
     @property
     def _lazy_webview(self: _T):

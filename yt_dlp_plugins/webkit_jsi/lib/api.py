@@ -165,6 +165,8 @@ PyResultType = Union[
     dt.datetime
 ]
 
+DarwinMinVer = (20, )
+
 class WKJS_Task:
     NAVIGATE_TO = 0
     EXECUTE_JS = 1

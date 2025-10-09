@@ -8,7 +8,7 @@ from yt_dlp.extractor.youtube.jsc.provider import (
     JsChallengeRequest,
 )
 
-# PRIVATE API!
+# PRIVATE API! Keep an eye on upstrem changes
 from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
 from .webkit_jsi import AppleWebKitMixin, _IEWithAttr
@@ -60,5 +60,5 @@ class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
 
 
 @register_preference(AppleWebKitJCP)
-def my_provider_preference(provider: JsChallengeProvider, requests: list[JsChallengeRequest]) -> int:
+def apple_webkit_jcp_preference(provider: JsChallengeProvider, requests: list[JsChallengeRequest]) -> int:
     return 500
