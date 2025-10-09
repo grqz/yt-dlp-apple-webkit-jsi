@@ -8,7 +8,7 @@ from ..webkit_jsi.lib.logging import AbstractLogger, DefaultLoggerImpl as Logger
 from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview
 
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 FACTORY_CACHE_TYPE = WKJSE_Factory
