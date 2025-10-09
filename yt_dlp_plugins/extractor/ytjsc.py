@@ -11,16 +11,16 @@ from yt_dlp.extractor.youtube.jsc.provider import (
 # PRIVATE API!
 from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
 
-from .webkit_jsi import _AppleWebKitMixin, _IEWithAttr
+from .webkit_jsi import AppleWebKitMixin, _IEWithAttr
 from ..webkit_jsi.lib.logging import AbstractLogger
 from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
 from ..webkit_jsi.lib.easy import jsres_to_log
 
 
 @register_provider
-class AppleWebKitJCP(_AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
+class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
     __slots__ = ()
-    JS_RUNTIME_NAME = _AppleWebKitMixin.PROVIDER_NAME
+    JS_RUNTIME_NAME = AppleWebKitMixin.PROVIDER_NAME
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

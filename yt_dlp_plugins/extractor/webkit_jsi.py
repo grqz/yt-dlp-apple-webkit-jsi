@@ -29,7 +29,7 @@ class _IECP_Proto(Protocol):
 _T = TypeVar('_T', bound=_IECP_Proto)
 
 
-class _AppleWebKitMixin(Generic[_T]):
+class AppleWebKitMixin(Generic[_T]):
     __slots__ = ()
     PROVIDER_VERSION = __version__
     PROVIDER_NAME = 'apple-webkit-jsi'
@@ -68,3 +68,5 @@ class _AppleWebKitMixin(Generic[_T]):
             return wv
         else:
             return self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview
+
+__all__ = []

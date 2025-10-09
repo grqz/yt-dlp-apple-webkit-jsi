@@ -22,7 +22,7 @@ jobs:
           - 'pypy3.10'
           - 'pypy3.11'
         os:
-          - 'macos-13'  # x86_64
+          - 'macos-13'  # x86_64 deprecated
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
           - 'macos-15-intel'  # x86_64
@@ -37,7 +37,7 @@ jobs:
     - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.pyvsn }}
-    - run: python -c "import platform;print(platform.uname()[2])"
+    - run: python -c "import platform as p;u = p.uname(); print((u.system, u.release, p.mac_ver()))"
     - name: run easy API
       run: |
         cd yt_dlp_plugins/webkit_jsi
