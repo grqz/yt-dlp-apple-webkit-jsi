@@ -65,37 +65,21 @@ jobs:
         path: st.txt
         compression-level: 9
     - uses: denoland/setup-deno@v2
-      # if: ${{ matrix.pyvsn != '3.9' }}
       with:
             deno-version: v2.x
     - name: test yt-dlp works
-      # if: ${{ matrix.pyvsn != '3.9' }}
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        # pip install . pytest # "git+https://github.com/yt-dlp/ejs@main"
         git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         cd ejs
-        git apply --3way ../misc/ejs.diff
+        git apply --3way ../patches/ejs.diff  # for 3.9
         pip install . .. pytest
         cd ..
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
-        git apply --3way ../misc/ytest.diff
+        git apply --3way ../patches/ytest.diff
         pytest test/test_jsc/test_runtime.py
-        python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
-          --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
-          dQw4w9WgXcQ dQw4w9WgXcQ
-
-    - name: test yt-dlp works(3.9)
-      # if: ${{ matrix.pyvsn == '3.9' }}
-      if: 0
-      run: |
-        python -m venv .ve
-        . .ve/bin/activate
-        pip install .
-        git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
-        cd yt-dlp
         python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
