@@ -1,0 +1,65 @@
+from typing import cast as py_typecast
+
+from yt_dlp.extractor.youtube.jsc.provider import (
+    JsChallengeProviderError,
+    register_provider,
+    register_preference,
+    JsChallengeProvider,
+    JsChallengeRequest,
+)
+
+# PRIVATE API!
+from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
+
+from .webkit_jsi import _AppleWebKitMixin, _IEWithAttr
+from ..webkit_jsi.lib.logging import AbstractLogger
+from ..webkit_jsi.lib.api import WKJS_UncaughtException, WKJS_LogType
+from ..webkit_jsi.lib.easy import jsres_to_log
+
+
+@register_provider
+class AppleWebKitJCP(_AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
+    __slots__ = ()
+    JS_RUNTIME_NAME = _AppleWebKitMixin.PROVIDER_NAME
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ie = py_typecast(_IEWithAttr, self.ie)
+        self.logger = py_typecast(AbstractLogger, self.logger)
+        self._try_init_factory()
+
+    def _run_js_runtime(self, stdin: str, /) -> str:
+        self._start()
+        self.logger.trace(f'solving challenge, script length: {len(stdin)}')
+        result = ''
+        err = ''
+
+        def on_log(msg):
+            nonlocal result, err
+            assert isinstance(msg, dict)
+            ltype, args = WKJS_LogType(msg['logType']), msg['argsArr']
+            str_to_log = jsres_to_log(*args)
+            self.logger.trace(f'[JS][{ltype.name}] {str_to_log}')
+            if ltype == WKJS_LogType.ERR:
+                err += str_to_log
+            elif ltype == WKJS_LogType.INFO:
+                result += str_to_log
+
+        # the default exception handler doesn't let you see the stacktrace
+        script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack);}'
+        # script = stdin
+        webview = self._lazy_webview
+        webview.on_script_log(on_log)
+        try:
+            webview.execute_js(script)
+        except WKJS_UncaughtException as e:
+            raise JsChallengeProviderError(repr(e), False)
+        self.logger.trace(f'Javascript returned {result=}, {err=}')
+        if err:
+            raise JsChallengeProviderError(f'Error running Apple WebKit: {err}')
+        return result
+
+
+@register_preference(AppleWebKitJCP)
+def my_provider_preference(provider: JsChallengeProvider, requests: list[JsChallengeRequest]) -> int:
+    return 500
