@@ -1,5 +1,5 @@
 diff --git a/test/test_jsc/test_runtime.py b/test/test_jsc/test_runtime.py
-index abd8b9f3f..10506d9d8 100644
+index abd8b9f3f..14fa43bfa 100644
 --- a/test/test_jsc/test_runtime.py
 +++ b/test/test_jsc/test_runtime.py
 @@ -18,10 +18,8 @@
@@ -10,7 +10,7 @@ index abd8b9f3f..10506d9d8 100644
 -from yt_dlp.extractor.youtube.jsc._builtin.deno import DenoJCP
 -from yt_dlp.extractor.youtube.jsc._builtin.node import NodeJCP
  
-+from yt_dlp_plugins.extractor.webkit_jsi import AppleWebKitJCP
++from yt_dlp_plugins.extractor.ytjsc import AppleWebKitJCP
  
  pytestmark = pytest.mark.skipif(not yt_dlp_ejs, reason='yt-dlp-ejs not available')
  
