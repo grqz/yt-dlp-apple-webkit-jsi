@@ -229,7 +229,7 @@ COMM_CBTYPE = Callable[
 
 def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
     with PyNeApple(logger=logger) as pa:
-        pa.load_framework_from_path('Foundation')
+        fdn = pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         pa.load_framework_from_path('WebKit')
 
@@ -295,7 +295,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
         # TODO: remove this line!!!!!!
-        pa.send_message(NSString, b'string')
+        pa.cfn_at(fdn(b'NSLog').value, None, c_void_p)(pa.send_message(NSString, b'stringWithUTF8String:', b'PH1', restype=c_void_p, argtypes=(c_char_p, )))
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
