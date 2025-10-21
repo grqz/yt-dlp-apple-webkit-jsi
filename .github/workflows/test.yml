@@ -13,12 +13,12 @@ jobs:
     strategy:
       matrix:
         pyvsn:
-          # - 'pypy3.10'
-          # - 'pypy3.11'
-          # - '3.10'
-          # - '3.11'
-          # - '3.12'
-          # - '3.13'
+          - 'pypy3.10'
+          - 'pypy3.11'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
           - '3.14'
         os:
           - 'macos-13'  # x86_64 deprecated
@@ -75,7 +75,6 @@ jobs:
         # git remote add origin "https://github.com/yt-dlp/ejs"
         # git fetch origin  # 689764f8cea694e99609a41f1630d2e7e8e8668a
         # git reset --hard FETCH_HEAD
-        # git apply ../patches/ejs-localwindow.diff
         git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         cd ejs
         pip install . .. pytest
@@ -88,7 +87,7 @@ jobs:
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
   c:
-    if: 0
+    # if: 0
     strategy:
       matrix:
         os:
