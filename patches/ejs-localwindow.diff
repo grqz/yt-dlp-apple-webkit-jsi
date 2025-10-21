@@ -1,0 +1,27 @@
+diff --git a/src/yt/solver/setup.ts b/src/yt/solver/setup.ts
+index f0b3324..445644c 100644
+--- a/src/yt/solver/setup.ts
++++ b/src/yt/solver/setup.ts
+@@ -4,11 +4,9 @@ export const setupNodes = parse(`
+ if (typeof globalThis.XMLHttpRequest === "undefined") {
+     globalThis.XMLHttpRequest = { prototype: {} };
+ }
+-if (typeof globalThis.window === "undefined") {
+-    globalThis.window = Object.create(null);
+-}
++const window = Object.create(null);
+ if (typeof URL === "undefined") {
+-    globalThis.window.location = {
++    window.location = {
+         hash: "",
+         host: "www.youtube.com",
+         hostname: "www.youtube.com",
+@@ -22,7 +20,7 @@ if (typeof URL === "undefined") {
+         username: "",
+     };
+ } else {
+-    globalThis.window.location = new URL("https://www.youtube.com/watch?v=yt-dlp-wins");
++    window.location = new URL("https://www.youtube.com/watch?v=yt-dlp-wins");
+ }
+ if (typeof globalThis.document === "undefined") {
+     globalThis.document = Object.create(null);

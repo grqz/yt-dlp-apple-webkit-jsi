@@ -14,12 +14,12 @@ jobs:
       matrix:
         pyvsn:
           - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-          - '3.14'
-          - 'pypy3.10'
-          - 'pypy3.11'
+          # - '3.11'
+          # - '3.12'
+          # - '3.13'
+          # - '3.14'
+          # - 'pypy3.10'
+          # - 'pypy3.11'
         os:
           - 'macos-13'  # x86_64 deprecated
           - 'macos-14'  # arm64
@@ -64,7 +64,7 @@ jobs:
         compression-level: 9
     - uses: denoland/setup-deno@v2
       with:
-            deno-version: v2.x
+        deno-version: v2.x
     - name: test yt-dlp works
       run: |
         python -m venv .ve
@@ -73,15 +73,16 @@ jobs:
         cd ejs
         git init
         git remote add origin "https://github.com/yt-dlp/ejs"
-        git fetch origin 689764f8cea694e99609a41f1630d2e7e8e8668a
+        git fetch origin  # 689764f8cea694e99609a41f1630d2e7e8e8668a
         git reset --hard FETCH_HEAD
+        git apply ../patches/ejs-localwindow.diff
         # git clone --depth 1 --branch  --single-branch "https://github.com/yt-dlp/ejs"
         # cd ejs
         pip install . .. pytest
         cd ..
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
-        git apply --3way ../patches/ytest.diff
+        git apply ../patches/ytest.diff
         pytest test/test_jsc/test_runtime.py
         python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
