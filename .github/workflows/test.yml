@@ -13,13 +13,13 @@ jobs:
     strategy:
       matrix:
         pyvsn:
-          - '3.10'
+          # - 'pypy3.10'
+          # - 'pypy3.11'
+          # - '3.10'
           # - '3.11'
           # - '3.12'
           # - '3.13'
-          # - '3.14'
-          # - 'pypy3.10'
-          # - 'pypy3.11'
+          - '3.14'
         os:
           - 'macos-13'  # x86_64 deprecated
           - 'macos-14'  # arm64
@@ -75,7 +75,7 @@ jobs:
         git remote add origin "https://github.com/yt-dlp/ejs"
         git fetch origin  # 689764f8cea694e99609a41f1630d2e7e8e8668a
         git reset --hard FETCH_HEAD
-        # git apply ../patches/ejs-localwindow.diff
+        git apply ../patches/ejs-localwindow.diff
         # git clone --depth 1 --branch  --single-branch "https://github.com/yt-dlp/ejs"
         # cd ejs
         pip install . .. pytest

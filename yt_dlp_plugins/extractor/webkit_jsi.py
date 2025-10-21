@@ -64,7 +64,8 @@ class AppleWebKitMixin(Generic[_T]):
                 send = self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.__enter__()
                 self.ie.__yt_dlp_plugin__apple_webkit_jsi__factory.set_logger(self.logger)
                 self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview = wv = WKJSE_Webview(send).__enter__()
-                wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
+                # TODO: this is yt specific, move to somewhere else
+                # wv.navigate_to('https://www.youtube.com/watch?v=yt-dlp-wins', '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>')
             except Exception:
                 AppleWebKitMixin.IS_AVAIL = False
                 raise
