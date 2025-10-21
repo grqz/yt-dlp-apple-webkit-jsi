@@ -294,10 +294,10 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         }
 
         kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
-        pa.send_message(pa.objc_getClass(b'NSAutoreleasePool').value, b'showPools')
+        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
         # TODO: remove this line!!!!!!
         pa.cfn_at(fdn(b'NSLog').value, None, c_void_p)(pa.send_message(NSString, b'stringWithUTF8String:', b'PH1', restype=c_void_p, argtypes=(c_char_p, )))
-        pa.send_message(pa.objc_getClass(b'NSAutoreleasePool').value, b'showPools')
+        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
