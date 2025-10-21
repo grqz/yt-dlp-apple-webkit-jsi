@@ -44,44 +44,41 @@ class WKJSE_Factory:
 
 
 class WKJSE_Webview:
-    __slots__ = '_send', '_wv', '_ucc_v'
+    __slots__ = '_send', '_wv', '_ucc'
 
     def __init__(self, sendmsg: SENDMSG_CBTYPE):
         self._send = sendmsg
-        self._wv = 0
-        self._ucc_v: Optional[int] = None
-
-    @property
-    def _ucc(self) -> int:
-        assert self._wv
-        if not self._ucc_v:
-            self._ucc_v = py_typecast(int, self._send(WKJS_Task.GET_USRCONTCTLR, (self._wv, )))
-        return self._ucc_v
+        self._wv: Optional[int] = None
+        self._ucc: Optional[int] = None
 
     def __enter__(self):
-        assert not self._wv
-        self._wv = self._send(WKJS_Task.NEW_WEBVIEW, ())
+        assert self._wv is None
+        self._wv, self._ucc = py_typecast(tuple[int, int], self._send(WKJS_Task.NEW_WEBVIEW2, ()))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        assert self._wv
+        assert self._wv is not None
         self._send(WKJS_Task.FREE_WEBVIEW, (self._wv, ))
-        self._wv = 0
-        self._ucc_v = None
+        self._wv = None
+        self._ucc = None
 
     def navigate_to(self, host: str, html: str) ->  None:
+        assert self._wv is not None
         self._send(WKJS_Task.NAVIGATE_TO, (self._wv, host, html))
 
     def execute_js(self, script: str) -> DefaultJSResult:
+        assert self._wv is not None
         res, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], self._send(WKJS_Task.EXECUTE_JS, (self._wv, script)))
         if exc is not None:
             raise exc
         return res
 
     def on_script_log(self, cb: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
+        assert self._wv is not None
         return py_typecast(Optional[LOG_CBTYPE], self._send(WKJS_Task.ON_SCRIPTLOG2, (self._ucc, cb)))
 
     def on_script_comm(self, cb: COMM_CBTYPE) -> Optional[COMM_CBTYPE]:
+        assert self._wv is not None
         return py_typecast(Optional[COMM_CBTYPE], self._send(WKJS_Task.ON_SCRIPTCOMM2, (self._ucc, cb)))
 
 

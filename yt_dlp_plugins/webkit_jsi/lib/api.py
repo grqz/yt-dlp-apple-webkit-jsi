@@ -171,12 +171,11 @@ class WKJS_Task:
     NAVIGATE_TO = 0
     EXECUTE_JS = 1
     SHUTDOWN = 2
-    NEW_WEBVIEW = 3
+    NEW_WEBVIEW2 = 3
     FREE_WEBVIEW = 4
-    GET_USRCONTCTLR = 5
-    ON_SCRIPTLOG2 = 6
-    ON_SCRIPTCOMM2 = 7
-    SET_LOGGER = 8
+    ON_SCRIPTLOG2 = 5
+    ON_SCRIPTCOMM2 = 6
+    SET_LOGGER = 7
 
 
 class WKJS_UncaughtException(Exception):
@@ -612,7 +611,8 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 p_wvhandler = pa.safe_alloc_init(Py_WVHandler)
                 exsk_out.callback(pa.release_obj, p_wvhandler)
                 active = True
-                async def new_webview() -> int:
+
+                async def new_webview() -> tuple[int, int]:
                     async with AsyncExitStack() as exsk:
                         p_cfg = pa.safe_alloc_init(WKWebViewConfiguration)
                         exsk.callback(pa.release_obj, p_cfg)
@@ -682,19 +682,11 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         p_webview, b'setNavigationDelegate:',
                         p_wvhandler, argtypes=(c_void_p, ))
                     pa.logger.trace('webview full init')
-                    return p_webview.value
+                    return p_webview.value, p_usrcontctlr.value
 
                 async def free_webview(wv: int) -> None:
                     if wv:
                         pa.release_obj(c_void_p(wv))
-
-                def get_usrcontctlr(webview: int) -> int:
-                    rp_usrcontctlr = pa.send_message(
-                        c_void_p(pa.send_message(c_void_p(webview), b'configuration', restype=c_void_p)),
-                        b'userContentController', restype=c_void_p)
-                    if not rp_usrcontctlr:
-                        raise RuntimeError(f'Unexpected nil WKUserContentController on webview object @ {webview}')
-                    return rp_usrcontctlr
 
                 def on_script_log(usrcontctlr: int, cb_new: LOG_CBTYPE) -> Optional[LOG_CBTYPE]:
                     ret = usrcontctlr_cbdct.get(usrcontctlr)
@@ -782,7 +774,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     nonlocal active
                     active = False
 
-                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, get_usrcontctlr, on_script_log, on_script_comm, pa.set_logger
+                fn_tup = navigate_to, execute_js, shutdown, new_webview, free_webview, on_script_log, on_script_comm, pa.set_logger
                 fn_iscoro = True, True, False, True, True, False, False, False, False
                 last_res = 0
                 while active:

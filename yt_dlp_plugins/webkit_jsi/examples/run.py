@@ -28,13 +28,12 @@ def main():
         sendmsg(7, ())  # default case
         sendmsg(7, ('ordinary string', ))
         sendmsg(7, ('\0' * 28602851, ))
-        wv = sendmsg(WKJS_Task.NEW_WEBVIEW, ())
+        wv, ucc = py_typecast(tuple[int, int], sendmsg(WKJS_Task.NEW_WEBVIEW, ()))
     except BaseException:
         logger.error(traceback.format_exc())
         return 1
     try:
         sendmsg(WKJS_Task.NAVIGATE_TO, (wv, HOST, HTML))
-        ucc = sendmsg(WKJS_Task.GET_USRCONTCTLR, (wv, ))
         sendmsg(WKJS_Task.ON_SCRIPTLOG2, (ucc, print))
         def script_comm_cb(res: DefaultJSResult, cb: Callable[[PyResultType, Optional[str]], None]):
             logger.trace(f'received in comm channel: {res}')
