@@ -1,7 +1,6 @@
 SCRIPT_PHOLDER = r'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/'
 SCRIPT_TEMPL = r'''
 let __webkit = window.webkit;
-const res = await (async ()=>{  // IIAFE
 const communicate = (()=>{
 if (!window?.webkit?.messageHandlers) throw new Error('No message handlers set up');
 function __postmsg(x, channel) {
@@ -27,8 +26,7 @@ Object.entries({
 window.webkit = undefined;
 return x=>__postmsg(x, 'wkjs_com');
 })();
+return await (async ()=>{
 /*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/
-})();
-window.webkit = __webkit;
-return res;
+})().then(()=>{window.webkit = __webkit;});
 '''

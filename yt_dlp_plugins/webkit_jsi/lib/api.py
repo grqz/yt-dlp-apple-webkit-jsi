@@ -795,3 +795,4 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         gen_run = run()
         assert gen_run.send(None) == 0
         yield lambda *args: gen_run.send(args)
+        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
