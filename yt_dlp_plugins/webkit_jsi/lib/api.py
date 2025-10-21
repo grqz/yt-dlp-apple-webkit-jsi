@@ -727,11 +727,11 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         await fut_navidone
                     pa.logger.trace('navigation done')
 
-                async def execute_js(webview: int, script: str, templ=SCRIPT_TEMPL) -> tuple[DefaultJSResult, Optional[WKJS_UncaughtException]]:
+                async def execute_js(webview: int, script: str) -> tuple[DefaultJSResult, Optional[WKJS_UncaughtException]]:
                     fut_jsdone: CFRL_Future[bool] = CFRL_Future()
                     result_exc: Optional[WKJS_UncaughtException] = None
                     result_pyobj: Optional[DefaultJSResult] = None
-                    real_script = templ.replace(SCRIPT_PHOLDER, script)
+                    real_script = SCRIPT_TEMPL.replace(SCRIPT_PHOLDER, script)
                     async with AsyncExitStack() as exsk:
                         ps_script = alloc_nsstring_from_str(real_script)
                         exsk.callback(pa.release_obj, ps_script)

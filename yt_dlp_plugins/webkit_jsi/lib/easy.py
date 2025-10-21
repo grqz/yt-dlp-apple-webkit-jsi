@@ -66,9 +66,9 @@ class WKJSE_Webview:
         assert self._wv is not None
         self._send(WKJS_Task.NAVIGATE_TO, (self._wv, host, html))
 
-    def execute_js(self, script: str, *a) -> DefaultJSResult:
+    def execute_js(self, script: str) -> DefaultJSResult:
         assert self._wv is not None
-        res, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], self._send(WKJS_Task.EXECUTE_JS, (self._wv, script, *a)))
+        res, exc = py_typecast(tuple[DefaultJSResult, Optional[WKJS_UncaughtException]], self._send(WKJS_Task.EXECUTE_JS, (self._wv, script)))
         if exc is not None:
             raise exc
         return res
