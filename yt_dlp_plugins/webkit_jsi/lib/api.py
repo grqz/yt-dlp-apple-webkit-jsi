@@ -228,10 +228,13 @@ COMM_CBTYPE = Callable[
 
 def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
     with PyNeApple(logger=logger) as pa:
-        fdn = pa.load_framework_from_path('Foundation')
+        pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         pa.load_framework_from_path('WebKit')
 
+        NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
+        pool = pa.safe_alloc_init(NSAutoreleasePool)
+        pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
         NSArray = pa.safe_objc_getClass(b'NSArray')
         NSDate = pa.safe_objc_getClass(b'NSDate')
         NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
@@ -293,10 +296,8 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         }
 
         kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
-        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
-        # TODO: remove this line!!!!!!
-        pa.cfn_at(fdn(b'NSLog').value, None, c_void_p)(pa.send_message(NSString, b'stringWithUTF8String:', b'PH1', restype=c_void_p, argtypes=(c_char_p, )))
-        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
+
+        pa.send_message(NSAutoreleasePool, b'showPools')
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
@@ -787,4 +788,4 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         gen_run = run()
         assert gen_run.send(None) == 0
         yield lambda *args: gen_run.send(args)
-        pa.send_message(pa.safe_objc_getClass(b'NSAutoreleasePool'), b'showPools')
+        pa.send_message(NSAutoreleasePool, b'showPools')

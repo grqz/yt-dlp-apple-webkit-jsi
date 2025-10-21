@@ -363,6 +363,9 @@ class PyNeApple:
     def release_on_exit(self, obj: NULLABLE_VOIDP):
         self._stack.callback(self.release_obj, obj)
 
+    def call_on_exit(self, cb: Callable[[], None]) -> None:
+        self._stack.callback(cb)
+
     def safe_objc_getClass(self, name: bytes) -> NotNull_VoidP:
         if Cls := self.objc_getClass(name):
             self.logger.trace(f'objc_getClass({name.decode()}) = {Cls}')
