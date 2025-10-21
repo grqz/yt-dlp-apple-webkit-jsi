@@ -233,9 +233,9 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         pa.load_framework_from_path('WebKit')
 
         NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
-        pool = pa.safe_alloc_init(NSAutoreleasePool)
-        pa.logger.error(f'the pool is at {pool.value}')
-        pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
+        # pool = pa.safe_alloc_init(NSAutoreleasePool)
+        # print(f'the pool is at {pool.value}')
+        # pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
 
         NSArray = pa.safe_objc_getClass(b'NSArray')
         NSDate = pa.safe_objc_getClass(b'NSDate')
