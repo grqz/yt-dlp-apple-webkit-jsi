@@ -234,7 +234,9 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
         pool = pa.safe_alloc_init(NSAutoreleasePool)
+        pa.release_on_exit(pool)
         pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
+
         NSArray = pa.safe_objc_getClass(b'NSArray')
         NSDate = pa.safe_objc_getClass(b'NSDate')
         NSDictionary = pa.safe_objc_getClass(b'NSDictionary')
