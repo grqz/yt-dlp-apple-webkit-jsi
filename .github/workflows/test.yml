@@ -69,7 +69,7 @@ jobs:
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
+        git clone --depth 1 --branch 689764f8cea694e99609a41f1630d2e7e8e8668a --single-branch "https://github.com/yt-dlp/ejs"
         cd ejs
         pip install . .. pytest
         cd ..
