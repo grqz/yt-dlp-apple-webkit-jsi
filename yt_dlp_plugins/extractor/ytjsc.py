@@ -45,8 +45,8 @@ class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
                 result += str_to_log
 
         # the default exception handler doesn't let you see the stacktrace
-        script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack.toString());}'
-        # script = stdin
+        # script = 'try{' + stdin + '}catch(e){console.error(e.toString(), e.stack.toString());}'
+        script = stdin
         webview = self._get_webview_lazy()
         webview.on_script_log(on_log)
         try:
