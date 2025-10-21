@@ -69,8 +69,14 @@ jobs:
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        git clone --depth 1 --branch 689764f8cea694e99609a41f1630d2e7e8e8668a --single-branch "https://github.com/yt-dlp/ejs"
+        mkdir ejs
         cd ejs
+        git init
+        git remote add origin "https://github.com/yt-dlp/ejs"
+        git fetch origin 689764f8cea694e99609a41f1630d2e7e8e8668a
+        git reset --hard FETCH_HEAD
+        # git clone --depth 1 --branch  --single-branch "https://github.com/yt-dlp/ejs"
+        # cd ejs
         pip install . .. pytest
         cd ..
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"

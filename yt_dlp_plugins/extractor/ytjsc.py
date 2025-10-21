@@ -50,7 +50,7 @@ class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
         webview = self._get_webview_lazy()
         webview.on_script_log(on_log)
         try:
-            webview.execute_js(script, r'/*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/')
+            webview.execute_js(script)
         except WKJS_UncaughtException as e:
             raise JsChallengeProviderError(repr(e), False)
         self.logger.trace(f'Javascript returned {result=}, {err=}')
