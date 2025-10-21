@@ -232,7 +232,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         cf = pa.load_framework_from_path('CoreFoundation')
         pa.load_framework_from_path('WebKit')
 
-        NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
+        # NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
         # pool = pa.safe_alloc_init(NSAutoreleasePool)
         # print(f'the pool is at {pool.value}')
         # pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
@@ -299,7 +299,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
 
-        pa.send_message(NSAutoreleasePool, b'showPools')
+        # pa.send_message(NSAutoreleasePool, b'showPools')
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
@@ -790,4 +790,4 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         gen_run = run()
         assert gen_run.send(None) == 0
         yield lambda *args: gen_run.send(args)
-        pa.send_message(NSAutoreleasePool, b'showPools')
+        # pa.send_message(NSAutoreleasePool, b'showPools')
