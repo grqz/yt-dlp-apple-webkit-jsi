@@ -234,7 +234,7 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
 
         NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
         pool = pa.safe_alloc_init(NSAutoreleasePool)
-        pa.release_on_exit(pool)
+        logger.info(f'the pool is at {pool.value}')
         pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
 
         NSArray = pa.safe_objc_getClass(b'NSArray')
