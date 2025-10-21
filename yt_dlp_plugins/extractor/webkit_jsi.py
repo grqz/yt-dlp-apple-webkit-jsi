@@ -57,6 +57,7 @@ class AppleWebKitMixin(Generic[_T]):
         return AppleWebKitMixin.IS_AVAIL and ures.sysname == 'Darwin' and version_tuple(ures.release) >= DarwinMinVer
 
     def _get_webview_lazy(self: _T):
+        # TODO: maybe start the construction earlier on a-shell to improve performance?
         if self.ie.__yt_dlp_plugin__apple_webkit_jsi__webview is None:
             self.logger.info('Constructing webview')
             try:

@@ -294,6 +294,8 @@ def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         }
 
         kCFBooleanTrue = c_void_p.from_address(cf(b'kCFBooleanTrue').value)
+        # TODO: remove this line!!!!!!
+        pa.send_message(NSString, b'string')
 
         # RELEASE IT!!!
         def alloc_nsstring_from_str(pystr: str):
