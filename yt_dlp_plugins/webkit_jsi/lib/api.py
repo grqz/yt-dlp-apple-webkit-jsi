@@ -226,15 +226,15 @@ COMM_CBTYPE = Callable[
 ]
 
 
-def get_gen(logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
-    with PyNeApple(logger=logger) as pa:
+def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
+    with PyNeApple(logger=_logger) as pa:
         pa.load_framework_from_path('Foundation')
         cf = pa.load_framework_from_path('CoreFoundation')
         pa.load_framework_from_path('WebKit')
 
         NSAutoreleasePool = pa.safe_objc_getClass(b'NSAutoreleasePool')
         pool = pa.safe_alloc_init(NSAutoreleasePool)
-        logger.info(f'the pool is at {pool.value}')
+        pa.logger.error(f'the pool is at {pool.value}')
         pa.call_on_exit(lambda: pa.send_message(pool, b'drain'))
 
         NSArray = pa.safe_objc_getClass(b'NSArray')
