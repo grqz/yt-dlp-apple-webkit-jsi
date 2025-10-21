@@ -5,8 +5,7 @@ A pure Python yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, shoul
 # Installing
 
 ## Requirements
-<!--TODO: 3.10+-->
-1. Python. CPython 3.9+ and PyPy 3.10+ are supported. Other implementations and versions might or might not work.
+1. Python. CPython 3.10+ and PyPy 3.10+ are supported. Other implementations and versions might or might not work.
 2. A device with Apple's operating system. This plugin _should_ work on iOS/iPadOS 14.0+, and MacOS 11.0+, on x86\_64 or arm64. Other apple's operating systems might or might not work.
 3. yt-dlp **`2025.<TODO:MinVer>`** or above. Requires [yt-dlp/yt-dlp#14157](<https://github.com/yt-dlp/yt-dlp/pull/14157>)
 

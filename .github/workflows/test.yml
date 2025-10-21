@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         pyvsn:
-          - '3.9'
           - '3.10'
           - '3.11'
           - '3.12'
@@ -72,7 +71,6 @@ jobs:
         . .ve/bin/activate
         git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         cd ejs
-        git apply --3way ../patches/ejs.diff  # for 3.9
         pip install . .. pytest
         cd ..
         git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
