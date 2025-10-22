@@ -80,7 +80,6 @@ jobs:
         gh release create "${tag}" \
           --title "${project_name} ${tag}" \
           --generate-notes \
-          --verify-tag \
           "bundle/${project_name}.zip"
 
     #     r=$(cat CHANGELOG.md)                           # <--- Read release Notes
