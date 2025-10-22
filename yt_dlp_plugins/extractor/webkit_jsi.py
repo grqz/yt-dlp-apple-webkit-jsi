@@ -9,7 +9,7 @@ from ..webkit_jsi.lib.easy import WKJSE_Factory, WKJSE_Webview
 from ..webkit_jsi.lib.api import DarwinMinVer
 
 
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 
 FACTORY_CACHE_TYPE = WKJSE_Factory

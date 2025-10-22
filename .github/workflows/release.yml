@@ -70,22 +70,35 @@ jobs:
         commit_origin="${def_branch}%%40%%7B700000day%%7D"
         printf "\n**Full Changelog**: ${{ github.server_url }}/${{ github.repository }}/compare/${tag:-$commit_origin}...${version}\n" >> CHANGELOG.md
 
-        r=$(cat CHANGELOG.md)                           # <--- Read release Notes
-        r="${r//'%'/'%25'}"                             # Multiline escape sequences for %
-        r="${r//$'\n'/'%0A'}"                           # Multiline escape sequences for '\n'
-        r="${r//$'\r'/'%0D'}"                           # Multiline escape sequences for '\r'
-        echo "RELEASE_BODY=$r" | tee -a $GITHUB_OUTPUT  # <--- Set environment variable
-
-    - name: Create a release on Github
-      uses: svenstaro/upload-release-action@v2
-      with:
+    - name: Create GitHub Release
+      env:
         tag: ${{ steps.set_variables.outputs.version }}
-        release_name: |
-          ${{ steps.set_variables.outputs.project_name }} ${{ steps.set_variables.outputs.version }}
-        body: ${{ steps.bundle.outputs.RELEASE_BODY }}
-        file: bundle/${{ steps.set_variables.outputs.project_name }}.zip
-        asset_name: ${{ steps.set_variables.outputs.project_name }}.zip
-        overwrite: true
+        project_name: ${{ steps.set_variables.outputs.project_name }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # --notes-file "bundle/CHANGELOG.md"
+        gh release create "${tag}" \
+          --title "${project_name} ${tag}" \
+          --generate-notes \
+          --verify-tag \
+          "bundle/${project_name}.zip"
+
+    #     r=$(cat CHANGELOG.md)                           # <--- Read release Notes
+    #     r="${r//'%'/'%25'}"                             # Multiline escape sequences for %
+    #     r="${r//$'\n'/'%0A'}"                           # Multiline escape sequences for '\n'
+    #     r="${r//$'\r'/'%0D'}"                           # Multiline escape sequences for '\r'
+    #     echo "RELEASE_BODY=$r" | tee -a $GITHUB_OUTPUT  # <--- Set environment variable
+
+    # - name: Create a release on Github
+    #   uses: svenstaro/upload-release-action@v2
+    #   with:
+    #     tag: ${{ steps.set_variables.outputs.version }}
+    #     release_name: |
+    #       ${{ steps.set_variables.outputs.project_name }} ${{ steps.set_variables.outputs.version }}
+    #     body: ${{ steps.bundle.outputs.RELEASE_BODY }}
+    #     file: bundle/${{ steps.set_variables.outputs.project_name }}.zip
+    #     asset_name: ${{ steps.set_variables.outputs.project_name }}.zip
+    #     overwrite: true
 
   release_pypi:
     name: Publish plugin to PyPI
