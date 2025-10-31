@@ -13,7 +13,6 @@ jobs:
     strategy:
       matrix:
         pyvsn:
-          - 'pypy3.10'
           - 'pypy3.11'
           - '3.10'
           - '3.11'
@@ -21,7 +20,6 @@ jobs:
           - '3.13'
           - '3.14'
         os:
-          - 'macos-13'  # x86_64 deprecated
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
           - 'macos-15-intel'  # x86_64
@@ -69,17 +67,10 @@ jobs:
       run: |
         python -m venv .ve
         . .ve/bin/activate
-        # mkdir ejs
-        # cd ejs
-        # git init
-        # git remote add origin "https://github.com/yt-dlp/ejs"
-        # git fetch origin  # 689764f8cea694e99609a41f1630d2e7e8e8668a
-        # git reset --hard FETCH_HEAD
-        git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
-        cd ejs
-        pip install . .. pytest
-        cd ..
-        git clone --depth 1 --branch feat/jsc-deno --single-branch "https://github.com/Grub4K/yt-dlp"
+        # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
+        # (cd ejs && pip install . .. pytest)
+        pip install . pytest
+        git clone --depth 1 --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
         git apply ../patches/ytest.diff
         pytest test/test_jsc/test_runtime.py
@@ -91,7 +82,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - 'macos-13'  # x86_64
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
           - 'macos-15-intel'  # x86_64
