@@ -1,25 +1,21 @@
-diff --git a/test/test_jsc/test_runtime.py b/test/test_jsc/test_runtime.py
-index abd8b9f3f..14fa43bfa 100644
---- a/test/test_jsc/test_runtime.py
-+++ b/test/test_jsc/test_runtime.py
-@@ -18,10 +18,8 @@
-     SigChallengeInput,
-     SigChallengeOutput,
- )
--from yt_dlp.extractor.youtube.jsc._builtin.bun import BunJCP
--from yt_dlp.extractor.youtube.jsc._builtin.deno import DenoJCP
--from yt_dlp.extractor.youtube.jsc._builtin.node import NodeJCP
+diff --git a/test/test_jsc/test_ejs_integration.py b/test/test_jsc/test_ejs_integration.py
+index 798481079..2a03304f7 100644
+--- a/test/test_jsc/test_ejs_integration.py
++++ b/test/test_jsc/test_ejs_integration.py
+@@ -7,6 +7,7 @@
+ 
+ import pytest
  
 +from yt_dlp_plugins.extractor.ytjsc import AppleWebKitJCP
+ from yt_dlp.extractor.youtube.jsc.provider import (
+     JsChallengeRequest,
+     JsChallengeType,
+@@ -103,7 +104,7 @@ def url(self, /):
+     responses.append(JsChallengeProviderResponse(request, JsChallengeResponse(test.type, output_type(test.values))))
  
- pytestmark = pytest.mark.skipif(not yt_dlp_ejs, reason='yt-dlp-ejs not available')
  
-@@ -63,7 +61,7 @@
- ]
- 
- 
--@pytest.fixture(params=[BunJCP, DenoJCP, NodeJCP])
-+@pytest.fixture(params=[AppleWebKitJCP])
+-@pytest.fixture(params=[BunJCP, DenoJCP, NodeJCP, QuickJSJCP])
++@pytest.fixture(params=[BunJCP, DenoJCP, NodeJCP, QuickJSJCP, AppleWebKitJCP])
  def jcp(request, ie, logger):
      obj = request.param(ie, logger, None)
      if not obj.is_available():

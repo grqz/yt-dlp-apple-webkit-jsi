@@ -73,7 +73,7 @@ jobs:
         git clone --depth 1 --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
         git apply ../patches/ytest.diff
-        pytest test/test_jsc/test_runtime.py
+        pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF --remote-components ejs:github --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
