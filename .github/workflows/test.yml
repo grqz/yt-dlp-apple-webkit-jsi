@@ -65,6 +65,7 @@ jobs:
         deno-version: v2.x
     - name: test yt-dlp works
       run: |
+        set -euo pipefail
         python -m venv .ve
         . .ve/bin/activate
         # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
@@ -73,7 +74,13 @@ jobs:
         git clone --depth 1 "https://github.com/yt-dlp/yt-dlp"
         cd yt-dlp
         git apply ../patches/ytest.diff
-        pytest test/test_jsc/test_ejs_integration.py
+        lldb --batch \
+          -o 'process handle -s true -n false -p true SIGSEGV' \
+          -o 'run' \
+          -o 'thread backtrace all' \
+          -o 'register read' \
+          -o 'disassemble --pc --count 50' \
+          -- pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
