@@ -69,12 +69,12 @@ jobs:
         . .ve/bin/activate
         # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         # (cd ejs && pip install . .. pytest)
-        pip install . pytest
+        pip install . pytest yt-dlp-ejs
         git clone --depth 1 "https://github.com/yt-dlp/yt-dlp"
         cd yt-dlp
         git apply ../patches/ytest.diff
         pytest test/test_jsc/test_ejs_integration.py
-        python -myt_dlp -vF     dQw4w9WgXcQ dQw4w9WgXcQ--remote-components ejs:github --no-js-runtimes \
+        python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
           dQw4w9WgXcQ dQw4w9WgXcQ
   c:
