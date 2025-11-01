@@ -9,7 +9,7 @@ from yt_dlp.extractor.youtube.jsc.provider import (
 )
 
 # PRIVATE API! Keep an eye on upstream changes
-from yt_dlp.extractor.youtube.jsc._builtin.runtime import JsRuntimeChalBaseJCP
+from yt_dlp.extractor.youtube.jsc._builtin.ejs import EJSBaseJCP
 
 from .webkit_jsi import AppleWebKitMixin, _IEWithAttr
 from ..webkit_jsi.lib.logging import AbstractLogger
@@ -18,7 +18,7 @@ from ..webkit_jsi.lib.easy import jsres_to_log
 
 
 @register_provider
-class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], JsRuntimeChalBaseJCP):
+class AppleWebKitJCP(AppleWebKitMixin['AppleWebKitJCP'], EJSBaseJCP):
     __slots__ = ()
     JS_RUNTIME_NAME = AppleWebKitMixin.PROVIDER_NAME
 
