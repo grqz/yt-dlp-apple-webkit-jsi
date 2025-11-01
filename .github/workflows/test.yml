@@ -70,7 +70,7 @@ jobs:
         # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         # (cd ejs && pip install . .. pytest)
         pip install . pytest
-        git clone "https://github.com/Grub4K/yt-dlp"
+        git clone "https://github.com/yt-dlp/yt-dlp"
         cd yt-dlp
         git rev-parse HEAD
         ls -R test
