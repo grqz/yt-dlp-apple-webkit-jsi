@@ -20,6 +20,7 @@ jobs:
           - '3.13'
           - '3.14'
         os:
+          - 'macos-13'  # x8664
           - 'macos-14'  # arm64
           - 'macos-15'  # arm64
           - 'macos-15-intel'  # x86_64
@@ -75,6 +76,7 @@ jobs:
         cd yt-dlp
         git apply ../patches/ytest.diff
         lldb --batch \
+          -o 'settings set target.process.stop-on-exec false' \
           -o 'process handle -s true -n false -p true SIGSEGV' \
           -o 'run' \
           -o 'thread backtrace all' \
