@@ -11,7 +11,7 @@ A pure Python yt-dlp-plugin that uses Apple WebKit to solve Youtube N/Sig, shoul
 
 ## Installing the plugin
 
-The master branch is for development. It's not recommended to install from master. A new release is published on Github and PyPI when a new feature or fix is added.
+The master branch is for development. It's not recommended to install from master. A new release is published on GitHub and PyPI when a new feature or fix is added.
 
 **pip/pipx**
 
