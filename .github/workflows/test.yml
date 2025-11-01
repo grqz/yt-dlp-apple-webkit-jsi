@@ -72,7 +72,7 @@ jobs:
         pip install . pytest
         git clone --depth 1 --single-branch "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
-        ls test/test_jsc
+        ls -R test
         git apply ../patches/ytest.diff
         pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF     dQw4w9WgXcQ dQw4w9WgXcQ--remote-components ejs:github --no-js-runtimes \
