@@ -80,9 +80,9 @@ jobs:
           -o 'thread backtrace all' \
           -o 'register read' \
           -o 'disassemble --pc --count 50' \
-          -- pytest test/test_jsc/test_ejs_integration.py
+          -- python -m pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
-          --extractor-args "youtube:jsc_trace=false"  --extractor-args "youtubejsc-ejs:dev=true;script_version=0.1.4;repo=coletdjnz/ejs-dev" \
+          --extractor-args "youtube:jsc_trace=false" \
           dQw4w9WgXcQ dQw4w9WgXcQ
   c:
     # if: 0
