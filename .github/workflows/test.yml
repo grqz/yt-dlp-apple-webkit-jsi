@@ -77,11 +77,11 @@ jobs:
         git apply ../patches/ytest.diff
         lldb --batch \
           -o 'settings set target.process.stop-on-exec false' \
-          -o 'process handle -s true -n false -p true SIGSEGV' \
+          -o 'target stop-hook add --one-liner "frame variable"' \
+          -o 'target stop-hook add --one-liner "thread backtrace all"' \
+          -o 'target stop-hook add --one-liner "register read"' \
+          -o 'target stop-hook add --one-liner "disassemble --pc --count 50"' \
           -o 'run' \
-          -o 'thread backtrace all' \
-          -o 'register read' \
-          -o 'disassemble --pc --count 50' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
           --extractor-args "youtube:jsc_trace=false" \
