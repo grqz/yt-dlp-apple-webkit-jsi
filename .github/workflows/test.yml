@@ -70,8 +70,9 @@ jobs:
         # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
         # (cd ejs && pip install . .. pytest)
         pip install . pytest
-        git clone --depth 1 --single-branch "https://github.com/Grub4K/yt-dlp"
+        git clone --depth 0 "https://github.com/Grub4K/yt-dlp"
         cd yt-dlp
+        git rev-parse HEAD
         ls -R test
         git apply ../patches/ytest.diff
         pytest test/test_jsc/test_ejs_integration.py
