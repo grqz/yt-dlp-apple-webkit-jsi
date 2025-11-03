@@ -1,5 +1,4 @@
 import os
-import platform
 import struct
 import sys
 
@@ -191,7 +190,7 @@ class PyNeApple:
         return f'/System/Library/Frameworks/{fwk_name}.framework/{fwk_name}'
 
     def __init__(self, logger: AbstractLogger):
-        if platform.uname()[0] != 'Darwin':
+        if os.uname()[0] != 'Darwin':
             logger.warning('Warning: kernel is not Darwin, PyNeApple might not function correctly', once=True)
         self._init = False
         self.logger = logger

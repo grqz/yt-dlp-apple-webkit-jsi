@@ -273,7 +273,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         currloop = c_void_p(pa.cfn_at(cf(b'CFRunLoopGetCurrent').value, c_void_p)())
         mainloop = c_void_p(CFRunLoopGetMain())
         if currloop.value != mainloop.value:
-            pa.logger.warning('running code on another loop is an experimental feature')
+            pa.logger.debug('not running on main thread', once=True)
         CFDateGetAbsoluteTime = pa.cfn_at(cf(b'CFDateGetAbsoluteTime').value, c_double, c_void_p)
         CFNumberGetValue = pa.cfn_at(cf(b'CFNumberGetValue').value, c_bool, c_void_p, c_long, c_void_p)
         kCFNumberFloat64Type = c_long(6)
