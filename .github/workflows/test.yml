@@ -76,17 +76,16 @@ jobs:
         cd yt-dlp
         git apply ../patches/ytest.diff
         lldb --batch \
+          -o 'help breakpoint modify' \
+          -o 'help breakpoint set' \
+          -o 'help breakpoint command add' \
           -o 'settings set target.process.stop-on-exec false' \
           -o 'target stop-hook add --one-liner "frame variable"' \
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --pc --count 50"' \
-          -o 'breakpoint set -r "sanitizeStackForVM" --shlib JavaScriptCore' \
+          -o 'breakpoint set -D -r "sanitizeStackForVM" -G true -C "register read" --shlib JavaScriptCore' \
           -o 'breakpoint list' \
-          -o 'help breakpoint modify' \
-          -o 'help breakpoint set' \
-          -o 'help breakpoint command add' \
-          -o 'breakpoint modify -c "true" --command "register read" --auto-continue 1' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
