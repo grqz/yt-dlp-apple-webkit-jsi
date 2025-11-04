@@ -81,7 +81,7 @@ jobs:
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --pc --count 50"' \
-          -o 'breakpoint set --method setLastStackTop' \
+          -o 'breakpoint set --name "JSC::sanitizeStackForVM(JSC::VM&)" --shlib JavaScriptCore' \
           -o 'breakpoint list' \
           -o 'breakpoint modify -c "true" -C "register read" --auto-continue 1' \
           -o 'run' \
