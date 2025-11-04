@@ -84,6 +84,8 @@ jobs:
           -o 'breakpoint set -r "sanitizeStackForVM" --shlib JavaScriptCore' \
           -o 'breakpoint list' \
           -o 'help breakpoint modify' \
+          -o 'help breakpoint set' \
+          -o 'help breakpoint command add' \
           -o 'breakpoint modify -c "true" --command "register read" --auto-continue 1' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
