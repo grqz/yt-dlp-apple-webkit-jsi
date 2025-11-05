@@ -85,8 +85,7 @@ jobs:
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --frame --count 50"' \
-          -o 'watchpoint set expression -- *(uint64_t*)0x10f41c3b8' \
-          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"sanitizeStackForVMImpl\" -G true -C \"register read\" --shlib JavaScriptCore" --shlib CoreFoundation' \
+          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"sanitizeStackForVMImpl\" -G true -C \"register read\" --shlib JavaScriptCore" -C "watchpoint set expression -- *(uint64_t*)0x10f41c3b8" --shlib CoreFoundation' \
           -o 'breakpoint list' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
