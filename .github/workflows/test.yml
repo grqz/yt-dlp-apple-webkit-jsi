@@ -77,6 +77,7 @@ jobs:
         git apply ../patches/ytest.diff
         lldb --batch \
           -o 'help watchpoint set expression' \
+          -o 'help watchpoint command add' \
           -o 'help breakpoint modify' \
           -o 'help breakpoint set' \
           -o 'help breakpoint command add' \
