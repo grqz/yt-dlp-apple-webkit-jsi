@@ -84,7 +84,7 @@ jobs:
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --pc --count 50"' \
-          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"sanitizeStackForVM\" -G true -C \"register read\" --shlib JavaScriptCore" --shlib CoreFoundation' \
+          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"setLastStackTop\" -G true -C \"register read\" --shlib JavaScriptCore" --shlib CoreFoundation' \
           -o 'breakpoint list' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
