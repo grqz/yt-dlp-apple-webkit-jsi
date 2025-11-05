@@ -87,7 +87,7 @@ jobs:
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --frame --count 50"' \
-          -o 'breakpoint set -n "__CFRunLoopRun" --shlib CoreFoundation -G true -o true -C "breakpoint set -n \"JSC::VM::VM(JSC::VM::VMType, JSC::HeapType, WTF::RunLoop*, bool*)\" --shlib JavaScriptCore -G true -C \"register read\" -C \"expr auto* $pLST = (unsigned long long*)($x0+0x163b8)\" -C \"p $pLST\" -C \"watchpoint set expression --size 8 --watch read_write -- $pLST\" -C \"watchpoint command add -o \\\"p $pLST\\\" -o continue\" -C \"p * $pLST\""' \
+          -o 'breakpoint set -n "__CFRunLoopRun" --shlib CoreFoundation -G true -o true -C "breakpoint set -n \"JSC::VM::VM(JSC::VM::VMType, JSC::HeapType, WTF::RunLoop*, bool*)\" --shlib JavaScriptCore -G true -C \"register read\" -C \"expr auto* pLST = (unsigned long long*)($x0+0x163b8)\" -C \"p pLST\" -C \"watchpoint set expression --size 8 --watch read_write -- pLST\" -C \"watchpoint command add -o \\\"p pLST\\\" -o continue\" -C \"p * pLST\""' \
           -o 'breakpoint list' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
