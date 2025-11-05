@@ -14,17 +14,17 @@ jobs:
       matrix:
         pyvsn:
           - 'pypy3.11'
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-          - '3.14'
+          #- '3.10'
+          #- '3.11'
+          #- '3.12'
+          #- '3.13'
+          #- '3.14'
         os:
-          - 'macos-13'  # x8664
+          #- 'macos-13'  # x8664
           - 'macos-14'  # arm64
-          - 'macos-15'  # arm64
-          - 'macos-15-intel'  # x86_64
-          - 'macos-26'  # arm64 beta
+          #- 'macos-15'  # arm64
+          #- 'macos-15-intel'  # x86_64
+          #- 'macos-26'  # arm64 beta
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
@@ -83,7 +83,7 @@ jobs:
           -o 'target stop-hook add --one-liner "frame variable"' \
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
-          -o 'target stop-hook add --one-liner "disassemble `$pc-40` --count 100"' \
+          -o 'target stop-hook add --one-liner "disassemble 0x1a0518f00 --count 100"' \
           -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"setLastStackTop\" -G true -C \"register read\" --shlib JavaScriptCore" --shlib CoreFoundation' \
           -o 'breakpoint list' \
           -o 'run' \
