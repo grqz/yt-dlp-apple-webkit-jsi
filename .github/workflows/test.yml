@@ -83,7 +83,7 @@ jobs:
           -o 'target stop-hook add --one-liner "frame variable"' \
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
-          -o 'target stop-hook add --one-liner "disassemble -a `$pc` --count 100"' \
+          -o 'target stop-hook add --one-liner "disassemble `$pc-40` --count 100"' \
           -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"setLastStackTop\" -G true -C \"register read\" --shlib JavaScriptCore" --shlib CoreFoundation' \
           -o 'breakpoint list' \
           -o 'run' \
