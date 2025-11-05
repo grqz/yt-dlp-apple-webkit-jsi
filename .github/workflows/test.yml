@@ -76,7 +76,7 @@ jobs:
         cd yt-dlp
         git apply ../patches/ytest.diff
         lldb --batch \
-          -o 'help watchpoint set' \
+          -o 'help watchpoint set expression' \
           -o 'help breakpoint modify' \
           -o 'help breakpoint set' \
           -o 'help breakpoint command add' \
@@ -86,7 +86,7 @@ jobs:
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
           -o 'target stop-hook add --one-liner "register read"' \
           -o 'target stop-hook add --one-liner "disassemble --frame --count 50"' \
-          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"sanitizeStackForVMImpl\" -G true -C \"register read\" --shlib JavaScriptCore" -C "watchpoint set expression -- *(uint64_t*)0x10f41c3b8" --shlib CoreFoundation' \
+          -o 'breakpoint set -n "__CFRunLoopRun" -G true -o true -C "breakpoint set -r \"JSC::VM::VM\" -G true -C \"register read\" -C \"p *(unsigned long long *)($x0+0x163b8)\" --shlib JavaScriptCore" -C "watchpoint set expression -s 8 -- 0x10f41c3b8" --shlib CoreFoundation' \
           -o 'breakpoint list' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
