@@ -79,6 +79,7 @@ jobs:
           -o 'help breakpoint modify' \
           -o 'help breakpoint set' \
           -o 'help breakpoint command add' \
+          -o 'help disassemble' \
           -o 'settings set target.process.stop-on-exec false' \
           -o 'target stop-hook add --one-liner "frame variable"' \
           -o 'target stop-hook add --one-liner "thread backtrace all"' \
