@@ -76,6 +76,7 @@ jobs:
         cd yt-dlp
         git apply ../patches/ytest.diff
         lldb --batch \
+          -o 'help watchpoint set' \
           -o 'help breakpoint modify' \
           -o 'help breakpoint set' \
           -o 'help breakpoint command add' \
