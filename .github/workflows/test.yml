@@ -70,7 +70,7 @@ jobs:
         . .ve/bin/activate
         git clone --depth 1 "https://github.com/yt-dlp/yt-dlp"
         cd yt-dlp
-        pip install .[default] pytest
+        pip install .. .[default] pytest
         git apply ../patches/ytest.diff
         lldb --batch \
           -o 'run' \
