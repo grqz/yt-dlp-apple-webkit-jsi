@@ -14,17 +14,16 @@ jobs:
       matrix:
         pyvsn:
           - 'pypy3.11'
-          #- '3.10'
-          #- '3.11'
-          #- '3.12'
-          #- '3.13'
-          #- '3.14'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - '3.14'
         os:
-          #- 'macos-13'  # x8664
           - 'macos-14'  # arm64
-          #- 'macos-15'  # arm64
-          #- 'macos-15-intel'  # x86_64
-          #- 'macos-26'  # arm64 beta
+          - 'macos-15'  # arm64
+          - 'macos-15-intel'  # x86_64
+          - 'macos-26'  # arm64 beta
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
@@ -69,26 +68,11 @@ jobs:
         set -euo pipefail
         python -m venv .ve
         . .ve/bin/activate
-        # git clone --depth 1 --branch main --single-branch "https://github.com/yt-dlp/ejs"
-        # (cd ejs && pip install . .. pytest)
-        pip install . pytest yt-dlp-ejs
         git clone --depth 1 "https://github.com/yt-dlp/yt-dlp"
         cd yt-dlp
+        pip install .[default] pytest
         git apply ../patches/ytest.diff
         lldb --batch \
-          -o 'help watchpoint set expression' \
-          -o 'help watchpoint command add' \
-          -o 'help breakpoint modify' \
-          -o 'help breakpoint set' \
-          -o 'help breakpoint command add' \
-          -o 'help disassemble' \
-          -o 'settings set target.process.stop-on-exec false' \
-          -o 'target stop-hook add --one-liner "frame variable"' \
-          -o 'target stop-hook add --one-liner "thread backtrace all"' \
-          -o 'target stop-hook add --one-liner "register read"' \
-          -o 'target stop-hook add --one-liner "disassemble --frame --count 50"' \
-          -o 'breakpoint set -n "__CFRunLoopRun" --shlib CoreFoundation -G true -o true -C "breakpoint set -n \"JSC::VM::VM(JSC::VM::VMType, JSC::HeapType, WTF::RunLoop*, bool*)\" --shlib JavaScriptCore -G true -C \"register read\" -C \"expr auto* $pLST = (unsigned long long*)($x0+0x163b8)\" -C \"p $pLST\" -C \"watchpoint set expression --size 8 --watch read_write -- `$pLST`\" -C \"watchpoint command add -o \\\"p $pLST\\\" -o continue\" -C \"p * $pLST\""' \
-          -o 'breakpoint list' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
