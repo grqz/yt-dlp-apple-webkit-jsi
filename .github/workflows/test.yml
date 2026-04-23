@@ -73,6 +73,7 @@ jobs:
         pip install .. .[default] pytest
         git apply ../patches/ytest.diff
         lldb --batch \
+          -o 'settings set target.process.stop-on-exec false' \
           -o 'run' \
           -- python -m pytest test/test_jsc/test_ejs_integration.py
         python -myt_dlp -vF dQw4w9WgXcQ dQw4w9WgXcQ --no-js-runtimes \
