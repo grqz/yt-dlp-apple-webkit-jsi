@@ -607,14 +607,14 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         PFC_WVHandler.userContentController0_didReceiveScriptMessage1_replyHandler2),
                 b'v@:@@@?',
             ),
-            # (
-            #     pa.sel_registerName(b'webView:decidePolicyForNavigationAction:decisionHandler:'),
-            #     CFUNCTYPE(
-            #         None,
-            #         c_void_p, c_void_p, c_void_p, c_void_p, c_void_p)(
-            #             PFC_WVHandler.webView0_decidePolicyForNavigationAction1_decisionHandler2),
-            #     b'v@:@@@?',
-            # ),
+            (
+                pa.sel_registerName(b'webView:decidePolicyForNavigationAction:decisionHandler:'),
+                CFUNCTYPE(
+                    None,
+                    c_void_p, c_void_p, c_void_p, c_void_p, c_void_p)(
+                        PFC_WVHandler.webView0_decidePolicyForNavigationAction1_decisionHandler2),
+                b'v@:@@@?',
+            ),
         )
         if i_Py_WVHandler := pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0):
             Py_WVHandler = py_typecast(NotNull_VoidP, c_void_p(i_Py_WVHandler))
