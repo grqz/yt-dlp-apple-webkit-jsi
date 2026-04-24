@@ -11,6 +11,7 @@ from ctypes import (
     c_byte,
     c_char_p,
     c_double,
+    c_int,
     c_int64,
     c_long,
     c_longlong,
@@ -252,6 +253,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
         WKWebView = pa.safe_objc_getClass(b'WKWebView')
         WKWebViewConfiguration = pa.safe_objc_getClass(b'WKWebViewConfiguration')
         WKUserContentController = pa.safe_objc_getClass(b'WKUserContentController')
+        _WKNavigationActionPolicyAllowWithoutTryingAppLink = 3
 
         if not pa.send_message(
             WKUserContentController, b'instancesRespondToSelector:',
@@ -527,6 +529,18 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                     cb()
 
             @staticmethod
+            def webView0_decidePolicyForNavigationAction1_decisionHandler2(
+                this: CRet.Py_PVoid, sel: CRet.Py_PVoid,
+                rp_webview: CRet.Py_PVoid,
+                rp_naviact: CRet.Py_PVoid,
+                rp_dhandler: CRet.Py_PVoid,
+            ) -> None:
+                pa.logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} webView: {rp_webview} decidePolicyForNavigationAction: {rp_naviact} decisionHandler: {rp_dhandler}]')
+                # https://stackoverflow.com/a/44942814
+                dhandler = cast(rp_dhandler or 0, POINTER(ObjCBlock)).contents
+                dhandler.as_pycb(None, c_int)(_WKNavigationActionPolicyAllowWithoutTryingAppLink)
+
+            @staticmethod
             def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
                 pa.logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} userContentController: {rp_usrcontctlr} didReceiveScriptMessage: {rp_sm}]')
                 rp_msgbody = c_void_p(pa.send_message(c_void_p(rp_sm), b'body', restype=c_void_p))
@@ -593,6 +607,14 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                         PFC_WVHandler.userContentController0_didReceiveScriptMessage1_replyHandler2),
                 b'v@:@@@?',
             ),
+            (
+                pa.sel_registerName(b'webView:decidePolicyForNavigationAction:decisionHandler:'),
+                CFUNCTYPE(
+                    None,
+                    c_void_p, c_void_p, c_void_p, c_void_p, c_void_p)(
+                        PFC_WVHandler.webView0_decidePolicyForNavigationAction1_decisionHandler2),
+                b'v@:@@@?',
+            ),
         )
         if i_Py_WVHandler := pa.objc_allocateClassPair(NSObject, b'PyForeignClass_WebViewHandler', 0):
             Py_WVHandler = py_typecast(NotNull_VoidP, c_void_p(i_Py_WVHandler))
@@ -605,7 +627,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
             pa.logger.trace('Registered PyForeignClass_WebViewHandler')
         else:
             Py_WVHandler = pa.safe_objc_getClass(b'PyForeignClass_WebViewHandler')
-            pa.logger.trace('Failed to allocate class PyForeignClass_WebViewHandler, testing if it is what we previously registered')
+            pa.logger.trace('Failed to allocate class PyForeignClass_WebViewHandler')
             pa.safe_upd_or_add_meths(Py_WVHandler, meth_list)
         pa.logger.trace(f'PyForeignClass_WebViewHandler@{Py_WVHandler.value}')
 
