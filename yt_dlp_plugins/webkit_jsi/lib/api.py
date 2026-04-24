@@ -536,6 +536,14 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 rp_dhandler: CRet.Py_PVoid,
             ) -> None:
                 pa.logger.trace(f'Callback: [(PyForeignClass_WebViewHandler){this} webView: {rp_webview} decidePolicyForNavigationAction: {rp_naviact} decisionHandler: {rp_dhandler}]')
+                dst_absurl = str_from_nsstring(pa, c_void_p(pa.send_message(
+                    c_void_p(pa.send_message(
+                        c_void_p(pa.send_message(
+                            c_void_p(rp_naviact), b'request',restype=c_void_p)),
+                        b'URL', restype=c_void_p)),
+                    b'absoluteString', restype=c_void_p)))
+
+                pa.logger.info(f'Navigating to: {dst_absurl}')
                 # https://stackoverflow.com/a/44942814
                 dhandler = cast(rp_dhandler or 0, POINTER(ObjCBlock)).contents
                 dhandler.as_pycb(None, c_int)(1)
