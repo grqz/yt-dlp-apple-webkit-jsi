@@ -13,7 +13,7 @@ function __postmsg(x, channel) {
 Object.entries({
     //trace: 0,  // TRACE
     //debug: 1,  // DIAG
-    log: 2,  // INFO
+    //log: 2,  // INFO
     //info: 2,  // INFO
     //warn: 3,  // WARN
     //assert: 4,  // ASSERT
