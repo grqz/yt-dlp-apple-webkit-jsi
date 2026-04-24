@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   testpy:
-    if: 0
+    if: 1
     strategy:
       matrix:
         pyvsn:
