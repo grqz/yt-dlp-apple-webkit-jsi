@@ -102,3 +102,4 @@ jobs:
     - run: |
         cd misc
         make hello && ./hello
+        make translated && ./translated
