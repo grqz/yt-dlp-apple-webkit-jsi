@@ -26,7 +26,7 @@ Object.entries({
 window.webkit = undefined;
 return x=>__postmsg(x, 'wkjs_com');
 })();
-return await (async ()=>{
+/*return */await (async ()=>{
 /*__ACTUAL_SCRIPT_CONTENT_PLACEHOLDER__*/
 })().then(()=>{window.webkit = __webkit;});
 '''
