@@ -546,7 +546,7 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                 pa.logger.info(f'Navigating to: {dst_absurl}')
                 # https://stackoverflow.com/a/44942814
                 dhandler = cast(rp_dhandler or 0, POINTER(ObjCBlock)).contents
-                dhandler.as_pycb(None, c_int)(3)
+                dhandler.as_pycb(None, c_int)(4)
 
             @staticmethod
             def userContentController0_didReceiveScriptMessage1(this: CRet.Py_PVoid, sel: CRet.Py_PVoid, rp_usrcontctlr: CRet.Py_PVoid, rp_sm: CRet.Py_PVoid) -> None:
