@@ -13,14 +13,14 @@ function __postmsg(x, channel) {
 Object.entries({
     trace: 0,  // TRACE
     debug: 1,  // DIAG
-    //log: 2,  // INFO
+    log: 2,  // INFO
     info: 2,  // INFO
     warn: 3,  // WARN
     assert: 4,  // ASSERT
     error: 5,  // ERR
 }).forEach(([fn, logType])=>{
-    window.console[fn] = function() {
-        __postmsg({logType, argsArr: JSON.parse(JSON.stringify(Array.from(arguments)))}, 'wkjs_log');
+    console[fn] = function() {
+        __postmsg({logType, argsArr: Array.from(arguments)}, 'wkjs_log');
     };
 });
 window.webkit = undefined;
