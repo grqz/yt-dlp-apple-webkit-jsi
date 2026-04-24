@@ -11,16 +11,16 @@ function __postmsg(x, channel) {
     return ret;
 }
 Object.entries({
-    trace: 0,  // TRACE
-    debug: 1,  // DIAG
+    //trace: 0,  // TRACE
+    //debug: 1,  // DIAG
     log: 2,  // INFO
-    info: 2,  // INFO
-    warn: 3,  // WARN
-    assert: 4,  // ASSERT
-    error: 5,  // ERR
+    //info: 2,  // INFO
+    //warn: 3,  // WARN
+    //assert: 4,  // ASSERT
+    //error: 5,  // ERR
 }).forEach(([fn, logType])=>{
-    console[fn] = function() {
-        __postmsg({logType, argsArr: Array.from(arguments)}, 'wkjs_log');
+    window.console[fn] = function() {
+        __postmsg({logType, argsArr: JSON.parse(JSON.stringify(Array.from(arguments)))}, 'wkjs_log');
     };
 });
 window.webkit = undefined;
