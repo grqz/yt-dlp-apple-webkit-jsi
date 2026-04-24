@@ -658,15 +658,6 @@ def get_gen(_logger: AbstractLogger) -> Generator[SENDMSG_CBTYPE, None, None]:
                             argtypes=(c_void_p, c_void_p))
                         rp_pref = None
 
-                        p_setkey1 = pa.safe_new_object(
-                            NSString, b'initWithUTF8String:', b'allowUniversalAccessFromFileURLs',
-                            argtypes=(c_char_p, ))
-                        exsk.callback(pa.release_obj, p_setkey1)
-                        pa.send_message(
-                            p_cfg, b'setValue:forKey:',
-                            kCFBooleanTrue, p_setkey1,
-                            argtypes=(c_void_p, c_void_p))
-
                         p_usrcontctlr = pa.safe_alloc_init(WKUserContentController)
                         exsk.callback(pa.release_obj, p_usrcontctlr)
 
