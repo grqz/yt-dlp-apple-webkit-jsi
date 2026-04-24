@@ -80,7 +80,7 @@ jobs:
           --extractor-args "youtube:jsc_trace=false" \
           dQw4w9WgXcQ dQw4w9WgXcQ
   c:
-    if: 0
+    if: 1
     strategy:
       matrix:
         os:

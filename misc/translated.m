@@ -67,6 +67,7 @@ void onCallAsyncJSComplete(void *idResult, void *nserrError, void *stop, void *g
 }
 
 int main(void) {
+    fprintf(stderr, "WKNavigationActionPolicyAllow + 2 = %d", WKNavigationActionPolicyAllow + 2);
     WKWebViewConfiguration *pCfg = [[WKWebViewConfiguration alloc] init];
     void *pPref = [pCfg preferences];
     [pPref setJavaScriptCanOpenWindowsAutomatically:YES];

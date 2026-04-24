@@ -9,7 +9,7 @@ LDFLAGS ?= -fsanitize=address \
 	-framework Foundation -framework WebKit -framework CoreFoundation -framework CoreGraphics \
 	-isysroot "$(shell xcrun --show-sdk-path)"
 
-all: hello translated testcall
+all: hello translated
 
 translated: translated.o config.o cbmap.o
 	$(CXX) $(LDFLAGS) $^ -o $@
