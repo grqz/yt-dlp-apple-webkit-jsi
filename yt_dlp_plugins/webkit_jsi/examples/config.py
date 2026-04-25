@@ -1,8 +1,8 @@
 HTML = r'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
-HOST = r'''https://www.youtube.com/watch?v=yt-dlp-wins'''
+HOST = r'''about:blank'''
 SCRIPT = r'''
 try {
-window.location.href = 'https://www.youtube.com/watch?v=yt-dlp-winz';
+window.location.href = 'about:blank#test';
 console.log(window.location.href);
 console.log(typeof globalThis.XMLHttpRequest, typeof globalThis.window, typeof URL, typeof globalThis.document, typeof globalThis.navigator, typeof globalThis.self);
 const val = await Promise.all([3, null, true, new Date, false].map(communicate));
