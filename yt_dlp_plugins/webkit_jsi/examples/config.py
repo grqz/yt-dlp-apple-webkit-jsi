@@ -1,9 +1,7 @@
 HTML = r'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>'''
-HOST = r'''about:srcdoc'''
+HOST = r'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 try {
-window.location.href = 'about:blank';
-console.log(window.location.href);
 console.log(typeof globalThis.XMLHttpRequest, typeof globalThis.window, typeof URL, typeof globalThis.document, typeof globalThis.navigator, typeof globalThis.self);
 const val = await Promise.all([3, null, true, new Date, false].map(communicate));
 console.log('started generating pot, communicate result: ', val);
