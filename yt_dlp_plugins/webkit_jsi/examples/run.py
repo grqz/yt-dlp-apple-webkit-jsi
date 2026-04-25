@@ -22,13 +22,13 @@ def main():
             os.remove(PATH2CORE)
         logger.trace(f'writing symlink to coredump (if any) to {PATH2CORE} for CI')
         os.symlink(f'/cores/core.{os.getpid()}', PATH2CORE)
-    gen = get_gen(logger=logger)
+    gen = get_gen(_logger=logger)
     try:
         sendmsg = next(gen)
         sendmsg(7, ())  # default case
         sendmsg(7, ('ordinary string', ))
         sendmsg(7, ('\0' * 28602851, ))
-        wv, ucc = py_typecast(tuple[int, int], sendmsg(WKJS_Task.NEW_WEBVIEW, ()))
+        wv, ucc = py_typecast(tuple[int, int], sendmsg(WKJS_Task.NEW_WEBVIEW2, ()))
     except BaseException:
         logger.error(traceback.format_exc())
         return 1

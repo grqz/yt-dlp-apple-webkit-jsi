@@ -2,7 +2,7 @@ HTML = r'''<!DOCTYPE html><html lang="en"><head><title></title></head><body></bo
 HOST = r'''https://www.youtube.com/robots.txt'''
 SCRIPT = r'''
 try {
-window.location.href = 'about:blank';
+window.location.href = 'https://www.youtube.com/watch?v=yt-dlp-wins';
 console.log(window.location.href);
 console.log(typeof globalThis.XMLHttpRequest, typeof globalThis.window, typeof URL, typeof globalThis.document, typeof globalThis.navigator, typeof globalThis.self);
 const val = await Promise.all([3, null, true, new Date, false].map(communicate));
